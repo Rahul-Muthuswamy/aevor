@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Aevor.Application/Aevor.Application.csproj" />
+    <Project Path="src/Aevor.Core/Aevor.Core.csproj" />
+    <Project Path="src/Aevor.Infrastructure/Aevor.Infrastructure.csproj" />
+    <Project Path="src/Aevor.UI/Aevor.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Aevor.Tests/Aevor.Tests.csproj" />
+  </Folder>
+</Solution>
