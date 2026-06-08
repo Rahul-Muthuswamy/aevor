@@ -28,10 +28,17 @@ public partial class App : System.Windows.Application
             var discoveryService = _serviceProvider.GetRequiredService<IProfileDiscoveryService>();
             var profiles = await discoveryService.GetProfilesAsync();
             logger.LogInformation("Successfully completed startup profile discovery test. Found {Count} profiles.", profiles.Count);
+
+            if (profiles.Count > 0)
+            {
+                var analyzer = _serviceProvider.GetRequiredService<IProfileAnalyzer>();
+                var analysisResult = await analyzer.AnalyzeAsync(profiles[0]);
+                logger.LogInformation("Successfully completed startup profile analysis test for {ProfileName}. Extracted {Count} extensions. System theme: {ThemeMode}.", analysisResult.ProfileName, analysisResult.ExtensionCount, analysisResult.Theme.SystemThemeMode);
+            }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error occurred during startup profile discovery test.");
+            logger.LogError(ex, "Error occurred during startup profile discovery or analysis test.");
         }
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();

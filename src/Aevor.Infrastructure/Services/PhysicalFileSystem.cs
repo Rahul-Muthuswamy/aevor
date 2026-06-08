@@ -18,4 +18,14 @@ public class PhysicalFileSystem : IFileSystem
     {
         return File.ReadAllTextAsync(path);
     }
+
+    public Task WriteAllTextAsync(string path, string contents)
+    {
+        return File.WriteAllTextAsync(path, contents);
+    }
+
+    public void CreateDirectory(string path)
+    {
+        Directory.CreateDirectory(path);
+    }
 }

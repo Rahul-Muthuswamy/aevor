@@ -38,6 +38,10 @@ public static class DependencyInjection
         services.AddSingleton<IBraveInstallationService, BraveInstallationService>();
         services.AddSingleton<ILocalStateParser, LocalStateParser>();
         services.AddSingleton<IProfileDiscoveryService, ProfileDiscoveryService>();
+        services.AddSingleton<IDiscoveredSettingRegistry, DiscoveredSettingRegistry>();
+        services.AddTransient<IPreferencesParser, PreferencesParser>();
+        services.AddTransient<ISecurePreferencesParser, SecurePreferencesParser>();
+        services.AddTransient<IProfileAnalyzer, ProfileAnalyzer>();
 
         return services;
     }
