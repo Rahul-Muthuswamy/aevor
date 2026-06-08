@@ -7,4 +7,5 @@ public interface IFileSystem
     Task<string> ReadAllTextAsync(string path);
     Task WriteAllTextAsync(string path, string contents);
     void CreateDirectory(string path);
+    Task<byte[]> ReadBytesAsync(string path, int count);
 }

@@ -28,4 +28,16 @@ public class PhysicalFileSystem : IFileSystem
     {
         Directory.CreateDirectory(path);
     }
+
+    public async Task<byte[]> ReadBytesAsync(string path, int count)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true);
+        var buffer = new byte[count];
+        int bytesRead = await stream.ReadAsync(buffer, 0, count);
+        if (bytesRead < count)
+        {
+            Array.Resize(ref buffer, bytesRead);
+        }
+        return buffer;
+    }
 }

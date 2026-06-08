@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Aevor.Application.Interfaces;
+using Aevor.Application.Models;
 using Aevor.Infrastructure.Services;
 
 namespace Aevor.Infrastructure;
@@ -42,6 +43,9 @@ public static class DependencyInjection
         services.AddTransient<IPreferencesParser, PreferencesParser>();
         services.AddTransient<ISecurePreferencesParser, SecurePreferencesParser>();
         services.AddTransient<IProfileAnalyzer, ProfileAnalyzer>();
+        services.AddSingleton(new SecurityScannerOptions());
+        services.AddSingleton<ExportSafetyEvaluator>();
+        services.AddTransient<ISecurityScanner, SecurityScanner>();
 
         return services;
     }
