@@ -47,6 +47,10 @@ public static class DependencyInjection
         services.AddSingleton<ExportSafetyEvaluator>();
         services.AddTransient<ISecurityScanner, SecurityScanner>();
 
+        services.AddTransient<ITemplateBuilder, TemplateBuilder>();
+        services.AddTransient<ITemplateValidator, TemplateValidator>();
+        services.AddTransient<ITemplateSerializer, TemplateSerializer>();
+
         return services;
     }
 }
