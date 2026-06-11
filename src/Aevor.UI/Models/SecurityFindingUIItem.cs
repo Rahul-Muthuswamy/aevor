@@ -41,7 +41,7 @@ public class SecurityFindingUIItem
         _                         => new SolidColorBrush(Color.FromRgb(243, 244, 246)) // light gray: #F3F4F6
     };
 
-    public static SecurityFindingUIItem FromFinding(SecurityFinding finding)
+    public static SecurityFindingUIItem FromFinding(Aevor.Core.Models.SecurityFinding finding)
     {
         return new SecurityFindingUIItem
         {

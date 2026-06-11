@@ -164,12 +164,30 @@
                                Foreground="{StaticResource MutedBrush}"
                                Margin="0,4,0,0" />
 
-                    <ItemsControl ItemsSource="{Binding AvailableProfiles}"
-                                  Margin="0,24,0,0">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox ItemsSource="{Binding AvailableProfiles}"
+                             SelectedItem="{Binding SelectedSourceProfile}"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             Margin="0,24,0,0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,0,0,8"
-                                        CornerRadius="{StaticResource CornerRadiusMD}"
+                                <Border CornerRadius="{StaticResource CornerRadiusMD}"
                                         Padding="16,14"
                                         Cursor="Hand">
                                     <Border.Style>
@@ -178,9 +196,7 @@
                                             <Setter Property="Background"      Value="{StaticResource BackgroundBrush}" />
                                             <Setter Property="BorderBrush"     Value="{StaticResource BorderBrush}" />
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding DataContext.SelectedSourceProfile,
-                                                             RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                             Value="{Binding}">
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
                                                     <Setter Property="BorderBrush"    Value="{StaticResource PrimaryBrush}" />
                                                     <Setter Property="BorderThickness" Value="2" />
                                                     <Setter Property="Background"      Value="#F5F3FF" />
@@ -188,12 +204,6 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <Border.InputBindings>
-                                        <MouseBinding MouseAction="LeftClick"
-                                                      Command="{Binding DataContext.SelectSourceProfileCommand,
-                                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      CommandParameter="{Binding}" />
-                                    </Border.InputBindings>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -226,9 +236,7 @@
                                                     <Setter Property="Stroke" Value="{StaticResource BorderBrush}" />
                                                     <Setter Property="Fill"   Value="Transparent" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding DataContext.SelectedSourceProfile,
-                                                                     RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                     Value="{Binding}">
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
                                                             <Setter Property="Stroke" Value="{StaticResource PrimaryBrush}" />
                                                             <Setter Property="Fill"   Value="{StaticResource PrimaryBrush}" />
                                                         </DataTrigger>
@@ -239,8 +247,8 @@
                                     </Grid>
                                 </Border>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </StackPanel>
 
                 <!-- ──────────────────────────────────────────────────

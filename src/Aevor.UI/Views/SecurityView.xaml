@@ -7,595 +7,298 @@
              d:DesignHeight="700" d:DesignWidth="900">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <!-- Filter Pill Button Style -->
+        <Style x:Key="FilterPillStyle" TargetType="Button">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#E5E7EB" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Padding" Value="16,6" />
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="16" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <!-- Root Grid: 2 rows — Header | Content -->
-    <Grid Background="{StaticResource BackgroundBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*"    />
-        </Grid.RowDefinitions>
+    <!-- Root: ScrollViewer > StackPanel -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="White">
+        <Border Padding="32" Background="White">
+            <StackPanel>
 
-        <!-- ══════════════════════════════════════════════════════════════
-             Row 1 — Page Header
-             ══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0"
-                Padding="32,32,32,20"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="0,0,0,1"
-                Background="{StaticResource BackgroundBrush}">
+            <!-- ══════════════════════════════════════════════════════════════
+                 Section 1 — Header
+                 ══════════════════════════════════════════════════════════════ -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"    />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Title + Subtitle -->
+                <!-- Left -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Security Auditor"
-                               Style="{StaticResource H1TextBlockStyle}" />
-                    <TextBlock Text="Scan and verify the security posture of Brave browser profiles"
+                    <TextBlock Text="Security Reports" Style="{StaticResource H1TextBlockStyle}" />
+                    <TextBlock Text="Scan results and risk assessment for all profiles"
                                Style="{StaticResource BodyTextBlockStyle}"
                                Foreground="{StaticResource MutedBrush}"
-                               Margin="0,6,0,0" />
+                               Margin="0,4,0,0" />
                 </StackPanel>
 
-                <!-- Right: Profile Selection + Scan Button -->
+                <!-- Right -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Target Profile:"
-                               Style="{StaticResource LabelTextBlockStyle}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,10,0" />
-
-                    <!-- Profile Dropdown -->
-                    <ComboBox ItemsSource="{Binding Profiles}"
-                              SelectedItem="{Binding SelectedProfile}"
-                              DisplayMemberPath="DisplayName"
-                              Width="180"
-                              Height="36"
-                              VerticalContentAlignment="Center" />
-
-                    <!-- Scan Button -->
                     <Button Content="Run Scan"
                             Style="{StaticResource PrimaryButton}"
-                            Command="{Binding ScanCommand}"
-                            Margin="12,0,0,0"
-                            IsEnabled="{Binding IsScanning, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
+                            Command="{Binding RunScanCommand}" />
+                    
+                    <Button Content="Export Report"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ExportReportCommand}"
+                            Margin="8,0,0,0" />
                 </StackPanel>
             </Grid>
-        </Border>
 
-        <!-- ══════════════════════════════════════════════════════════════
-             Row 2 — Content Area
-             ══════════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="1">
+            <!-- ══════════════════════════════════════════════════════════════
+                 Section 2 — Overall Risk Banner (margin top 32)
+                 ══════════════════════════════════════════════════════════════ -->
+            <Border Margin="0,32,0,0" 
+                    Style="{StaticResource CardStyle}" 
+                    Padding="24" 
+                    Background="{Binding OverallRiskBackground}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"    />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-            <!-- Loading Profiles State -->
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="⏳" FontSize="40" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                <TextBlock Text="Loading profiles..."
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{StaticResource MutedBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,12,0,0" />
-            </StackPanel>
+                    <!-- Left side: Risk score overview -->
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding OverallRiskScore}" 
+                                       Style="{StaticResource H1TextBlockStyle}" 
+                                       Foreground="{Binding OverallRiskColor}" 
+                                       FontSize="36" />
+                            <TextBlock Text=" / 100" 
+                                       Style="{StaticResource H2TextBlockStyle}" 
+                                       Foreground="{StaticResource MutedBrush}" 
+                                       VerticalAlignment="Bottom" 
+                                       Margin="0,0,0,6" />
+                        </StackPanel>
+                        
+                        <TextBlock Text="{Binding OverallRiskLabel}" 
+                                   Style="{StaticResource H3TextBlockStyle}" 
+                                   Foreground="{Binding OverallRiskColor}" 
+                                   Margin="0,4,0,0" />
+                        
+                        <TextBlock Text="Overall Security Score" 
+                                   Style="{StaticResource BodyTextBlockStyle}" 
+                                   Foreground="{StaticResource MutedBrush}" 
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
 
-            <!-- Scanning State -->
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                        Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="🔍" FontSize="40" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBrush}" />
-                <TextBlock Text="Scanning profile directories and databases..."
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{StaticResource MutedBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,12,0,0" />
-            </StackPanel>
+                    <!-- Right side: Four stat tiles -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Stat 1: Total Findings -->
+                        <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding TotalFindings}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Total Findings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
 
-            <!-- Empty State (No scan result, not loading/scanning) -->
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Setter Property="Visibility" Value="Collapsed" />
-                        <Style.Triggers>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsLoading}" Value="False" />
-                                    <Condition Binding="{Binding IsScanning}" Value="False" />
-                                    <Condition Binding="{Binding HasScanResult}" Value="False" />
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Visibility" Value="Visible" />
-                            </MultiDataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </StackPanel.Style>
-                <TextBlock Text="🛡️" FontSize="48" HorizontalAlignment="Center" Opacity="0.3" />
-                <TextBlock Text="No Audit Run"
-                           Style="{StaticResource H3TextBlockStyle}"
-                           HorizontalAlignment="Center"
-                           Margin="0,16,0,0" />
-                <TextBlock Text="Select a profile above and click Run Scan to begin audit."
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{StaticResource MutedBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,8,0,0" />
-            </StackPanel>
+                        <!-- Stat 2: Critical -->
+                        <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding CriticalCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource DangerBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Critical" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
 
-            <!-- Audit Results Layout -->
-            <Grid Margin="32" Visibility="{Binding HasScanResult, Converter={StaticResource BoolToVis}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="320" /> <!-- Summary Metrics -->
-                    <ColumnDefinition Width="32"  /> <!-- Spacer -->
-                    <ColumnDefinition Width="*"   /> <!-- Findings List   -->
-                </Grid.ColumnDefinitions>
+                        <!-- Stat 3: Warnings -->
+                        <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding WarningCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource WarningBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Warnings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
 
-                <!-- Left Column: Summary Metrics -->
-                <ScrollViewer Grid.Column="0"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel>
-                        <!-- Risk Score Card -->
-                        <Border Style="{StaticResource CardStyle}" Padding="24" Margin="0,0,0,16">
+                        <!-- Stat 4: Excluded -->
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding ExcludedCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Excluded" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 Section 3 — Profile Risk Summary (margin top 32)
+                 ══════════════════════════════════════════════════════════════ -->
+            <TextBlock Text="Profile Risk Overview" Style="{StaticResource H3TextBlockStyle}" Margin="0,32,0,0" />
+            
+            <ItemsControl ItemsSource="{Binding ProfileSummaries}" Margin="0,16,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Profile Card -->
+                        <Border Style="{StaticResource CardStyle}" Width="200" Padding="20" Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}">
                             <StackPanel>
-                                <TextBlock Text="Risk Level"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{StaticResource MutedBrush}"
-                                           FontWeight="SemiBold"
-                                           HorizontalAlignment="Center" />
-
-                                <!-- Large Score Circle -->
-                                <Border Width="110" Height="110" CornerRadius="55" Margin="0,16" HorizontalAlignment="Center">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#F3F4F6" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding RiskLevel}" Value="Low">
-                                                    <Setter Property="Background" Value="#D1FAE5" /> <!-- green-100 -->
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding RiskLevel}" Value="Medium">
-                                                    <Setter Property="Background" Value="#FEF3C7" /> <!-- amber-100 -->
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding RiskLevel}" Value="High">
-                                                    <Setter Property="Background" Value="#FEE2E2" /> <!-- red-100 -->
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding RiskLevel}" Value="Critical">
-                                                    <Setter Property="Background" Value="#FEE2E2" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding RiskScore}"
-                                                   HorizontalAlignment="Center"
-                                                   FontSize="28">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource H1TextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="Low">
-                                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="Medium">
-                                                            <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="High">
-                                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="Critical">
-                                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock Text="{Binding RiskLevel}"
-                                                   HorizontalAlignment="Center"
-                                                   FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource LabelTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="Low">
-                                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="Medium">
-                                                            <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="High">
-                                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RiskLevel}" Value="Critical">
-                                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </StackPanel>
+                                <!-- Profile Avatar -->
+                                <Border Width="36" Height="36" CornerRadius="18" Background="#EDE9FE" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding Initial}" 
+                                               Style="{StaticResource BodyTextBlockStyle}" 
+                                               FontWeight="Bold" 
+                                               Foreground="{StaticResource PrimaryBrush}" 
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center" />
                                 </Border>
 
-                                <TextBlock Text="{Binding ScanTimestamp, StringFormat='Audited on {0}'}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{StaticResource MutedBrush}"
-                                           HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
+                                <!-- Profile Name -->
+                                <TextBlock Text="{Binding ProfileName}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Margin="0,12,0,0" />
 
-                        <!-- Export Safety Card -->
-                        <Border CornerRadius="12" Padding="20" BorderThickness="1" Margin="0,0,0,16">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding ExportSafe}" Value="True">
-                                            <Setter Property="Background" Value="#F0FDF4" />
-                                            <Setter Property="BorderBrush" Value="#BBF7D0" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding ExportSafe}" Value="False">
-                                            <Setter Property="Background" Value="#FEF2F2" />
-                                            <Setter Property="BorderBrush" Value="#FECACA" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <StackPanel>
-                                <TextBlock Text="Export Safety"
-                                           FontWeight="Bold"
-                                           Margin="0,0,0,4">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource LabelTextBlockStyle}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ExportSafe}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding ExportSafe}" Value="False">
-                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
+                                <!-- Risk Score -->
+                                <TextBlock Text="{Binding RiskScore, StringFormat='Score: {0}'}" Style="{StaticResource H2TextBlockStyle}" Foreground="{Binding RiskColor}" Margin="0,8,0,0" />
+
+                                <!-- Risk Label -->
+                                <TextBlock Text="{Binding RiskLabel}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{Binding RiskColor}" FontWeight="Bold" />
+
+                                <!-- Findings Count -->
+                                <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0">
+                                    <Run Text="{Binding FindingCount}" />
+                                    <Run Text=" findings" />
                                 </TextBlock>
-                                <TextBlock Foreground="{StaticResource TextBrush}"
-                                           TextWrapping="Wrap">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodySmallTextBlockStyle}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ExportSafe}" Value="True">
-                                                    <Setter Property="Text" Value="This profile is clean of credentials, active sessions, and wallet databases. It is safe to build templates or distribute as a team config." />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding ExportSafe}" Value="False">
-                                                    <Setter Property="Text" Value="This profile contains sensitive login credentials, active cookies, or cryptographic wallets. You should not share this profile folder directly without running the Clone Wizard to sanitize it." />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+
+                                <!-- Last Scanned -->
+                                <TextBlock Text="{Binding LastScanned}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                             </StackPanel>
                         </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
-                        <!-- Content Checklist Card -->
-                        <Border Style="{StaticResource CardStyle}" Padding="20">
-                            <StackPanel>
-                                <TextBlock Text="Audit Items Detected"
-                                           Style="{StaticResource LabelTextBlockStyle}"
-                                           FontWeight="Bold"
-                                           Margin="0,0,0,16" />
+            <!-- ══════════════════════════════════════════════════════════════
+                 Section 4 — Findings (margin top 32)
+                 ══════════════════════════════════════════════════════════════ -->
+            <Grid Margin="0,32,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"    />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                                <!-- Passwords -->
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Saved Passwords" Style="{StaticResource BodyTextBlockStyle}" />
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasPasswords}" Value="True">
-                                                        <Setter Property="Background" Value="#FEE2E2" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="Found" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource DangerBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasPasswords}" Value="False">
-                                                        <Setter Property="Background" Value="#D1FAE5" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="None" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
+                <TextBlock Grid.Column="0" Text="Findings" Style="{StaticResource H3TextBlockStyle}" VerticalAlignment="Center" />
 
-                                <!-- Cookies -->
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Active Cookies" Style="{StaticResource BodyTextBlockStyle}" />
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasCookies}" Value="True">
-                                                        <Setter Property="Background" Value="#FEE2E2" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="Found" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource DangerBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasCookies}" Value="False">
-                                                        <Setter Property="Background" Value="#D1FAE5" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="None" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
+                <!-- Filter Pill Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Button All -->
+                    <Button Content="All" Command="{Binding FilterBySeverityCommand}" CommandParameter="All">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterAllActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
 
-                                <!-- Wallet -->
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Crypto Wallets" Style="{StaticResource BodyTextBlockStyle}" />
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasWalletData}" Value="True">
-                                                        <Setter Property="Background" Value="#FEE2E2" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="Found" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource DangerBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasWalletData}" Value="False">
-                                                        <Setter Property="Background" Value="#D1FAE5" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="None" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
+                    <!-- Button Critical -->
+                    <Button Content="Critical" Command="{Binding FilterBySeverityCommand}" CommandParameter="Critical" Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterCriticalActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
 
-                                <!-- Sessions -->
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Session History" Style="{StaticResource BodyTextBlockStyle}" />
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasSessions}" Value="True">
-                                                        <Setter Property="Background" Value="#FEF3C7" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="Scan" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource WarningBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasSessions}" Value="False">
-                                                        <Setter Property="Background" Value="#D1FAE5" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="None" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
+                    <!-- Button Warning -->
+                    <Button Content="Warning" Command="{Binding FilterBySeverityCommand}" CommandParameter="Warning" Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterWarningActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
 
-                                <!-- Autofill -->
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Autofill / Forms" Style="{StaticResource BodyTextBlockStyle}" />
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasAutofillData}" Value="True">
-                                                        <Setter Property="Background" Value="#FEF3C7" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="Yes" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource WarningBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasAutofillData}" Value="False">
-                                                        <Setter Property="Background" Value="#D1FAE5" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="None" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
-
-                                <!-- Extension Local Storage -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Ext LocalStorage" Style="{StaticResource BodyTextBlockStyle}" />
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasExtensionStorage}" Value="True">
-                                                        <Setter Property="Background" Value="#FEF3C7" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="Scan" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource WarningBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasExtensionStorage}" Value="False">
-                                                        <Setter Property="Background" Value="#D1FAE5" />
-                                                        <Setter Property="Child">
-                                                            <Setter.Value>
-                                                                <TextBlock Text="None" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
-
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <!-- Right Column: Audit Findings List -->
-                <Grid Grid.Column="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*"    />
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0"
-                               Text="Audit Findings"
-                               Style="{StaticResource H2TextBlockStyle}"
-                               Margin="0,0,0,16" />
-
-                    <!-- Scan Results Findings List -->
-                    <ScrollViewer Grid.Row="1"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel>
-                            
-                            <!-- No findings text -->
-                            <TextBlock Text="No security warnings found for this profile. Excellent configuration!"
-                                       Foreground="{StaticResource SuccessBrush}"
-                                       FontWeight="Medium"
-                                       Margin="0,16,0,0">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Findings.Count}" Value="0">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-                            <!-- Findings items list -->
-                            <ItemsControl ItemsSource="{Binding Findings}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,12">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*"    />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-
-                                                <!-- Severity Icon / Dot -->
-                                                <Border Grid.Column="0"
-                                                        Width="32" Height="32" CornerRadius="16"
-                                                        Background="{Binding SeverityBadgeBackground}"
-                                                        Margin="0,0,16,0"
-                                                        VerticalAlignment="Top">
-                                                    <TextBlock Text="{Binding SeverityIcon}"
-                                                               Foreground="{Binding SeverityColor}"
-                                                               FontSize="14" FontWeight="Bold"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center" />
-                                                </Border>
-
-                                                <!-- Finding Text -->
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Top">
-                                                    <TextBlock Text="{Binding Name}"
-                                                               Style="{StaticResource H3TextBlockStyle}" />
-                                                    <TextBlock Text="{Binding Category}"
-                                                               Style="{StaticResource CaptionTextBlockStyle}"
-                                                               Foreground="{StaticResource MutedBrush}"
-                                                               Margin="0,2,0,6"
-                                                               FontWeight="SemiBold" />
-                                                    <TextBlock Text="{Binding Description}"
-                                                               Style="{StaticResource BodyTextBlockStyle}"
-                                                               Foreground="{StaticResource TextBrush}"
-                                                               TextWrapping="Wrap" />
-                                                    
-                                                    <!-- Path -->
-                                                    <TextBlock Text="Scan Target Path:"
-                                                               Style="{StaticResource CaptionTextBlockStyle}"
-                                                               Foreground="{StaticResource MutedBrush}"
-                                                               FontWeight="SemiBold"
-                                                               Margin="0,12,0,2" />
-                                                    <TextBlock Text="{Binding Path}"
-                                                               Style="{StaticResource CaptionTextBlockStyle}"
-                                                               Foreground="{StaticResource MutedBrush}"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-
-                                                <!-- Severity Label Badge -->
-                                                <Border Grid.Column="2"
-                                                        Background="{Binding SeverityBadgeBackground}"
-                                                        CornerRadius="12"
-                                                        Padding="12,5"
-                                                        VerticalAlignment="Top"
-                                                        Margin="16,0,0,0">
-                                                    <TextBlock Text="{Binding SeverityLabel}"
-                                                               Style="{StaticResource CaptionTextBlockStyle}"
-                                                               Foreground="{Binding SeverityColor}"
-                                                               FontWeight="Bold" />
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
-
+                    <!-- Button Info -->
+                    <Button Content="Info" Command="{Binding FilterBySeverityCommand}" CommandParameter="Info" Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterInfoActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
             </Grid>
 
-        </Grid>
-    </Grid>
+            <!-- Findings List (margin top 16) -->
+            <ItemsControl ItemsSource="{Binding FilteredFindings}" Margin="0,16,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Finding Card Row -->
+                        <Border Style="{StaticResource CardStyle}" Padding="16,20" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" /> <!-- Ellipse dot -->
+                                    <ColumnDefinition Width="*"    /> <!-- Middle Text -->
+                                    <ColumnDefinition Width="Auto" /> <!-- Severity Badge -->
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Col 1: Ellipse Dot -->
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{Binding SeverityColor}" VerticalAlignment="Center" Margin="4,0,16,0" />
+
+                                <!-- Col 2: Middle Text -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FindingTitle}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="{Binding FindingDetail}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                    
+                                    <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0">
+                                        <Run Text="Affected: " />
+                                        <Run Text="{Binding AffectedProfile}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <!-- Col 3: Severity Badge -->
+                                <Border Grid.Column="2" CornerRadius="12" Padding="10,6" VerticalAlignment="Center" Background="{Binding SeverityBadgeBackground}">
+                                    <TextBlock Text="{Binding Severity}" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="Bold" Foreground="{Binding SeverityBadgeText}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+        </Border>
+    </ScrollViewer>
 </UserControl>

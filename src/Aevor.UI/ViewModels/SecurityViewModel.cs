@@ -1,10 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using Aevor.Application.Interfaces;
-using Aevor.Core.Models;
+using System.Windows.Media;
 using Aevor.UI.Commands;
 using Aevor.UI.Models;
 
@@ -12,240 +10,240 @@ namespace Aevor.UI.ViewModels;
 
 public class SecurityViewModel : BaseViewModel
 {
-    private readonly IProfileDiscoveryService _profileDiscoveryService;
-    private readonly ISecurityScanner _securityScanner;
-
     // ── Collections ────────────────────────────────────────────────────
-    public ObservableCollection<BraveProfile> Profiles                { get; } = new();
-    public ObservableCollection<SecurityFindingUIItem> Findings       { get; } = new();
+    public ObservableCollection<SecurityProfileSummary> ProfileSummaries { get; } = new();
+    public ObservableCollection<SecurityFinding>        Findings         { get; } = new();
+    public ObservableCollection<SecurityFinding>        FilteredFindings { get; } = new();
 
     // ── Properties ─────────────────────────────────────────────────────
-    private BraveProfile? _selectedProfile;
-    public BraveProfile? SelectedProfile
+    private int _overallRiskScore;
+    public int OverallRiskScore
     {
-        get => _selectedProfile;
+        get => _overallRiskScore;
         set
         {
-            if (SetProperty(ref _selectedProfile, value))
+            if (SetProperty(ref _overallRiskScore, value))
             {
-                if (value != null)
-                {
-                    _ = RunScanAsync(value);
-                }
-                else
-                {
-                    ScanResult = null;
-                    Findings.Clear();
-                }
+                OnPropertyChanged(nameof(OverallRiskLabel));
+                OnPropertyChanged(nameof(OverallRiskColor));
+                OnPropertyChanged(nameof(OverallRiskBackground));
             }
         }
     }
 
-    private bool _isLoading;
-    public bool IsLoading
+    public string OverallRiskLabel
     {
-        get => _isLoading;
-        set => SetProperty(ref _isLoading, value);
-    }
-
-    private bool _isScanning;
-    public bool IsScanning
-    {
-        get => _isScanning;
-        set
+        get
         {
-            if (SetProperty(ref _isScanning, value))
-                OnPropertyChanged(nameof(HasScanResult));
+            if (OverallRiskScore >= 75) return "High";
+            if (OverallRiskScore >= 35) return "Medium";
+            return "Low";
         }
     }
 
-    private SecurityScanResult? _scanResult;
-    public SecurityScanResult? ScanResult
+    public Brush OverallRiskColor => OverallRiskLabel switch
     {
-        get => _scanResult;
+        "High"   => new SolidColorBrush(Color.FromRgb(239, 68,  68)),  // #EF4444
+        "Medium" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),  // #F59E0B
+        _        => new SolidColorBrush(Color.FromRgb(16,  185, 129)), // #10B981 (Low)
+    };
+
+    public Brush OverallRiskBackground => OverallRiskLabel switch
+    {
+        "High"   => new SolidColorBrush(Color.FromRgb(255, 241, 242)), // #FFF1F2
+        "Medium" => new SolidColorBrush(Color.FromRgb(255, 251, 235)), // #FFFBEB
+        _        => new SolidColorBrush(Color.FromRgb(240, 253, 244)), // #F0FDF4 (Low)
+    };
+
+    private int _totalFindings;
+    public int TotalFindings
+    {
+        get => _totalFindings;
+        private set => SetProperty(ref _totalFindings, value);
+    }
+
+    private int _criticalCount;
+    public int CriticalCount
+    {
+        get => _criticalCount;
+        private set => SetProperty(ref _criticalCount, value);
+    }
+
+    private int _warningCount;
+    public int WarningCount
+    {
+        get => _warningCount;
+        private set => SetProperty(ref _warningCount, value);
+    }
+
+    private int _excludedCount;
+    public int ExcludedCount
+    {
+        get => _excludedCount;
+        private set => SetProperty(ref _excludedCount, value);
+    }
+
+    private string _selectedSeverityFilter = "All";
+    public string SelectedSeverityFilter
+    {
+        get => _selectedSeverityFilter;
         set
         {
-            if (SetProperty(ref _scanResult, value))
+            if (SetProperty(ref _selectedSeverityFilter, value))
             {
-                OnPropertyChanged(nameof(HasScanResult));
-                UpdateScanProperties();
+                ApplyFilter();
+                // trigger PropertyChanged for active state of filter pills
+                OnPropertyChanged(nameof(IsFilterAllActive));
+                OnPropertyChanged(nameof(IsFilterCriticalActive));
+                OnPropertyChanged(nameof(IsFilterWarningActive));
+                OnPropertyChanged(nameof(IsFilterInfoActive));
             }
         }
     }
 
-    public bool HasScanResult => ScanResult != null && !IsScanning;
-
-    // ── Scan Properties ────────────────────────────────────────────────
-    private int _riskScore;
-    public int RiskScore
-    {
-        get => _riskScore;
-        private set => SetProperty(ref _riskScore, value);
-    }
-
-    private string _riskLevel = string.Empty;
-    public string RiskLevel
-    {
-        get => _riskLevel;
-        private set => SetProperty(ref _riskLevel, value);
-    }
-
-    private bool _exportSafe;
-    public bool ExportSafe
-    {
-        get => _exportSafe;
-        private set => SetProperty(ref _exportSafe, value);
-    }
-
-    private bool _hasPasswords;
-    public bool HasPasswords
-    {
-        get => _hasPasswords;
-        private set => SetProperty(ref _hasPasswords, value);
-    }
-
-    private bool _hasCookies;
-    public bool HasCookies
-    {
-        get => _hasCookies;
-        private set => SetProperty(ref _hasCookies, value);
-    }
-
-    private bool _hasWalletData;
-    public bool HasWalletData
-    {
-        get => _hasWalletData;
-        private set => SetProperty(ref _hasWalletData, value);
-    }
-
-    private bool _hasAutofillData;
-    public bool HasAutofillData
-    {
-        get => _hasAutofillData;
-        private set => SetProperty(ref _hasAutofillData, value);
-    }
-
-    private bool _hasSessions;
-    public bool HasSessions
-    {
-        get => _hasSessions;
-        private set => SetProperty(ref _hasSessions, value);
-    }
-
-    private bool _hasExtensionStorage;
-    public bool HasExtensionStorage
-    {
-        get => _hasExtensionStorage;
-        private set => SetProperty(ref _hasExtensionStorage, value);
-    }
-
-    private string _scanTimestamp = string.Empty;
-    public string ScanTimestamp
-    {
-        get => _scanTimestamp;
-        private set => SetProperty(ref _scanTimestamp, value);
-    }
+    // Helper bool properties for pill active states
+    public bool IsFilterAllActive      => SelectedSeverityFilter == "All";
+    public bool IsFilterCriticalActive => SelectedSeverityFilter == "Critical";
+    public bool IsFilterWarningActive  => SelectedSeverityFilter == "Warning";
+    public bool IsFilterInfoActive     => SelectedSeverityFilter == "Info";
 
     // ── Commands ───────────────────────────────────────────────────────
-    public ICommand LoadProfilesCommand { get; }
-    public ICommand ScanCommand         { get; }
+    public ICommand RunScanCommand          { get; }
+    public ICommand FilterBySeverityCommand { get; }
+    public ICommand ExportReportCommand     { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
-    public SecurityViewModel(IProfileDiscoveryService profileDiscoveryService, ISecurityScanner securityScanner)
+    public SecurityViewModel()
     {
-        _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
-        _securityScanner = securityScanner ?? throw new ArgumentNullException(nameof(securityScanner));
+        RunScanCommand          = new RelayCommand(OnRunScan);
+        FilterBySeverityCommand = new RelayCommand<string>(OnFilterBySeverity);
+        ExportReportCommand     = new RelayCommand(OnExportReport);
 
-        LoadProfilesCommand = new RelayCommand(async () => await LoadProfilesAsync());
-        ScanCommand         = new RelayCommand(async () => { if (SelectedProfile != null) await RunScanAsync(SelectedProfile); });
-
-        // Initial load
-        _ = LoadProfilesAsync();
+        LoadSampleData();
     }
 
-    // ── Methods ────────────────────────────────────────────────────────
-    public async Task LoadProfilesAsync()
+    // ── Sample Data ────────────────────────────────────────────────────
+    private void LoadSampleData()
     {
-        IsLoading = true;
-        try
+        ProfileSummaries.Clear();
+        ProfileSummaries.Add(new SecurityProfileSummary
         {
-            var discovered = await _profileDiscoveryService.GetProfilesAsync();
-            Profiles.Clear();
-            foreach (var p in discovered)
-            {
-                Profiles.Add(p);
-            }
-
-            // Auto-select first profile or last used
-            var initial = Profiles.FirstOrDefault(p => p.IsLastUsed) ?? Profiles.FirstOrDefault();
-            if (initial != null)
-            {
-                SelectedProfile = initial;
-            }
-        }
-        catch
+            ProfileName  = "Personal",
+            RiskScore    = 15,
+            RiskLabel    = "Low",
+            FindingCount = 2,
+            LastScanned  = "Scanned 10m ago"
+        });
+        ProfileSummaries.Add(new SecurityProfileSummary
         {
-            // Handle loading error (silent in UI placeholder)
-        }
-        finally
+            ProfileName  = "Work",
+            RiskScore    = 48,
+            RiskLabel    = "Medium",
+            FindingCount = 3,
+            LastScanned  = "Scanned 2h ago"
+        });
+        ProfileSummaries.Add(new SecurityProfileSummary
         {
-            IsLoading = false;
-        }
-    }
-
-    public async Task RunScanAsync(BraveProfile profile)
-    {
-        if (profile == null) return;
-
-        IsScanning = true;
-        try
-        {
-            var result = await _securityScanner.ScanAsync(profile);
-            ScanResult = result;
-        }
-        catch
-        {
-            ScanResult = null;
-        }
-        finally
-        {
-            IsScanning = false;
-        }
-    }
-
-    private void UpdateScanProperties()
-    {
-        if (ScanResult == null)
-        {
-            RiskScore           = 0;
-            RiskLevel           = string.Empty;
-            ExportSafe          = true;
-            HasPasswords        = false;
-            HasCookies          = false;
-            HasWalletData       = false;
-            HasAutofillData     = false;
-            HasSessions         = false;
-            HasExtensionStorage = false;
-            ScanTimestamp       = string.Empty;
-            Findings.Clear();
-            return;
-        }
-
-        RiskScore           = ScanResult.RiskScore;
-        RiskLevel           = ScanResult.RiskLevel.ToString();
-        ExportSafe          = ScanResult.ExportSafe;
-        HasPasswords        = ScanResult.HasPasswords;
-        HasCookies          = ScanResult.HasCookies;
-        HasWalletData       = ScanResult.HasWalletData;
-        HasAutofillData     = ScanResult.HasAutofillData;
-        HasSessions         = ScanResult.HasSessions;
-        HasExtensionStorage = ScanResult.HasExtensionStorage;
-        ScanTimestamp       = ScanResult.ScanTimestamp.ToLocalTime().ToString("MMM d, yyyy h:mm tt");
+            ProfileName  = "Research",
+            RiskScore    = 82,
+            RiskLabel    = "High",
+            FindingCount = 5,
+            LastScanned  = "Scanned 1d ago"
+        });
 
         Findings.Clear();
-        foreach (var f in ScanResult.Findings.OrderByDescending(x => x.Severity))
+        Findings.Add(new SecurityFinding
         {
-            Findings.Add(SecurityFindingUIItem.FromFinding(f));
+            FindingTitle    = "Saved Passwords Detected",
+            FindingDetail   = "23 login credentials stored in plain local state database",
+            AffectedProfile = "Research",
+            Severity        = "Critical"
+        });
+        Findings.Add(new SecurityFinding
+        {
+            FindingTitle    = "Active Session Cookies",
+            FindingDetail   = "Session cookies found for multiple financial websites",
+            AffectedProfile = "Work",
+            Severity        = "Warning"
+        });
+        Findings.Add(new SecurityFinding
+        {
+            FindingTitle    = "Autofill Forms Information",
+            FindingDetail   = "Credit card profiles and forms stored in local autofill cache",
+            AffectedProfile = "Personal",
+            Severity        = "Warning"
+        });
+        Findings.Add(new SecurityFinding
+        {
+            FindingTitle    = "Untrusted Extensions Configured",
+            FindingDetail   = "2 search provider extensions request wide browsing access",
+            AffectedProfile = "Research",
+            Severity        = "Warning"
+        });
+        Findings.Add(new SecurityFinding
+        {
+            FindingTitle    = "Sandbox Protection Activated",
+            FindingDetail   = "Google Safe Browsing is properly set to Enhanced Protection Mode",
+            AffectedProfile = "Personal",
+            Severity        = "Info"
+        });
+        Findings.Add(new SecurityFinding
+        {
+            FindingTitle    = "Form History Audited",
+            FindingDetail   = "Form history has been successfully excluded from clone configuration",
+            AffectedProfile = "Work",
+            Severity        = "Excluded"
+        });
+        Findings.Add(new SecurityFinding
+        {
+            FindingTitle    = "Third-Party Cookies Blocked",
+            FindingDetail   = "Browser shield blocking setting successfully applied for cross-site scripts",
+            AffectedProfile = "Research",
+            Severity        = "Excluded"
+        });
+
+        // Compute Overall Risk Score: average score
+        OverallRiskScore = (int)ProfileSummaries.Average(p => p.RiskScore);
+
+        UpdateCounts();
+        ApplyFilter();
+    }
+
+    // ── Helper ─────────────────────────────────────────────────────────
+    private void UpdateCounts()
+    {
+        TotalFindings = Findings.Count;
+        CriticalCount = Findings.Count(f => f.Severity == "Critical");
+        WarningCount  = Findings.Count(f => f.Severity == "Warning");
+        ExcludedCount = Findings.Count(f => f.Severity == "Excluded");
+    }
+
+    private void ApplyFilter()
+    {
+        FilteredFindings.Clear();
+        foreach (var f in Findings)
+        {
+            if (SelectedSeverityFilter == "All" || f.Severity.Equals(SelectedSeverityFilter, StringComparison.OrdinalIgnoreCase))
+            {
+                FilteredFindings.Add(f);
+            }
         }
+    }
+
+    // ── Command Handlers ───────────────────────────────────────────────
+    private void OnRunScan()
+    {
+        LoadSampleData(); // Re-scan simulation reload
+    }
+
+    private void OnFilterBySeverity(string? severity)
+    {
+        if (string.IsNullOrEmpty(severity)) return;
+        SelectedSeverityFilter = severity;
+    }
+
+    private void OnExportReport()
+    {
+        // Mock export trigger
     }
 }

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using Aevor.Application.Interfaces;
 using Aevor.UI.Commands;
 using Aevor.UI.Models;
 
@@ -11,11 +9,9 @@ namespace Aevor.UI.ViewModels;
 
 public class BackupsViewModel : BaseViewModel
 {
-    private readonly IBackupService _backupService;
-
     // ── Collections ────────────────────────────────────────────────────
-    public ObservableCollection<BackupCardItem> Backups         { get; } = new();
-    public ObservableCollection<BackupCardItem> FilteredBackups { get; } = new();
+    public ObservableCollection<BackupItem> Backups         { get; } = new();
+    public ObservableCollection<BackupItem> FilteredBackups { get; } = new();
 
     // ── Properties ─────────────────────────────────────────────────────
     private string _searchQuery = string.Empty;
@@ -25,15 +21,10 @@ public class BackupsViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _searchQuery, value))
+            {
                 ApplyFilter();
+            }
         }
-    }
-
-    private BackupCardItem? _selectedBackup;
-    public BackupCardItem? SelectedBackup
-    {
-        get => _selectedBackup;
-        set => SetProperty(ref _selectedBackup, value);
     }
 
     private bool _isLoading;
@@ -43,83 +34,104 @@ public class BackupsViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _isLoading, value))
+            {
                 OnPropertyChanged(nameof(HasBackups));
+            }
         }
     }
 
-    private bool _isRestoring;
-    public bool IsRestoring
+    private int _totalBackups;
+    public int TotalBackups
     {
-        get => _isRestoring;
-        set => SetProperty(ref _isRestoring, value);
+        get => _totalBackups;
+        private set => SetProperty(ref _totalBackups, value);
     }
 
-    private string _statusMessage = string.Empty;
-    public string StatusMessage
+    private string _totalSize = "0.0 MB";
+    public string TotalSize
     {
-        get => _statusMessage;
-        set => SetProperty(ref _statusMessage, value);
-    }
-
-    private bool? _isMessageSuccess;
-    public bool? IsMessageSuccess
-    {
-        get => _isMessageSuccess;
-        set => SetProperty(ref _isMessageSuccess, value);
+        get => _totalSize;
+        private set => SetProperty(ref _totalSize, value);
     }
 
     public bool HasBackups => !IsLoading && FilteredBackups.Count > 0;
 
     // ── Commands ───────────────────────────────────────────────────────
-    public ICommand RefreshCommand  { get; }
-    public ICommand RestoreCommand  { get; }
-    public ICommand DeleteCommand   { get; }
-    public ICommand ValidateCommand { get; }
+    public ICommand RestoreCommand      { get; }
+    public ICommand DeleteCommand       { get; }
+    public ICommand CreateBackupCommand { get; }
+    public ICommand RefreshCommand      { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
-    public BackupsViewModel(IBackupService backupService)
+    public BackupsViewModel()
     {
-        _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
+        RestoreCommand      = new RelayCommand<BackupItem>(OnRestore);
+        DeleteCommand       = new RelayCommand<BackupItem>(OnDelete);
+        CreateBackupCommand = new RelayCommand(OnCreateBackup);
+        RefreshCommand      = new RelayCommand(OnRefresh);
 
-        RefreshCommand  = new RelayCommand(async () => await LoadBackupsAsync());
-        RestoreCommand  = new RelayCommand<BackupCardItem>(async (b) => await OnRestoreBackup(b));
-        DeleteCommand   = new RelayCommand<BackupCardItem>(async (b) => await OnDeleteBackup(b));
-        ValidateCommand = new RelayCommand<BackupCardItem>(async (b) => await OnValidateBackup(b));
-
-        // Load initially
-        _ = LoadBackupsAsync();
+        LoadSampleData();
     }
 
-    // ── Load & Filter ──────────────────────────────────────────────────
-    public async Task LoadBackupsAsync()
+    // ── Sample Data ────────────────────────────────────────────────────
+    private void LoadSampleData()
     {
         IsLoading = true;
-        StatusMessage = string.Empty;
-        IsMessageSuccess = null;
 
-        try
+        Backups.Clear();
+        Backups.Add(new BackupItem
         {
-            var rawBackups = await _backupService.GetBackupsAsync();
-            
-            Backups.Clear();
-            foreach (var metadata in rawBackups.OrderByDescending(b => b.CreatedTimestamp))
-            {
-                Backups.Add(BackupCardItem.FromMetadata(metadata));
-            }
+            BackupName       = "Pre-Update Snapshot",
+            ProfileName      = "Personal",
+            CreatedDate      = "Jun 10, 2026 10:45 AM",
+            Size             = "45.2 MB",
+            ValidationStatus = "Valid",
+            Notes            = "Created automatically before Brave update"
+        });
+        Backups.Add(new BackupItem
+        {
+            BackupName       = "Work Secure Clean",
+            ProfileName      = "Work",
+            CreatedDate      = "Jun 9, 2026 04:20 PM",
+            Size             = "12.8 MB",
+            ValidationStatus = "Warning",
+            Notes            = "Cookies present in backup folder"
+        });
+        Backups.Add(new BackupItem
+        {
+            BackupName       = "Dev Sandbox Draft",
+            ProfileName      = "Development",
+            CreatedDate      = "Jun 05, 2026 11:00 AM",
+            Size             = "82.4 MB",
+            ValidationStatus = "Invalid",
+            Notes            = "Manifest hash mismatch detected"
+        });
+        Backups.Add(new BackupItem
+        {
+            BackupName       = "Research Safe Restore",
+            ProfileName      = "Research",
+            CreatedDate      = "May 28, 2026 08:15 PM",
+            Size             = "3.1 MB",
+            ValidationStatus = "Valid",
+            Notes            = ""
+        });
+        Backups.Add(new BackupItem
+        {
+            BackupName       = "Bounty Isolation Backup",
+            ProfileName      = "Bug Bounty",
+            CreatedDate      = "May 15, 2026 02:30 PM",
+            Size             = "14.2 MB",
+            ValidationStatus = "Valid",
+            Notes            = "Clean baseline backup"
+        });
 
-            ApplyFilter();
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Failed to load backups: {ex.Message}";
-            IsMessageSuccess = false;
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        ApplyFilter();
+        UpdateStats();
+
+        IsLoading = false;
     }
 
+    // ── Filtering ──────────────────────────────────────────────────────
     private void ApplyFilter()
     {
         FilteredBackups.Clear();
@@ -128,8 +140,9 @@ public class BackupsViewModel : BaseViewModel
         foreach (var b in Backups)
         {
             if (string.IsNullOrEmpty(query) ||
+                b.BackupName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 b.ProfileName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                b.BackupId.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+                b.Notes.Contains(query, StringComparison.OrdinalIgnoreCase))
             {
                 FilteredBackups.Add(b);
             }
@@ -138,96 +151,59 @@ public class BackupsViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasBackups));
     }
 
-    // ── Action Handlers ────────────────────────────────────────────────
-    private async Task OnRestoreBackup(BackupCardItem? item)
+    // ── Helper ─────────────────────────────────────────────────────────
+    private void UpdateStats()
     {
-        if (item == null || IsRestoring) return;
-
-        IsRestoring = true;
-        StatusMessage = $"Restoring backup of profile '{item.ProfileName}'...";
-        IsMessageSuccess = null;
-
-        try
+        TotalBackups = Backups.Count;
+        double totalMb = 0;
+        foreach (var b in Backups)
         {
-            var result = await _backupService.RestoreBackupAsync(item.BackupId);
-            if (result.IsSuccess)
+            var parts = b.Size.Split(' ');
+            if (parts.Length > 0 && double.TryParse(parts[0], out double val))
             {
-                StatusMessage = $"Successfully restored {result.FilesRestored} files ({result.TotalBytesRestored / 1024.0:F1} KB) for '{item.ProfileName}'.";
-                IsMessageSuccess = true;
-            }
-            else
-            {
-                StatusMessage = $"Restore failed: {result.ErrorMessage}";
-                IsMessageSuccess = false;
+                totalMb += val;
             }
         }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Restore error: {ex.Message}";
-            IsMessageSuccess = false;
-        }
-        finally
-        {
-            IsRestoring = false;
-        }
+        TotalSize = $"{totalMb:F1} MB";
     }
 
-    private async Task OnDeleteBackup(BackupCardItem? item)
+    // ── Command Handlers ───────────────────────────────────────────────
+    private void OnRestore(BackupItem? item)
     {
         if (item == null) return;
-
-        StatusMessage = $"Deleting backup from {item.FormattedDate}...";
-        IsMessageSuccess = null;
-
-        try
-        {
-            var success = await _backupService.DeleteBackupAsync(item.BackupId);
-            if (success)
-            {
-                Backups.Remove(item);
-                ApplyFilter();
-                StatusMessage = "Backup deleted successfully.";
-                IsMessageSuccess = true;
-            }
-            else
-            {
-                StatusMessage = "Delete failed: could not locate backup directory.";
-                IsMessageSuccess = false;
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Delete error: {ex.Message}";
-            IsMessageSuccess = false;
-        }
+        // In real app, this would execute restoration.
+        // We will mock updating the notes or status.
     }
 
-    private async Task OnValidateBackup(BackupCardItem? item)
+    private void OnDelete(BackupItem? item)
     {
         if (item == null) return;
+        Backups.Remove(item);
+        ApplyFilter();
+        UpdateStats();
+    }
 
-        StatusMessage = "Validating backup integrity...";
-        IsMessageSuccess = null;
+    private void OnCreateBackup()
+    {
+        // Add a mock new backup
+        var now = DateTime.Now;
+        var newBackup = new BackupItem
+        {
+            BackupName       = $"Manual Snapshot {now:HH:mm}",
+            ProfileName      = "Personal",
+            CreatedDate      = now.ToString("MMM dd, yyyy hh:mm tt"),
+            Size             = "15.0 MB",
+            ValidationStatus = "Valid",
+            Notes            = "Manually initiated backup point"
+        };
+        Backups.Insert(0, newBackup);
+        ApplyFilter();
+        UpdateStats();
+    }
 
-        try
-        {
-            var result = await _backupService.ValidateBackupAsync(item.BackupId);
-            if (result.IsValid)
-            {
-                StatusMessage = "Backup is valid! Integrity check passed.";
-                IsMessageSuccess = true;
-            }
-            else
-            {
-                var errors = string.Join(", ", result.Errors);
-                StatusMessage = $"Validation failed: {errors}";
-                IsMessageSuccess = false;
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Validation error: {ex.Message}";
-            IsMessageSuccess = false;
-        }
+    private void OnRefresh()
+    {
+        SearchQuery = string.Empty;
+        LoadSampleData();
     }
 }
