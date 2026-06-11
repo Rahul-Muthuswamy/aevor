@@ -4,8 +4,389 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="700" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Card Action Button Styles -->
+        <Style x:Key="CardPrimaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <Style x:Key="CardSecondaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource SecondaryButton}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <Style x:Key="CardDangerButton" TargetType="{x:Type Button}" BasedOn="{StaticResource DangerButton}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Root Grid: 2 rows — Header | Content -->
     <Grid Background="{StaticResource BackgroundBrush}">
-        <TextBlock Text="Backups" Style="{StaticResource H2TextBlockStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*"    />
+        </Grid.RowDefinitions>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             Row 1 — Page Header
+             ══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Padding="32,32,32,20"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Background="{StaticResource BackgroundBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"    />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Title + Subtitle -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Backups &amp; Recovery"
+                               Style="{StaticResource H1TextBlockStyle}" />
+                    <TextBlock Text="Manage restore points and recover Brave browser profiles"
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{StaticResource MutedBrush}"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+
+                <!-- Right: Search + Refresh -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+
+                    <!-- Search TextBox -->
+                    <Border Width="240"
+                            BorderBrush="{StaticResource ControlBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource CornerRadiusMD}"
+                            Background="{StaticResource SurfaceBrush}">
+                        <Grid>
+                            <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     Padding="10,8"
+                                     FontSize="13"
+                                     FontFamily="{StaticResource DefaultFontFamily}"
+                                     Foreground="{StaticResource TextBrush}"
+                                     VerticalContentAlignment="Center"
+                                     x:Name="SearchBox" />
+                            <!-- Placeholder -->
+                            <TextBlock Text="Search backups..."
+                                       Foreground="{StaticResource MutedBrush}"
+                                       FontSize="13"
+                                       FontFamily="{StaticResource DefaultFontFamily}"
+                                       Padding="12,9,0,0"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SearchQuery}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- Refresh Button -->
+                    <Button Content="Refresh"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding RefreshCommand}"
+                            Margin="12,0,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             Row 2 — Content Area
+             ══════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- Message Banner -->
+                <RowDefinition Height="*"    /> <!-- Main Content   -->
+            </Grid.RowDefinitions>
+
+            <!-- Message Banner -->
+            <Border Grid.Row="0"
+                    Margin="32,16,32,0"
+                    CornerRadius="{StaticResource CornerRadiusMD}"
+                    Padding="16"
+                    BorderThickness="1">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusMessage}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsMessageSuccess}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Setter Property="Background" Value="#F0FDF4" /> <!-- Light green -->
+                                <Setter Property="BorderBrush" Value="#BBF7D0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsMessageSuccess}" Value="False">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Setter Property="Background" Value="#FEF2F2" /> <!-- Light red -->
+                                <Setter Property="BorderBrush" Value="#FECACA" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsMessageSuccess}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Setter Property="Background" Value="#EFF6FF" /> <!-- Light blue -->
+                                <Setter Property="BorderBrush" Value="#BFDBFE" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*"    />
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Icon -->
+                    <TextBlock Grid.Column="0" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="ℹ" />
+                                <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMessageSuccess}" Value="True">
+                                        <Setter Property="Text" Value="✓" />
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMessageSuccess}" Value="False">
+                                        <Setter Property="Text" Value="⚠" />
+                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    
+                    <!-- Message Text -->
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding StatusMessage}"
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+
+            <!-- Main Content Container -->
+            <Grid Grid.Row="1">
+
+                <!-- Loading State -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="⏳"
+                               FontSize="40"
+                               HorizontalAlignment="Center"
+                               Foreground="{StaticResource MutedBrush}" />
+                    <TextBlock Text="Loading backups..."
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{StaticResource MutedBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,12,0,0" />
+                </StackPanel>
+
+                <!-- Empty State (not loading, no backups) -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsLoading}" Value="False" />
+                                        <Condition Binding="{Binding HasBackups}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <Rectangle Width="48" Height="48" Fill="{StaticResource MutedBrush}" Opacity="0.3"
+                               RadiusX="8" RadiusY="8" HorizontalAlignment="Center" />
+                    <TextBlock Text="No backups found"
+                               Style="{StaticResource H3TextBlockStyle}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0" />
+                    <TextBlock Text="Backups are created automatically when cloning profiles or applying templates."
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{StaticResource MutedBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,8,0,0" />
+                    <Button Content="Refresh"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding RefreshCommand}"
+                            HorizontalAlignment="Center"
+                            Margin="0,16,0,0" />
+                </StackPanel>
+
+                <!-- Backups Grid (ScrollViewer) -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Visibility="{Binding HasBackups, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding FilteredBackups}"
+                                  Margin="32,24,32,32">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+
+                                <!-- ─── Backup Card ─── -->
+                                <Border Style="{StaticResource CardStyle}"
+                                        Width="280"
+                                        Margin="0,0,16,16"
+                                        Padding="24">
+                                    <StackPanel>
+
+                                        <!-- Top Row: Avatar + Status Badge -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"    />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Avatar circle -->
+                                            <Border Grid.Column="0"
+                                                    Width="44" Height="44"
+                                                    CornerRadius="22"
+                                                    Background="#EDE9FE"
+                                                    HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding Initial}"
+                                                           Style="{StaticResource H3TextBlockStyle}"
+                                                           Foreground="{StaticResource PrimaryBrush}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <!-- Status Badge -->
+                                            <Border Grid.Column="1"
+                                                    Background="{Binding StatusBackground}"
+                                                    CornerRadius="12"
+                                                    Padding="10,5"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding StatusLabel}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{Binding StatusColor}"
+                                                           FontWeight="Bold" />
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Profile Name -->
+                                        <TextBlock Text="{Binding ProfileName}"
+                                                   Style="{StaticResource H3TextBlockStyle}"
+                                                   Margin="0,16,0,0" />
+
+                                        <!-- Backup Size -->
+                                        <TextBlock Text="{Binding FormattedSize}"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   Foreground="{StaticResource PrimaryBrush}"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,4,0,0" />
+
+                                        <!-- Created Date -->
+                                        <TextBlock Text="{Binding FormattedDate}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+
+                                        <!-- Divider -->
+                                        <Border Height="1"
+                                                Background="{StaticResource BorderBrush}"
+                                                Margin="0,16" />
+
+                                        <!-- Path / ID Info -->
+                                        <TextBlock Text="Backup ID:"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   FontWeight="SemiBold" />
+                                        
+                                        <TextBlock Text="{Binding BackupId}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding BackupId}"
+                                                   Margin="0,1,0,8" />
+
+                                        <TextBlock Text="Source Path:"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   FontWeight="SemiBold" />
+                                        
+                                        <TextBlock Text="{Binding ProfilePath}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   TextTrimming="PathEllipsis"
+                                                   ToolTip="{Binding ProfilePath}"
+                                                   Margin="0,1,0,0"
+                                                   Height="16" />
+
+                                        <!-- Action Buttons Row -->
+                                        <Grid Margin="0,20,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="6" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="6" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Restore Button -->
+                                            <Button Grid.Column="0"
+                                                    Content="Restore"
+                                                    Style="{StaticResource CardPrimaryButton}"
+                                                    Command="{Binding DataContext.RestoreCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+
+                                            <!-- Validate Button -->
+                                            <Button Grid.Column="2"
+                                                    Content="Verify"
+                                                    Style="{StaticResource CardSecondaryButton}"
+                                                    Command="{Binding DataContext.ValidateCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+
+                                            <!-- Delete Button -->
+                                            <Button Grid.Column="4"
+                                                    Content="Delete"
+                                                    Style="{StaticResource CardDangerButton}"
+                                                    Command="{Binding DataContext.DeleteCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+
+                                    </StackPanel>
+                                </Border>
+
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>

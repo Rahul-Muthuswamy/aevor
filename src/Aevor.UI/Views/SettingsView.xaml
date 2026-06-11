@@ -4,8 +4,330 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="700" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <!-- Root Grid: 2 rows — Header | Content -->
     <Grid Background="{StaticResource BackgroundBrush}">
-        <TextBlock Text="Settings" Style="{StaticResource H2TextBlockStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*"    />
+        </Grid.RowDefinitions>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             Row 1 — Page Header
+             ══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Padding="32,32,32,20"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Background="{StaticResource BackgroundBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"    />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Title + Subtitle -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Settings"
+                               Style="{StaticResource H1TextBlockStyle}" />
+                    <TextBlock Text="Configure Aevor preferences, directory locations, and safety settings"
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{StaticResource MutedBrush}"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             Row 2 — Content Area
+             ══════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- Message Banner -->
+                <RowDefinition Height="*"    /> <!-- Form Fields     -->
+            </Grid.RowDefinitions>
+
+            <!-- Message Banner -->
+            <Border Grid.Row="0"
+                    Margin="32,16,32,0"
+                    CornerRadius="{StaticResource CornerRadiusMD}"
+                    Padding="16"
+                    BorderThickness="1">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusMessage}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsMessageSuccess}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Setter Property="Background" Value="#F0FDF4" /> <!-- Light green -->
+                                <Setter Property="BorderBrush" Value="#BBF7D0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsMessageSuccess}" Value="False">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Setter Property="Background" Value="#FEF2F2" /> <!-- Light red -->
+                                <Setter Property="BorderBrush" Value="#FECACA" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*"    />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="✓" />
+                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMessageSuccess}" Value="False">
+                                        <Setter Property="Text" Value="⚠" />
+                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding StatusMessage}"
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+
+            <!-- Settings Form fields -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="32,24">
+                <StackPanel MaxWidth="720" HorizontalAlignment="Left" Width="650">
+
+                    <!-- Section: Directory Paths -->
+                    <TextBlock Text="Directory Configurations"
+                               Style="{StaticResource H2TextBlockStyle}"
+                               Margin="0,0,0,12" />
+
+                    <Border Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,24">
+                        <StackPanel>
+                            <!-- Brave User Data path -->
+                            <StackPanel Margin="0,0,0,16">
+                                <TextBlock Text="BRAVE USER DATA DIRECTORY"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           Margin="0,0,0,6" />
+                                <TextBox Text="{Binding BraveUserDataPath, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Aevor discovers Brave profiles from this parent folder."
+                                           Style="{StaticResource BodySmallTextBlockStyle}"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <!-- Backups path -->
+                            <StackPanel>
+                                <TextBlock Text="AEVOR BACKUPS DIRECTORY"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           Margin="0,0,0,6" />
+                                <TextBox Text="{Binding BackupsPath, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Root directory where all profile zip snapshots and manifests are saved."
+                                           Style="{StaticResource BodySmallTextBlockStyle}"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section: Interface Theme -->
+                    <TextBlock Text="Appearance"
+                               Style="{StaticResource H2TextBlockStyle}"
+                               Margin="0,0,0,12" />
+
+                    <Border Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,24">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Application Theme"
+                                           Style="{StaticResource BodyTextBlockStyle}"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="Choose the preferred color mode for Aevor's window interface"
+                                           Style="{StaticResource BodySmallTextBlockStyle}"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                            <ComboBox Grid.Column="1"
+                                      Width="160"
+                                      Height="32"
+                                      SelectedValuePath="Content"
+                                      SelectedValue="{Binding AppTheme, UpdateSourceTrigger=PropertyChanged}"
+                                      VerticalContentAlignment="Center">
+                                <ComboBoxItem Content="System" />
+                                <ComboBoxItem Content="Light" />
+                                <ComboBoxItem Content="Dark" />
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Section: Safety Configurations -->
+                    <TextBlock Text="Safety &amp; Auditing"
+                               Style="{StaticResource H2TextBlockStyle}"
+                               Margin="0,0,0,12" />
+
+                    <Border Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,0,24">
+                        <StackPanel>
+                            <!-- Auto-scan -->
+                            <Border Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Auto-scan profiles on startup"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Discover risks and passwords automatically when the app loads"
+                                                   Style="{StaticResource BodySmallTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding AutoScanOnStartup}"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Safe backup -->
+                            <Border Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Safe backup before template apply"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Create a snapshot automatically prior to writing template settings"
+                                                   Style="{StaticResource BodySmallTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding SafeBackupBeforeTemplate}"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Block on active sessions -->
+                            <Border Padding="20,16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Prevent clone of active session files"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Fail profile clone validation if target includes active session cookies"
+                                                   Style="{StaticResource BodySmallTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding BlockActiveCookiesOnClone}"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section: Default Sanitization -->
+                    <TextBlock Text="Default Sanitization Preferences"
+                               Style="{StaticResource H2TextBlockStyle}"
+                               Margin="0,0,0,12" />
+
+                    <Border Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,0,32">
+                        <StackPanel>
+                            <!-- Always exclude history -->
+                            <Border Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Always exclude browsing history"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Do not transfer browsing and download history in cloned profiles"
+                                                   Style="{StaticResource BodySmallTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding AlwaysExcludeHistory}"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Always exclude passwords -->
+                            <Border Padding="20,16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Always exclude saved credentials"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Do not clone Login Data database to destination folders (Recommended)"
+                                                   Style="{StaticResource BodySmallTextBlockStyle}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding AlwaysExcludePasswords}"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Form Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,24">
+                        <Button Content="Reset Defaults"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ResetSettingsCommand}"
+                                Width="140" />
+
+                        <Button Content="Save Settings"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveSettingsCommand}"
+                                Margin="12,0,0,0"
+                                Width="140" />
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>
