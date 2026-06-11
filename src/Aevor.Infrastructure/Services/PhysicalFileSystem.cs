@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Aevor.Application.Interfaces;
 
 namespace Aevor.Infrastructure.Services;
@@ -39,5 +43,40 @@ public class PhysicalFileSystem : IFileSystem
             Array.Resize(ref buffer, bytesRead);
         }
         return buffer;
+    }
+
+    public void CopyFile(string sourcePath, string destPath, bool overwrite = true)
+    {
+        File.Copy(sourcePath, destPath, overwrite);
+    }
+
+    public void DeleteFile(string path)
+    {
+        File.Delete(path);
+    }
+
+    public void DeleteDirectory(string path, bool recursive)
+    {
+        Directory.Delete(path, recursive);
+    }
+
+    public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
+    {
+        return Directory.EnumerateFiles(path, searchPattern, searchOption);
+    }
+
+    public IEnumerable<string> EnumerateDirectories(string path)
+    {
+        return Directory.EnumerateDirectories(path);
+    }
+
+    public long GetFileLength(string path)
+    {
+        return new FileInfo(path).Length;
+    }
+
+    public Stream OpenRead(string path)
+    {
+        return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
     }
 }
