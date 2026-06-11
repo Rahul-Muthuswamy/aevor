@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace Aevor.UI;
+namespace Aevor.UI.Views;
 
 public partial class MainWindow : Window
 {

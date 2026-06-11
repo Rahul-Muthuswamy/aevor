@@ -1,8 +1,12 @@
+using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Aevor.Application.Interfaces;
 using Aevor.Infrastructure;
+using Aevor.UI.Services;
+using Aevor.UI.ViewModels;
+using Aevor.UI.Views;
 
 namespace Aevor.UI;
 
@@ -16,7 +20,29 @@ public partial class App : System.Windows.Application
 
         var services = new ServiceCollection();
         services.AddInfrastructureServices();
+        
+        // Register Navigation Service
+        services.AddSingleton<INavigationService, NavigationService>();
+
+        // Register Views
         services.AddSingleton<MainWindow>();
+        services.AddTransient<DashboardView>();
+        services.AddTransient<ProfilesView>();
+        services.AddTransient<TemplatesView>();
+        services.AddTransient<CloneWizardView>();
+        services.AddTransient<BackupsView>();
+        services.AddTransient<SecurityView>();
+        services.AddTransient<SettingsView>();
+
+        // Register ViewModels
+        services.AddSingleton<MainWindowViewModel>();
+        services.AddTransient<DashboardViewModel>();
+        services.AddTransient<ProfilesViewModel>();
+        services.AddTransient<TemplatesViewModel>();
+        services.AddTransient<CloneWizardViewModel>();
+        services.AddTransient<BackupsViewModel>();
+        services.AddTransient<SecurityViewModel>();
+        services.AddTransient<SettingsViewModel>();
 
         _serviceProvider = services.BuildServiceProvider();
 
@@ -45,7 +71,12 @@ public partial class App : System.Windows.Application
             logger.LogError(ex, "Error occurred during startup profile discovery or analysis test.");
         }
 
+        // Set up initial view and data context
+        var navigationService = _serviceProvider.GetRequiredService<INavigationService>();
+        navigationService.NavigateTo<DashboardViewModel>();
+
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+        mainWindow.DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
         mainWindow.Show();
     }
 
