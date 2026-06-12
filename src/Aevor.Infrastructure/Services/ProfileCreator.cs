@@ -37,6 +37,12 @@ public class ProfileCreator : IProfileCreator
 
         _logger.LogInformation("Profile creation started for name: {ProfileName}", request.ProfileName);
 
+        if (_installationService.IsBraveRunning())
+        {
+            _logger.LogWarning("Profile creation failed. Brave Browser is running.");
+            return new ProfileCreationResult(false, null, "Brave Browser is running. Please close all Brave windows before proceeding.");
+        }
+
         if (string.IsNullOrWhiteSpace(request.ProfileName))
         {
             return new ProfileCreationResult(false, null, "Profile name cannot be empty.");

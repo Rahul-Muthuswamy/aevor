@@ -21,6 +21,7 @@ public class CloneEngineTests
     private readonly IBackupService _backupService = Substitute.For<IBackupService>();
     private readonly IProfileCreator _profileCreator = Substitute.For<IProfileCreator>();
     private readonly ITemplateApplier _templateApplier = Substitute.For<ITemplateApplier>();
+    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly NullLogger<CloneEngine> _logger = NullLogger<CloneEngine>.Instance;
     private readonly CloneEngine _engine;
 
@@ -34,6 +35,7 @@ public class CloneEngineTests
             _backupService,
             _profileCreator,
             _templateApplier,
+            _fileSystem,
             _logger
         );
     }

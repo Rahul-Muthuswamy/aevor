@@ -1,14 +1,64 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
+using Aevor.Application.Interfaces;
+using Aevor.Core.Models;
 using Aevor.UI.Commands;
 using Aevor.UI.Models;
+using Aevor.UI.Services;
 
 namespace Aevor.UI.ViewModels;
 
 public class CloneWizardViewModel : BaseViewModel
 {
+    // ════════════════════════════════════════════════════════════════════
+    // Services
+    // ════════════════════════════════════════════════════════════════════
+    private readonly ICloneEngine             _cloneEngine;
+    private readonly IProfileDiscoveryService _profileDiscoveryService;
+    private readonly ISecurityScanner         _securityScanner;
+    private readonly IBackupService           _backupService;
+    private readonly INavigationService       _navigationService;
+    private readonly IBraveInstallationService _braveInstallationService;
+
+    // ════════════════════════════════════════════════════════════════════
+    // Internal State
+    // ════════════════════════════════════════════════════════════════════
+    private List<BraveProfile>  _discoveredProfiles = new();
+    private BraveProfile?       _selectedRawProfile;
+    private SecurityScanResult? _lastScanResult;
+    private BackupResult?       _lastBackupResult;
+    private ClonePreview?       _lastClonePreview;
+    private bool                _cloneHasRun;
+
+    // ════════════════════════════════════════════════════════════════════
+    // Loading / Error State
+    // ════════════════════════════════════════════════════════════════════
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set => SetProperty(ref _isLoading, value);
+    }
+
+    private string _loadingMessage = "Loading profiles…";
+    public string LoadingMessage
+    {
+        get => _loadingMessage;
+        set => SetProperty(ref _loadingMessage, value);
+    }
+
+    private string _wizardErrorMessage = string.Empty;
+    public string WizardErrorMessage
+    {
+        get => _wizardErrorMessage;
+        set => SetProperty(ref _wizardErrorMessage, value);
+    }
+
     // ════════════════════════════════════════════════════════════════════
     // Step Indicator
     // ════════════════════════════════════════════════════════════════════
@@ -67,7 +117,11 @@ public class CloneWizardViewModel : BaseViewModel
     public string SelectedSourceProfile
     {
         get => _selectedSourceProfile;
-        set => SetProperty(ref _selectedSourceProfile, value);
+        set
+        {
+            if (SetProperty(ref _selectedSourceProfile, value))
+                NewProfileName = string.IsNullOrWhiteSpace(value) ? string.Empty : $"{value} — Copy";
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -75,8 +129,7 @@ public class CloneWizardViewModel : BaseViewModel
     // ════════════════════════════════════════════════════════════════════
     public ObservableCollection<SecurityFindingItem> SecurityFindings { get; } = new();
 
-    public bool HasWarnings => SecurityFindings.Count > 0 &&
-                               System.Linq.Enumerable.Any(SecurityFindings, f => f.Severity == "warning");
+    public bool HasWarnings => SecurityFindings.Any(f => f.Severity == "warning");
 
     private string _securitySummary = string.Empty;
     public string SecuritySummary
@@ -85,10 +138,19 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _securitySummary, value);
     }
 
-    public Brush SecurityBannerBackground =>
-        HasWarnings
-            ? new SolidColorBrush(Color.FromRgb(255, 251, 235))  // #FFFBEB
-            : new SolidColorBrush(Color.FromRgb(240, 253, 244)); // #F0FDF4
+    private bool _isScanning;
+    public bool IsScanning
+    {
+        get => _isScanning;
+        set => SetProperty(ref _isScanning, value);
+    }
+
+    // Pre-frozen brushes — safe to return from any thread
+    private static readonly Brush _warningBannerBrush  = MakeFrozen(Color.FromRgb(255, 251, 235));
+    private static readonly Brush _safeBannerBrush     = MakeFrozen(Color.FromRgb(240, 253, 244));
+    private static Brush MakeFrozen(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
+
+    public Brush SecurityBannerBackground => HasWarnings ? _warningBannerBrush : _safeBannerBrush;
 
     // ════════════════════════════════════════════════════════════════════
     // Step 3 — Backup
@@ -100,11 +162,34 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _createBackupBeforeClone, value);
     }
 
-    private string _backupLocation = @"C:\Users\YourName\AevorBackups\";
+    private string _backupStatusMessage = string.Empty;
+    public string BackupStatusMessage
+    {
+        get => _backupStatusMessage;
+        set => SetProperty(ref _backupStatusMessage, value);
+    }
+
+    // Bound in XAML Step 3 — informational display only
+    private string _backupLocation = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aevor", "Backups");
     public string BackupLocation
     {
         get => _backupLocation;
         set => SetProperty(ref _backupLocation, value);
+    }
+
+    private bool _isBackingUp;
+    public bool IsBackingUp
+    {
+        get => _isBackingUp;
+        set => SetProperty(ref _isBackingUp, value);
+    }
+
+    private bool _backupComplete;
+    public bool BackupComplete
+    {
+        get => _backupComplete;
+        set => SetProperty(ref _backupComplete, value);
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -117,10 +202,10 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _newProfileName, value);
     }
 
-    private bool _copyExtensions   = true;
-    private bool _copyBookmarks    = true;
-    private bool _copySettings     = true;
-    private bool _copyThemes       = true;
+    private bool _copyExtensions    = true;
+    private bool _copyBookmarks     = true;
+    private bool _copySettings      = true;
+    private bool _copyThemes        = true;
     private bool _copySearchEngines = true;
 
     public bool CopyExtensions    { get => _copyExtensions;    set => SetProperty(ref _copyExtensions,    value); }
@@ -128,6 +213,11 @@ public class CloneWizardViewModel : BaseViewModel
     public bool CopySettings      { get => _copySettings;      set => SetProperty(ref _copySettings,      value); }
     public bool CopyThemes        { get => _copyThemes;        set => SetProperty(ref _copyThemes,        value); }
     public bool CopySearchEngines { get => _copySearchEngines; set => SetProperty(ref _copySearchEngines, value); }
+
+    // Preview summary — populated from ClonePreview
+    public ObservableCollection<string> PreviewSettingsToCopy   { get; } = new();
+    public ObservableCollection<string> PreviewExtensionsToCopy { get; } = new();
+    public ObservableCollection<string> PreviewWarnings         { get; } = new();
 
     // ════════════════════════════════════════════════════════════════════
     // Step 5 — Execute
@@ -163,7 +253,7 @@ public class CloneWizardViewModel : BaseViewModel
         }
     }
 
-    public bool ShowStartButton => !IsCloning && CloneProgress == 0;
+    public bool ShowStartButton => !IsCloning && !_cloneHasRun;
 
     // ════════════════════════════════════════════════════════════════════
     // Step 6 — Completion
@@ -185,35 +275,41 @@ public class CloneWizardViewModel : BaseViewModel
     // ════════════════════════════════════════════════════════════════════
     // Commands
     // ════════════════════════════════════════════════════════════════════
-    public ICommand NextStepCommand           { get; }
-    public ICommand PreviousStepCommand       { get; }
-    public ICommand StartCloneCommand         { get; }
-    public ICommand FinishCommand             { get; }
-    public ICommand CancelCommand             { get; }
+    public ICommand NextStepCommand            { get; }
+    public ICommand PreviousStepCommand        { get; }
+    public ICommand StartCloneCommand          { get; }
+    public ICommand FinishCommand              { get; }
+    public ICommand CancelCommand              { get; }
     public ICommand SelectSourceProfileCommand { get; }
 
     // ════════════════════════════════════════════════════════════════════
     // Constructor
     // ════════════════════════════════════════════════════════════════════
-    public CloneWizardViewModel()
+    public CloneWizardViewModel(
+        ICloneEngine             cloneEngine,
+        IProfileDiscoveryService profileDiscoveryService,
+        ISecurityScanner         securityScanner,
+        IBackupService           backupService,
+        INavigationService       navigationService,
+        IBraveInstallationService braveInstallationService)
     {
+        _cloneEngine             = cloneEngine;
+        _profileDiscoveryService = profileDiscoveryService;
+        _securityScanner         = securityScanner;
+        _backupService           = backupService;
+        _navigationService       = navigationService;
+        _braveInstallationService = braveInstallationService;
+
         NextStepCommand            = new RelayCommand(OnNextStep,     () => CanGoNext && !IsLastStep);
         PreviousStepCommand        = new RelayCommand(OnPreviousStep, () => CanGoBack);
-        StartCloneCommand          = new RelayCommand(OnStartClone,   () => !IsCloning);
+        StartCloneCommand          = new RelayCommand(OnStartClone,   () => !IsCloning && !_cloneHasRun);
         FinishCommand              = new RelayCommand(OnFinish);
         CancelCommand              = new RelayCommand(OnCancel);
         SelectSourceProfileCommand = new RelayCommand<string>(OnSelectSourceProfile);
 
         InitialiseSteps();
-        LoadSampleData();
-    }
 
-    private void OnSelectSourceProfile(string? profile)
-    {
-        if (profile != null)
-        {
-            SelectedSourceProfile = profile;
-        }
+        Task.Run(async () => await LoadWizardDataAsync());
     }
 
     // ── Step Setup ─────────────────────────────────────────────────────
@@ -239,64 +335,112 @@ public class CloneWizardViewModel : BaseViewModel
             Steps[i].IsCompleted = i < _currentStepIndex;
             Steps[i].IsActive    = i == _currentStepIndex;
         }
-        // Force re-evaluation of each step (INotifyPropertyChanged not on CloneStep)
-        var tmp = new CloneStep[Steps.Count];
-        Steps.CopyTo(tmp, 0);
+        // Force ItemsControl to re-render (CloneStep has no INotifyPropertyChanged)
+        var tmp = Steps.ToArray();
         Steps.Clear();
         foreach (var s in tmp) Steps.Add(s);
     }
 
-    // ── Sample Data ────────────────────────────────────────────────────
-    private void LoadSampleData()
+    // ════════════════════════════════════════════════════════════════════
+    // BUG 2 FIX — Data Loading
+    // ════════════════════════════════════════════════════════════════════
+    private async Task LoadWizardDataAsync()
     {
-        AvailableProfiles.Add("Personal");
-        AvailableProfiles.Add("Work");
-        AvailableProfiles.Add("Research");
-        AvailableProfiles.Add("Bug Bounty");
-        AvailableProfiles.Add("Development");
-        SelectedSourceProfile = "Personal";
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
 
-        SecurityFindings.Add(new SecurityFindingItem
-        {
-            Title    = "Saved Passwords Detected",
-            Detail   = "23 login credentials stored in the browser — will NOT be copied",
-            Severity = "warning"
-        });
-        SecurityFindings.Add(new SecurityFindingItem
-        {
-            Title    = "Extensions Present",
-            Detail   = "7 extensions found — will be copied based on your configuration",
-            Severity = "info"
-        });
-        SecurityFindings.Add(new SecurityFindingItem
-        {
-            Title    = "Browsing History",
-            Detail   = "History will be excluded from the cloned profile",
-            Severity = "excluded"
-        });
-        SecurityFindings.Add(new SecurityFindingItem
-        {
-            Title    = "Cookies & Sessions",
-            Detail   = "Active sessions detected — will NOT be transferred to clone",
-            Severity = "warning"
-        });
-        SecurityFindings.Add(new SecurityFindingItem
-        {
-            Title    = "Custom Search Engines",
-            Detail   = "3 custom engines configured — can be optionally copied",
-            Severity = "info"
-        });
+        if (dispatcher != null)
+            await dispatcher.InvokeAsync(() =>
+            {
+                IsLoading      = true;
+                LoadingMessage = "Discovering Brave profiles…";
+            });
 
-        SecuritySummary = "2 warnings found. Passwords and active sessions will not be cloned.";
-        NewProfileName  = "Personal — Copy";
-        CompletionMessage = "Your new profile is ready and can be launched from Brave Browser.";
+        try
+        {
+            // GetProfilesAsync runs on background thread — no UI touch here
+            var profiles = await _profileDiscoveryService.GetProfilesAsync();
+
+            if (dispatcher != null)
+                await dispatcher.InvokeAsync(() =>
+                {
+                    _discoveredProfiles = profiles;
+                    AvailableProfiles.Clear();
+
+                    foreach (var p in profiles)
+                        AvailableProfiles.Add(p.DisplayName);
+
+                    if (AvailableProfiles.Count > 0)
+                    {
+                        SelectedSourceProfile = AvailableProfiles[0];
+                        NewProfileName        = $"{SelectedSourceProfile} — Copy";
+                    }
+                    else
+                    {
+                        WizardErrorMessage = "No Brave profiles found.";
+                    }
+
+                    IsLoading = false;
+                });
+        }
+        catch (Exception ex)
+        {
+            if (dispatcher != null)
+                await dispatcher.InvokeAsync(() =>
+                {
+                    WizardErrorMessage = $"Could not load profiles: {ex.Message}";
+                    IsLoading          = false;
+                });
+        }
     }
 
-    // ── Command Handlers ───────────────────────────────────────────────
-    private void OnNextStep()
+    // ════════════════════════════════════════════════════════════════════
+    // Step Transition Logic
+    // ════════════════════════════════════════════════════════════════════
+    private async void OnNextStep()
     {
-        if (CurrentStepIndex < 5)
+        if (!CanGoNext || IsLastStep) return;
+
+        if (_braveInstallationService.IsBraveRunning())
+        {
+            WizardErrorMessage = "Brave Browser is running. Please close all Brave windows before proceeding.";
+            return;
+        }
+        else
+        {
+            WizardErrorMessage = string.Empty;
+        }
+
+        try
+        {
+            // Step 0 → 1: resolve profile, run security scan
+            if (CurrentStepIndex == 0)
+            {
+                _selectedRawProfile = _discoveredProfiles
+                    .FirstOrDefault(p => p.DisplayName == SelectedSourceProfile);
+
+                if (_selectedRawProfile is null) return;
+                await RunSecurityScanAsync(_selectedRawProfile);
+            }
+            // Step 2 → 3: run backup if requested
+            else if (CurrentStepIndex == 2 && CreateBackupBeforeClone)
+            {
+                if (_selectedRawProfile is null) return;
+                await RunBackupAsync(_selectedRawProfile);
+                return; // RunBackupAsync increments CurrentStepIndex itself
+            }
+            // Step 3 → 4: build preview
+            else if (CurrentStepIndex == 3)
+            {
+                await BuildClonePreviewAsync();
+            }
+
             CurrentStepIndex++;
+        }
+        catch (Exception ex)
+        {
+            // Safety net: async void must never let exceptions escape
+            WizardErrorMessage = $"Step error: {ex.Message}";
+        }
     }
 
     private void OnPreviousStep()
@@ -305,36 +449,387 @@ public class CloneWizardViewModel : BaseViewModel
             CurrentStepIndex--;
     }
 
-    private async void OnStartClone()
+    private void OnSelectSourceProfile(string? profile)
     {
-        IsCloning = true;
-        CloneProgress = 0;
-
-        var stages = new[]
-        {
-            (10.0,  "Verifying source profile…"),
-            (25.0,  "Creating backup snapshot…"),
-            (45.0,  "Copying profile data…"),
-            (65.0,  "Applying extensions…"),
-            (80.0,  "Copying bookmarks and settings…"),
-            (95.0,  "Finalising clone…"),
-            (100.0, "Clone complete!"),
-        };
-
-        foreach (var (progress, message) in stages)
-        {
-            await System.Threading.Tasks.Task.Delay(600);
-            CloneProgress     = progress;
-            CloneStatusMessage = message;
-            OnPropertyChanged(nameof(ShowStartButton));
-        }
-
-        await System.Threading.Tasks.Task.Delay(400);
-        IsCloning       = false;
-        CloneSuccessful = true;
-        CurrentStepIndex = 5;
+        if (profile != null)
+            SelectedSourceProfile = profile;
     }
 
-    private void OnFinish()  { CurrentStepIndex = 0; CloneProgress = 0; IsCloning = false; }
-    private void OnCancel()  { CurrentStepIndex = 0; CloneProgress = 0; IsCloning = false; }
+    // ════════════════════════════════════════════════════════════════════
+    // Step 2 — Security Scan
+    // ════════════════════════════════════════════════════════════════════
+    private async Task RunSecurityScanAsync(BraveProfile profile)
+    {
+        // Already on UI thread (called from async void OnNextStep)
+        IsScanning = true;
+        SecurityFindings.Clear();
+        SecuritySummary = "Scanning profile…";
+
+        try
+        {
+            var result = await _securityScanner.ScanAsync(profile);
+            _lastScanResult = result;
+
+            // Back on UI thread after await
+            SecurityFindings.Clear();
+
+            if (result.HasPasswords)
+                SecurityFindings.Add(new SecurityFindingItem
+                {
+                    Title    = "Saved Passwords Detected",
+                    Detail   = "Login credentials stored — will NOT be copied to the clone.",
+                    Severity = "warning"
+                });
+
+            if (result.HasCookies || result.HasSessions)
+                SecurityFindings.Add(new SecurityFindingItem
+                {
+                    Title    = "Cookies & Active Sessions",
+                    Detail   = "Active sessions detected — will NOT be transferred to the clone.",
+                    Severity = "warning"
+                });
+
+            if (result.HasWalletData)
+                SecurityFindings.Add(new SecurityFindingItem
+                {
+                    Title    = "Crypto Wallet Data Found",
+                    Detail   = "Wallet data detected — will NOT be copied for security.",
+                    Severity = "warning"
+                });
+
+            if (result.HasAutofillData)
+                SecurityFindings.Add(new SecurityFindingItem
+                {
+                    Title    = "Autofill Data Present",
+                    Detail   = "Form data and addresses stored — will be excluded from clone.",
+                    Severity = "info"
+                });
+
+            if (result.HasExtensionStorage)
+                SecurityFindings.Add(new SecurityFindingItem
+                {
+                    Title    = "Extensions with Local Storage",
+                    Detail   = "Extension data found — can be optionally copied based on your configuration.",
+                    Severity = "info"
+                });
+
+            foreach (var finding in result.Findings.Take(5))
+            {
+                SecurityFindings.Add(new SecurityFindingItem
+                {
+                    Title    = finding.Name,
+                    Detail   = finding.Description,
+                    Severity = finding.Severity switch
+                    {
+                        SecuritySeverity.High     => "warning",
+                        SecuritySeverity.Critical => "warning",
+                        _                         => "info"
+                    }
+                });
+            }
+
+            int warnCount = SecurityFindings.Count(f => f.Severity == "warning");
+            SecuritySummary = warnCount > 0
+                ? $"{warnCount} warning{(warnCount > 1 ? "s" : "")} found — sensitive data will not be cloned."
+                : "No critical warnings. Profile is safe to clone.";
+
+            OnPropertyChanged(nameof(HasWarnings));
+            OnPropertyChanged(nameof(SecurityBannerBackground));
+            IsScanning = false;
+        }
+        catch (Exception ex)
+        {
+            SecurityFindings.Add(new SecurityFindingItem
+            {
+                Title    = "Scan Error",
+                Detail   = $"Could not complete security scan: {ex.Message}",
+                Severity = "warning"
+            });
+            SecuritySummary = "Security scan could not complete — proceed with caution.";
+            IsScanning      = false;
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Step 3 — Backup
+    // ════════════════════════════════════════════════════════════════════
+    private async Task RunBackupAsync(BraveProfile profile)
+    {
+        // Already on UI thread — assign directly, no Dispatcher needed
+        IsBackingUp         = true;
+        BackupComplete      = false;
+        BackupStatusMessage = "Creating backup snapshot…";
+
+        try
+        {
+            BackupResult? result = null;
+            try
+            {
+                result = await _backupService.CreateBackupAsync(profile);
+            }
+            catch (Exception ex)
+            {
+                // BackupService re-throws ProfileFolderNotFoundException and BackupCorruptionException;
+                // we catch ALL exceptions here so they can never escape to the async void caller.
+                BackupStatusMessage = $"Backup skipped: {ex.Message}. Proceeding without backup.";
+                BackupComplete      = false;
+                IsBackingUp         = false;
+                CurrentStepIndex++;
+                return;
+            }
+
+            _lastBackupResult = result;
+
+            if (result.IsSuccess)
+            {
+                BackupStatusMessage = result.Metadata is not null
+                    ? $"Backup created — {FormatBytes(result.Metadata.BackupSize)} saved."
+                    : "Backup created successfully.";
+                BackupComplete   = true;
+                IsBackingUp      = false;
+                CurrentStepIndex++;
+            }
+            else
+            {
+                BackupStatusMessage = $"Backup failed: {result.ErrorMessage ?? "Unknown error"}. You may still proceed.";
+                BackupComplete   = false;
+                IsBackingUp      = false;
+                CurrentStepIndex++;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Final safety net — must never throw from here
+            BackupStatusMessage = $"Backup error: {ex.Message}. Proceeding without backup.";
+            IsBackingUp         = false;
+            CurrentStepIndex++;
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Step 4 — Clone Preview
+    // ════════════════════════════════════════════════════════════════════
+    private async Task BuildClonePreviewAsync()
+    {
+        if (_selectedRawProfile is null) return;
+
+        var request = new CloneRequest(
+            SourceProfileFolderName:      _selectedRawProfile.FolderName,
+            DestinationProfileName:       NewProfileName,
+            DestinationProfileFolderName: null);
+
+        try
+        {
+            var preview = await _cloneEngine.PreviewCloneAsync(request);
+            _lastClonePreview = preview;
+
+            RunOnUi(() =>
+            {
+                PreviewSettingsToCopy.Clear();
+                PreviewExtensionsToCopy.Clear();
+                PreviewWarnings.Clear();
+
+                foreach (var s in preview.SettingsToCopy)   PreviewSettingsToCopy.Add(s);
+                foreach (var e in preview.ExtensionsToCopy) PreviewExtensionsToCopy.Add(e);
+                foreach (var w in preview.Warnings)         PreviewWarnings.Add(w);
+            });
+        }
+        catch
+        {
+            // Preview failure is non-blocking — clone can still proceed
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // BUG 1 FIX — Execute Clone (void, Task.Run, Dispatcher.InvokeAsync, outer try/catch)
+    // ════════════════════════════════════════════════════════════════════
+    private void OnStartClone()
+    {
+        // Null guard — must have a resolved raw profile
+        if (_selectedRawProfile is null || _cloneHasRun) return;
+
+        if (_braveInstallationService.IsBraveRunning())
+        {
+            WizardErrorMessage = "Brave Browser is running. Please close all Brave windows before proceeding.";
+            return;
+        }
+        else
+        {
+            WizardErrorMessage = string.Empty;
+        }
+
+        _cloneHasRun = true;
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+
+        dispatcher?.InvokeAsync(() =>
+        {
+            IsCloning     = true;
+            CloneProgress = 0;
+            OnPropertyChanged(nameof(ShowStartButton));
+        });
+
+        // Capture locals — never access 'this' members from background thread
+        var rawProfile  = _selectedRawProfile;
+        var profileName = NewProfileName;
+        var engine      = _cloneEngine;
+
+        var request = new CloneRequest(
+            SourceProfileFolderName:      rawProfile.FolderName,
+            DestinationProfileName:       profileName,
+            DestinationProfileFolderName: null);
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                // ── Phase 1: Begin ────────────────────────────────────
+                await ReportProgressAsync(dispatcher, () =>
+                {
+                    CloneProgress      = 10;
+                    CloneStatusMessage = "Verifying source profile…";
+                });
+
+                // ── Phase 2: Clone with staged progress ───────────────
+                await ReportProgressAsync(dispatcher, () => { CloneProgress = 25; CloneStatusMessage = "Creating backup snapshot…"; });
+                await ReportProgressAsync(dispatcher, () => { CloneProgress = 40; CloneStatusMessage = "Copying profile data…"; });
+                await ReportProgressAsync(dispatcher, () => { CloneProgress = 60; CloneStatusMessage = "Applying extensions…"; });
+                await ReportProgressAsync(dispatcher, () => { CloneProgress = 75; CloneStatusMessage = "Copying bookmarks and settings…"; });
+                await ReportProgressAsync(dispatcher, () => { CloneProgress = 90; CloneStatusMessage = "Finalising clone…"; });
+
+                CloneResult result;
+                try
+                {
+                    result = await engine.CloneProfileAsync(request);
+                }
+                catch (Exception ex)
+                {
+                    if (dispatcher != null)
+                        await dispatcher.InvokeAsync(() =>
+                        {
+                            CloneStatusMessage = $"Clone failed: {ex.Message}";
+                            IsCloning          = false;
+                            CloneSuccessful    = false;
+                            CompletionMessage  = $"An unexpected error occurred: {ex.Message}";
+                            CurrentStepIndex   = 5;
+                        });
+                    return;
+                }
+
+                await ReportProgressAsync(dispatcher, () =>
+                {
+                    CloneProgress      = 100;
+                    CloneStatusMessage = result.IsSuccess ? "Clone complete!" : $"Clone failed: {result.ErrorMessage}";
+                });
+
+                await Task.Delay(400);
+
+                if (dispatcher != null)
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        IsCloning         = false;
+                        CloneSuccessful   = result.IsSuccess;
+                        CompletionMessage = result.IsSuccess
+                            ? $"Your new profile \"{profileName}\" is ready and can be launched from Brave Browser."
+                            : $"Clone failed: {result.ErrorMessage ?? "Unknown error."}";
+                        CurrentStepIndex  = 5;
+                    });
+            }
+            catch (Exception ex)
+            {
+                // Outer safety net — catches anything not caught above
+                if (dispatcher != null)
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        CloneStatusMessage = $"Unexpected error: {ex.Message}";
+                        IsCloning          = false;
+                        CloneSuccessful    = false;
+                        CompletionMessage  = $"Clone aborted: {ex.Message}";
+                        CurrentStepIndex   = 5;
+                    });
+            }
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Finish / Cancel
+    // ════════════════════════════════════════════════════════════════════
+    private void OnFinish()
+    {
+        ResetWizard();
+        _navigationService.NavigateTo<DashboardViewModel>();
+    }
+
+    private void OnCancel()
+    {
+        if (IsCloning) return; // do not allow cancel mid-clone
+        ResetWizard();
+        _navigationService.NavigateTo<DashboardViewModel>();
+    }
+
+    private void ResetWizard()
+    {
+        _cloneHasRun        = false;
+        _lastScanResult     = null;
+        _lastBackupResult   = null;
+        _lastClonePreview   = null;
+        _selectedRawProfile = null;
+
+        CloneProgress       = 0;
+        IsCloning           = false;
+        CloneSuccessful     = false;
+        BackupComplete      = false;
+        BackupStatusMessage = string.Empty;
+        WizardErrorMessage  = string.Empty;
+
+        SecurityFindings.Clear();
+        PreviewSettingsToCopy.Clear();
+        PreviewExtensionsToCopy.Clear();
+        PreviewWarnings.Clear();
+
+        CurrentStepIndex = 0;
+        OnPropertyChanged(nameof(ShowStartButton));
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Helpers
+    // ════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Dispatches a progress + status update onto the UI thread, then waits
+    /// 600 ms on the background thread. Safe to call from Task.Run.
+    /// </summary>
+    private static async Task ReportProgressAsync(
+        System.Windows.Threading.Dispatcher? dispatcher,
+        Action uiUpdate)
+    {
+        if (dispatcher != null)
+            await dispatcher.InvokeAsync(uiUpdate);
+        else
+            uiUpdate();
+
+        await Task.Delay(600);
+    }
+
+    /// <summary>Marshals an action onto the WPF UI dispatcher safely.</summary>
+    private static void RunOnUi(Action action)
+    {
+        if (System.Windows.Application.Current?.Dispatcher is { } dispatcher)
+            dispatcher.Invoke(action);
+        else
+            action();
+    }
+
+    private static string SanitizeFolderName(string name)
+        => string.Concat(name.Split(System.IO.Path.GetInvalidFileNameChars()))
+                 .Replace(" ", "_")
+                 .Trim('_');
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes >= 1_073_741_824) return $"{bytes / 1_073_741_824.0:F1} GB";
+        if (bytes >= 1_048_576)     return $"{bytes / 1_048_576.0:F1} MB";
+        if (bytes >= 1_024)         return $"{bytes / 1_024.0:F1} KB";
+        return $"{bytes} B";
+    }
 }

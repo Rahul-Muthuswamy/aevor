@@ -74,7 +74,9 @@ public class BackupService : IBackupService
             // Save metadata first in InProgress state
             await SaveMetadataAsync(backupDir, metadata);
 
-            var files = _fileSystem.EnumerateFiles(profile.ProfilePath, "*", SearchOption.AllDirectories).ToList();
+            var files = _fileSystem.EnumerateFiles(profile.ProfilePath, "*", SearchOption.AllDirectories)
+                .Where(f => !ShouldExcludeFile(f))
+                .ToList();
             int fileCount = 0;
             long totalBytes = 0;
 
@@ -299,5 +301,34 @@ public class BackupService : IBackupService
         var metadataPath = Path.Combine(backupDir, "metadata.json");
         var metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
         await _fileSystem.WriteAllTextAsync(metadataPath, metadataJson);
+    }
+
+    private static bool ShouldExcludeFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        if (string.IsNullOrEmpty(fileName)) return true;
+
+        // Exclude lock and socket files
+        if (fileName.Equals("lockfile", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("parent.lock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonLock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonCookie", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonSocket", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("lock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("socket", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Exclude cache directories
+        var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (parts.Any(p => p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return false;
     }
 }

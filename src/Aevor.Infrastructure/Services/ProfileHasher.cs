@@ -26,6 +26,7 @@ public class ProfileHasher
 
         // Order files to ensure deterministic hashing across runs
         var files = _fileSystem.EnumerateFiles(directoryPath, "*", SearchOption.AllDirectories)
+            .Where(f => !ShouldExcludeFile(f))
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -62,5 +63,34 @@ public class ProfileHasher
         // Finalize calculation
         sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
         return Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
+    }
+
+    private static bool ShouldExcludeFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        if (string.IsNullOrEmpty(fileName)) return true;
+
+        // Exclude lock and socket files
+        if (fileName.Equals("lockfile", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("parent.lock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonLock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonCookie", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonSocket", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("lock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("socket", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Exclude cache directories
+        var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (parts.Any(p => p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return false;
     }
 }

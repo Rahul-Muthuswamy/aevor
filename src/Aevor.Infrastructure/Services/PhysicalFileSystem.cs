@@ -47,7 +47,17 @@ public class PhysicalFileSystem : IFileSystem
 
     public void CopyFile(string sourcePath, string destPath, bool overwrite = true)
     {
-        File.Copy(sourcePath, destPath, overwrite);
+        try
+        {
+            File.Copy(sourcePath, destPath, overwrite);
+        }
+        catch (IOException)
+        {
+            // Fallback to stream-based copy with FileShare.ReadWrite to copy files open by Brave
+            using var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var destStream = new FileStream(destPath, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write);
+            sourceStream.CopyTo(destStream);
+        }
     }
 
     public void DeleteFile(string path)

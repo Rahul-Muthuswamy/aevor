@@ -52,6 +52,8 @@ public static class DependencyInjection
         services.AddTransient<ITemplateSerializer, TemplateSerializer>();
         services.AddTransient<ITemplateApplier, TemplateApplier>();
         services.AddTransient<IBackupService, BackupService>();
+        services.AddTransient<IProfileCreator, ProfileCreator>();
+        services.AddTransient<ICloneEngine, CloneEngine>();
 
         return services;
     }

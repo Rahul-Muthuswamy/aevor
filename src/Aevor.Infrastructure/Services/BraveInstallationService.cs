@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Aevor.Application.Interfaces;
 
@@ -24,6 +26,12 @@ public class BraveInstallationService : IBraveInstallationService
         EnsureWindowsPlatform();
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         return Path.Combine(localAppData, "BraveSoftware", "Brave-Browser", "User Data");
+    }
+
+    public bool IsBraveRunning()
+    {
+        EnsureWindowsPlatform();
+        return Process.GetProcessesByName("brave").Any();
     }
 
     private void EnsureWindowsPlatform()

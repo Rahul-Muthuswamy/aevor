@@ -19,6 +19,7 @@ public class CloneEngine : ICloneEngine
     private readonly IBackupService _backupService;
     private readonly IProfileCreator _profileCreator;
     private readonly ITemplateApplier _templateApplier;
+    private readonly IFileSystem _fileSystem;
     private readonly ILogger<CloneEngine> _logger;
 
     public CloneEngine(
@@ -29,6 +30,7 @@ public class CloneEngine : ICloneEngine
         IBackupService backupService,
         IProfileCreator profileCreator,
         ITemplateApplier templateApplier,
+        IFileSystem fileSystem,
         ILogger<CloneEngine> logger)
     {
         _profileDiscoveryService = profileDiscoveryService;
@@ -38,6 +40,7 @@ public class CloneEngine : ICloneEngine
         _backupService = backupService;
         _profileCreator = profileCreator;
         _templateApplier = templateApplier;
+        _fileSystem = fileSystem;
         _logger = logger;
     }
 
@@ -99,6 +102,10 @@ public class CloneEngine : ICloneEngine
                 return new CloneResult(false, $"Destination profile creation failed: {creationResult.ErrorMessage}");
             }
             var destProfile = creationResult.Profile;
+
+            // Copy non-sensitive source profile files to destination profile folder
+            _logger.LogInformation("Copying profile files from source {Source} to dest {Dest}", sourceProfile.ProfilePath, destProfile.ProfilePath);
+            CopyProfileDirectory(sourceProfile.ProfilePath, destProfile.ProfilePath);
 
             // 7. Apply template to destination profile
             _logger.LogInformation("Applying template settings to destination profile: {FolderName}", destProfile.FolderName);
@@ -264,5 +271,85 @@ public class CloneEngine : ICloneEngine
         }
 
         return new ClonePreview(request.SourceProfileFolderName, request.DestinationProfileName, settingsToCopy, extensionsToCopy, warnings);
+    }
+
+    private void CopyProfileDirectory(string sourceDir, string destDir)
+    {
+        var files = _fileSystem.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories).ToList();
+        foreach (var file in files)
+        {
+            if (ShouldExcludeFromClone(file))
+            {
+                continue;
+            }
+
+            var relativePath = Path.GetRelativePath(sourceDir, file);
+            var destPath = Path.Combine(destDir, relativePath);
+
+            var destFileDir = Path.GetDirectoryName(destPath);
+            if (!string.IsNullOrEmpty(destFileDir) && !_fileSystem.DirectoryExists(destFileDir))
+            {
+                _fileSystem.CreateDirectory(destFileDir);
+            }
+
+            try
+            {
+                _fileSystem.CopyFile(file, destPath, true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to copy file {File} during cloning. Skipping.", file);
+            }
+        }
+    }
+
+    private bool ShouldExcludeFromClone(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        if (string.IsNullOrEmpty(fileName)) return true;
+
+        // Exclude lock and socket files
+        if (fileName.Equals("lockfile", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("parent.lock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonLock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonCookie", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("SingletonSocket", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("lock", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("socket", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Exclude directories/files that contain sensitive data
+        var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (parts.Any(p => 
+            p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("BraveWallet", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("Sessions", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("Session Storage", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("IndexedDB", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("Local Storage", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("Local Extension Settings", StringComparison.OrdinalIgnoreCase) ||
+            p.Equals("Extension State", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        // Exclude specific sensitive files
+        if (fileName.Equals("Login Data", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("Login Data For Account", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("Cookies", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("Cookies-journal", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("Web Data", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("Web Data-journal", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("History", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Equals("History-journal", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
     }
 }
