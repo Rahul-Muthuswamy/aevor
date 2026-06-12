@@ -1,16 +1,56 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Media;
+using Aevor.Core.Models;
 
 namespace Aevor.UI.Models;
 
-public class ProfileCardItem
+public class ProfileCardItem : INotifyPropertyChanged
 {
-    public string ProfileName { get; set; } = string.Empty;
-    public string Browser     { get; set; } = "Brave Browser";
-    public int    RiskScore   { get; set; }       // 0–100
-    public string RiskLabel   { get; set; } = "Low";
-    public int    ExtensionCount { get; set; }
-    public string LastUsed    { get; set; } = string.Empty;
-    public bool   IsSelected  { get; set; }
+    private string _profileName = string.Empty;
+    public string ProfileName
+    {
+        get => _profileName;
+        set { _profileName = value; OnPropertyChanged(); OnPropertyChanged(nameof(Initial)); }
+    }
+
+    public string Browser { get; set; } = "Brave Browser";
+
+    private int _riskScore;
+    public int RiskScore
+    {
+        get => _riskScore;
+        set { _riskScore = value; OnPropertyChanged(); }
+    }
+
+    private string _riskLabel = "Low";
+    public string RiskLabel
+    {
+        get => _riskLabel;
+        set
+        {
+            _riskLabel = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RiskColor));
+            OnPropertyChanged(nameof(RiskBadgeBackgroundBrush));
+            OnPropertyChanged(nameof(RiskBadgeTextBrush));
+        }
+    }
+
+    private int _extensionCount;
+    public int ExtensionCount
+    {
+        get => _extensionCount;
+        set { _extensionCount = value; OnPropertyChanged(); }
+    }
+
+    public string LastUsed { get; set; } = string.Empty;
+    public bool   IsSelected { get; set; }
+
+    /// <summary>
+    /// Reference to the raw BraveProfile for backend service calls.
+    /// </summary>
+    public BraveProfile? SourceProfile { get; set; }
 
     // ── Computed ────────────────────────────────────────────────────────
     public Brush RiskColor => RiskLabel switch
@@ -36,4 +76,10 @@ public class ProfileCardItem
 
     // Avatar: first letter of the profile name
     public string Initial => string.IsNullOrWhiteSpace(ProfileName) ? "?" : ProfileName[0].ToString().ToUpper();
+
+    // ── INotifyPropertyChanged ─────────────────────────────────────────
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
+

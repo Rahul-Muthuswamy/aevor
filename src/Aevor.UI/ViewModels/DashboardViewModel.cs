@@ -1,8 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using Aevor.Application.Interfaces;
+using Aevor.Core.Models;
 using Aevor.UI.Commands;
+using Aevor.UI.Services;
 
 namespace Aevor.UI.ViewModels;
 
@@ -34,6 +41,12 @@ public class ActivityItem
 // -------------------------
 public class DashboardViewModel : BaseViewModel
 {
+    // ── Injected Services ─────────────────────────────────────────────
+    private readonly IProfileDiscoveryService _profileDiscoveryService;
+    private readonly IBackupService _backupService;
+    private readonly ISecurityScanner _securityScanner;
+    private readonly INavigationService _navigationService;
+
     // ── Stats ──────────────────────────────────────────────────────────
     private int _totalProfiles;
     public int TotalProfiles
@@ -73,8 +86,24 @@ public class DashboardViewModel : BaseViewModel
     {
         "Warning"  => new SolidColorBrush(Color.FromRgb(245, 158, 11)),  // #F59E0B
         "At Risk"  => new SolidColorBrush(Color.FromRgb(239, 68, 68)),   // #EF4444
+        "Unknown"  => new SolidColorBrush(Color.FromRgb(107, 114, 128)), // #6B7280 (MutedBrush)
         _          => new SolidColorBrush(Color.FromRgb(16, 185, 129)),  // #10B981
     };
+
+    // ── Loading / Error State ─────────────────────────────────────────
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set => SetProperty(ref _isLoading, value);
+    }
+
+    private string? _errorMessage;
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set => SetProperty(ref _errorMessage, value);
+    }
 
     // ── Recent Activity ────────────────────────────────────────────────
     public ObservableCollection<ActivityItem> RecentActivities { get; } = new();
@@ -84,71 +113,197 @@ public class DashboardViewModel : BaseViewModel
     public ICommand CreateTemplateCommand  { get; }
     public ICommand CreateBackupCommand    { get; }
     public ICommand ViewSecurityCommand    { get; }
+    public ICommand RefreshCommand         { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
-    public DashboardViewModel()
+    public DashboardViewModel(
+        IProfileDiscoveryService profileDiscoveryService,
+        IBackupService backupService,
+        ISecurityScanner securityScanner,
+        INavigationService navigationService)
     {
+        _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
+        _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
+        _securityScanner = securityScanner ?? throw new ArgumentNullException(nameof(securityScanner));
+        _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+
         AnalyzeProfilesCommand = new RelayCommand(OnAnalyzeProfiles);
         CreateTemplateCommand  = new RelayCommand(OnCreateTemplate);
         CreateBackupCommand    = new RelayCommand(OnCreateBackup);
         ViewSecurityCommand    = new RelayCommand(OnViewSecurity);
+        RefreshCommand         = new RelayCommand(() => Task.Run(async () => await LoadDashboardDataAsync()));
 
-        LoadSampleData();
+        // Fire-and-forget initial load on a background thread
+        Task.Run(async () => await LoadDashboardDataAsync());
     }
 
-    // ── Sample Data ────────────────────────────────────────────────────
-    private void LoadSampleData()
+    // ── Data Loading ──────────────────────────────────────────────────
+    private async Task LoadDashboardDataAsync()
     {
-        TotalProfiles  = 6;
-        TotalTemplates = 4;
-        TotalBackups   = 12;
-        SecurityStatus = "Secure";
+        IsLoading = true;
+        ErrorMessage = null;
 
-        RecentActivities.Add(new ActivityItem
+        try
         {
-            Icon         = "✓",
-            Title        = "Backup Created",
-            Description  = "Profile \"Work\" was backed up successfully",
-            TimeAgo      = "2 min ago",
-            ActivityType = "success"
-        });
-        RecentActivities.Add(new ActivityItem
+            // ── Step A — Load Profiles ────────────────────────────────
+            var profiles = await _profileDiscoveryService.GetProfilesAsync();
+            TotalProfiles = profiles?.Count ?? 0;
+
+            // ── Step B — Load Backups ─────────────────────────────────
+            var backups = await _backupService.GetBackupsAsync();
+            TotalBackups = backups?.Count ?? 0;
+
+            // ── Step C — Security Scan ────────────────────────────────
+            SecurityScanResult? scanResult = null;
+            BraveProfile? scannedProfile = null;
+
+            if (profiles != null && profiles.Count > 0)
+            {
+                scannedProfile = profiles[0];
+                scanResult = await _securityScanner.ScanAsync(scannedProfile);
+
+                if (scanResult != null)
+                {
+                    bool hasCritical = scanResult.Findings.Any(f =>
+                        f.Severity == SecuritySeverity.Critical || f.Severity == SecuritySeverity.High);
+                    bool hasWarnings = scanResult.Findings.Any(f =>
+                        f.Severity == SecuritySeverity.Medium || f.Severity == SecuritySeverity.Low);
+
+                    if (hasCritical)
+                    {
+                        SecurityStatus = "At Risk";
+                    }
+                    else if (hasWarnings || scanResult.Findings.Count > 0)
+                    {
+                        SecurityStatus = "Warning";
+                    }
+                    else
+                    {
+                        SecurityStatus = "Secure";
+                    }
+                }
+                else
+                {
+                    SecurityStatus = "Secure";
+                }
+            }
+            else
+            {
+                SecurityStatus = "Secure";
+            }
+
+            // ── Step D — Templates ────────────────────────────────────
+            // TODO: wire up ITemplateService when available
+            TotalTemplates = 0;
+
+            // ── Step E — Recent Activities ────────────────────────────
+            var activities = new List<ActivityItem>();
+
+            // One entry per discovered profile
+            if (profiles != null)
+            {
+                foreach (var profile in profiles)
+                {
+                    activities.Add(new ActivityItem
+                    {
+                        Icon         = "🔍",
+                        Title        = "Profile Discovered",
+                        Description  = profile.DisplayName + " detected",
+                        ActivityType = "info",
+                        TimeAgo      = "Just now"
+                    });
+                }
+            }
+
+            // One entry per backup (max 3)
+            if (backups != null)
+            {
+                foreach (var backup in backups.Take(3))
+                {
+                    activities.Add(new ActivityItem
+                    {
+                        Icon         = "✓",
+                        Title        = "Backup Available",
+                        Description  = backup.ProfileName + " snapshot ready",
+                        ActivityType = "success",
+                        TimeAgo      = FormatRelativeTime(backup.CreatedTimestamp)
+                    });
+                }
+            }
+
+            // If security scan found warnings or critical findings
+            if (scanResult != null && scanResult.Findings.Count > 0 && scannedProfile != null)
+            {
+                activities.Add(new ActivityItem
+                {
+                    Icon         = "⚠",
+                    Title        = "Security Warning",
+                    Description  = "Issues found in " + scannedProfile.DisplayName,
+                    ActivityType = "warning",
+                    TimeAgo      = "Just now"
+                });
+            }
+
+            // Dispatch collection updates to the UI thread
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                RecentActivities.Clear();
+                foreach (var activity in activities)
+                {
+                    RecentActivities.Add(activity);
+                }
+            });
+        }
+        catch (Exception ex)
         {
-            Icon         = "⚠",
-            Title        = "Security Warning",
-            Description  = "Profile \"Research\" contains stored login data",
-            TimeAgo      = "18 min ago",
-            ActivityType = "warning"
-        });
-        RecentActivities.Add(new ActivityItem
+            // Graceful error handling — never crash the application
+            SecurityStatus = "Unknown";
+            ErrorMessage = ex.Message;
+
+            // Ensure the UI still has a reasonable state
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (RecentActivities.Count == 0)
+                {
+                    RecentActivities.Add(new ActivityItem
+                    {
+                        Icon         = "⚠",
+                        Title        = "Dashboard Load Error",
+                        Description  = "Unable to load dashboard data. Try refreshing.",
+                        ActivityType = "warning",
+                        TimeAgo      = "Just now"
+                    });
+                }
+            });
+        }
+        finally
         {
-            Icon         = "i",
-            Title        = "Template Applied",
-            Description  = "\"Dev Setup\" template applied to Profile \"Dev\"",
-            TimeAgo      = "1 hr ago",
-            ActivityType = "info"
-        });
-        RecentActivities.Add(new ActivityItem
-        {
-            Icon         = "✓",
-            Title        = "Profile Cloned",
-            Description  = "\"Personal\" cloned into \"Personal — Backup\"",
-            TimeAgo      = "3 hr ago",
-            ActivityType = "success"
-        });
-        RecentActivities.Add(new ActivityItem
-        {
-            Icon         = "i",
-            Title        = "Profile Discovered",
-            Description  = "6 Brave profiles detected on startup scan",
-            TimeAgo      = "Yesterday",
-            ActivityType = "info"
-        });
+            IsLoading = false;
+        }
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────
+    private static string FormatRelativeTime(DateTime timestamp)
+    {
+        var diff = DateTime.Now - timestamp;
+
+        if (diff.TotalSeconds < 60)
+            return "Just now";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes} min ago";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours} hr ago";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays} day{((int)diff.TotalDays != 1 ? "s" : "")} ago";
+        if (diff.TotalDays < 30)
+            return $"{(int)(diff.TotalDays / 7)} week{((int)(diff.TotalDays / 7) != 1 ? "s" : "")} ago";
+
+        return timestamp.ToString("MMM d, yyyy");
     }
 
     // ── Command Handlers ───────────────────────────────────────────────
-    private void OnAnalyzeProfiles() { /* wired to NavigationService in future */ }
-    private void OnCreateTemplate()  { }
-    private void OnCreateBackup()    { }
-    private void OnViewSecurity()    { }
+    private void OnAnalyzeProfiles() => _navigationService.NavigateTo<ProfilesViewModel>();
+    private void OnCreateTemplate()  => _navigationService.NavigateTo<TemplatesViewModel>();
+    private void OnCreateBackup()    => _navigationService.NavigateTo<BackupsViewModel>();
+    private void OnViewSecurity()    => _navigationService.NavigateTo<SecurityViewModel>();
 }
