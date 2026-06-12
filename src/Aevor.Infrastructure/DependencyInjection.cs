@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddTransient<ITemplateBuilder, TemplateBuilder>();
         services.AddTransient<ITemplateValidator, TemplateValidator>();
         services.AddTransient<ITemplateSerializer, TemplateSerializer>();
+        services.AddTransient<ITemplateApplier, TemplateApplier>();
         services.AddTransient<IBackupService, BackupService>();
 
         return services;
