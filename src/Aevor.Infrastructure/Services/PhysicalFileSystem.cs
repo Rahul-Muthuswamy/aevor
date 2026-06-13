@@ -18,9 +18,19 @@ public class PhysicalFileSystem : IFileSystem
         return File.Exists(path);
     }
 
-    public Task<string> ReadAllTextAsync(string path)
+    public async Task<string> ReadAllTextAsync(string path)
     {
-        return File.ReadAllTextAsync(path);
+        try
+        {
+            return await File.ReadAllTextAsync(path);
+        }
+        catch (IOException)
+        {
+            // Fallback to stream-based read with FileShare.ReadWrite to copy files open by Brave
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true);
+            using var reader = new StreamReader(stream);
+            return await reader.ReadToEndAsync();
+        }
     }
 
     public Task WriteAllTextAsync(string path, string contents)

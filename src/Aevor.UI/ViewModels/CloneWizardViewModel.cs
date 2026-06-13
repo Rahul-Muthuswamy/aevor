@@ -42,7 +42,14 @@ public class CloneWizardViewModel : BaseViewModel
     public bool IsLoading
     {
         get => _isLoading;
-        set => SetProperty(ref _isLoading, value);
+        set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                OnPropertyChanged(nameof(CanGoNext));
+                OnPropertyChanged(nameof(CanGoBack));
+            }
+        }
     }
 
     private string _loadingMessage = "Loading profiles…";
@@ -104,8 +111,8 @@ public class CloneWizardViewModel : BaseViewModel
         _ => string.Empty
     };
 
-    public bool CanGoBack  => CurrentStepIndex > 0 && CurrentStepIndex < 5;
-    public bool CanGoNext  => CurrentStepIndex < 5;
+    public bool CanGoBack  => CurrentStepIndex > 0 && CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading;
+    public bool CanGoNext  => CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading;
     public bool IsLastStep => CurrentStepIndex == 5;
 
     // ════════════════════════════════════════════════════════════════════
@@ -142,7 +149,14 @@ public class CloneWizardViewModel : BaseViewModel
     public bool IsScanning
     {
         get => _isScanning;
-        set => SetProperty(ref _isScanning, value);
+        set
+        {
+            if (SetProperty(ref _isScanning, value))
+            {
+                OnPropertyChanged(nameof(CanGoNext));
+                OnPropertyChanged(nameof(CanGoBack));
+            }
+        }
     }
 
     // Pre-frozen brushes — safe to return from any thread
@@ -182,7 +196,14 @@ public class CloneWizardViewModel : BaseViewModel
     public bool IsBackingUp
     {
         get => _isBackingUp;
-        set => SetProperty(ref _isBackingUp, value);
+        set
+        {
+            if (SetProperty(ref _isBackingUp, value))
+            {
+                OnPropertyChanged(nameof(CanGoNext));
+                OnPropertyChanged(nameof(CanGoBack));
+            }
+        }
     }
 
     private bool _backupComplete;
@@ -369,7 +390,11 @@ public class CloneWizardViewModel : BaseViewModel
                     foreach (var p in profiles)
                         AvailableProfiles.Add(p.DisplayName);
 
-                    if (AvailableProfiles.Count > 0)
+                    if (_preselectedProfileName != null)
+                    {
+                        ApplyPreselection();
+                    }
+                    else if (AvailableProfiles.Count > 0)
                     {
                         SelectedSourceProfile = AvailableProfiles[0];
                         NewProfileName        = $"{SelectedSourceProfile} — Copy";
@@ -391,6 +416,51 @@ public class CloneWizardViewModel : BaseViewModel
                     IsLoading          = false;
                 });
         }
+    }
+
+    private string? _preselectedProfileName;
+
+    public void PreselectSourceProfileAndAdvance(string profileName)
+    {
+        _preselectedProfileName = profileName;
+        // If data is already loaded, apply it immediately.
+        if (AvailableProfiles.Count > 0)
+        {
+            ApplyPreselection();
+        }
+    }
+
+    private async void ApplyPreselection()
+    {
+        if (_preselectedProfileName == null) return;
+
+        var matchingProfileName = AvailableProfiles.FirstOrDefault(p => p.Equals(_preselectedProfileName, StringComparison.OrdinalIgnoreCase));
+        if (matchingProfileName != null)
+        {
+            SelectedSourceProfile = matchingProfileName;
+            NewProfileName = $"{SelectedSourceProfile} — Copy";
+
+            _selectedRawProfile = _discoveredProfiles
+                .FirstOrDefault(p => p.DisplayName == SelectedSourceProfile);
+
+            if (_selectedRawProfile is not null)
+            {
+                // Run safety check
+                if (_braveInstallationService.IsBraveRunning())
+                {
+                    WizardErrorMessage = "Brave Browser is running. Please close all Brave windows before proceeding.";
+                }
+                else
+                {
+                    WizardErrorMessage = string.Empty;
+                }
+
+                // Advance to the second step (Security Review)
+                CurrentStepIndex = 1;
+                await RunSecurityScanAsync(_selectedRawProfile);
+            }
+        }
+        _preselectedProfileName = null;
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -565,7 +635,7 @@ public class CloneWizardViewModel : BaseViewModel
             BackupResult? result = null;
             try
             {
-                result = await _backupService.CreateBackupAsync(profile);
+                result = await Task.Run(async () => await _backupService.CreateBackupAsync(profile));
             }
             catch (Exception ex)
             {
@@ -616,7 +686,18 @@ public class CloneWizardViewModel : BaseViewModel
         var request = new CloneRequest(
             SourceProfileFolderName:      _selectedRawProfile.FolderName,
             DestinationProfileName:       NewProfileName,
-            DestinationProfileFolderName: null);
+            DestinationProfileFolderName: null,
+            CopyExtensions:               CopyExtensions,
+            CopyBookmarks:                CopyBookmarks,
+            CopySettings:                 CopySettings,
+            CopyThemes:                   CopyThemes,
+            CopySearchEngines:            CopySearchEngines,
+            CreateBackup:                 CreateBackupBeforeClone,
+            IncludeExtensions:            CopyExtensions,
+            IncludeBookmarks:             CopyBookmarks,
+            IncludeSettings:              CopySettings,
+            IncludeThemes:                CopyThemes,
+            IncludeSearchEngines:         CopySearchEngines);
 
         try
         {
@@ -669,15 +750,30 @@ public class CloneWizardViewModel : BaseViewModel
             OnPropertyChanged(nameof(ShowStartButton));
         });
 
-        // Capture locals — never access 'this' members from background thread
         var rawProfile  = _selectedRawProfile;
         var profileName = NewProfileName;
         var engine      = _cloneEngine;
+        var copyExtensions    = CopyExtensions;
+        var copyBookmarks     = CopyBookmarks;
+        var copySettings      = CopySettings;
+        var copyThemes        = CopyThemes;
+        var copySearchEngines = CopySearchEngines;
 
         var request = new CloneRequest(
             SourceProfileFolderName:      rawProfile.FolderName,
             DestinationProfileName:       profileName,
-            DestinationProfileFolderName: null);
+            DestinationProfileFolderName: null,
+            CopyExtensions:               copyExtensions,
+            CopyBookmarks:                copyBookmarks,
+            CopySettings:                 copySettings,
+            CopyThemes:                   copyThemes,
+            CopySearchEngines:            copySearchEngines,
+            CreateBackup:                 CreateBackupBeforeClone,
+            IncludeExtensions:            copyExtensions,
+            IncludeBookmarks:             copyBookmarks,
+            IncludeSettings:              copySettings,
+            IncludeThemes:                copyThemes,
+            IncludeSearchEngines:         copySearchEngines);
 
         Task.Run(async () =>
         {
@@ -762,7 +858,7 @@ public class CloneWizardViewModel : BaseViewModel
 
     private void OnCancel()
     {
-        if (IsCloning) return; // do not allow cancel mid-clone
+        if (IsCloning || IsBackingUp || IsScanning || IsLoading) return; // do not allow cancel mid-operation
         ResetWizard();
         _navigationService.NavigateTo<DashboardViewModel>();
     }

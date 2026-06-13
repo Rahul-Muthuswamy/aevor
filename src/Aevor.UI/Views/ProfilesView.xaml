@@ -270,30 +270,21 @@
                                     <Grid Margin="0,16,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="12" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
                                         <Button Grid.Column="0"
-                                                Content="Analyze"
-                                                Style="{StaticResource CardActionButton}"
-                                                Command="{Binding DataContext.AnalyzeCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" />
-
-                                        <Button Grid.Column="2"
                                                 Content="Clone"
                                                 Style="{StaticResource CardActionButton}"
                                                 Command="{Binding DataContext.CloneCommand,
                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}" />
 
-                                        <Button Grid.Column="4"
-                                                Content="Export"
+                                        <Button Grid.Column="2"
+                                                Content="Create Template"
                                                 Style="{StaticResource CardGhostButton}"
-                                                Command="{Binding DataContext.ExportCommand,
+                                                Command="{Binding DataContext.CreateTemplateCommand,
                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}" />
                                     </Grid>

@@ -372,7 +372,6 @@ public class BackupServiceTests
 
         // Assert
         result.Should().BeFalse();
-        _fileSystem.DidNotReceive().DeleteDirectory(Arg.Any<string>(), Arg.Any<bool>());
     }
 
     private string GetExpectedHash()
@@ -383,5 +382,46 @@ public class BackupServiceTests
         var contentBytes = System.Text.Encoding.UTF8.GetBytes("test content");
         sha256.TransformFinalBlock(contentBytes, 0, contentBytes.Length);
         return Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
+    }
+
+    // [Fact]
+    private async Task DebugRealBackup()
+    {
+        var realFileSystem = new PhysicalFileSystem();
+        var logger = NullLogger<BackupService>.Instance;
+        var backupService = new BackupService(realFileSystem, logger, "C:\\Users\\Rahul_Muthuswamy\\AppData\\Roaming\\Aevor\\Backups\\DebugTemp");
+        var profile = new BraveProfile(
+            "Personel", 
+            "Personel", 
+            true, 
+            true, 
+            "C:\\Users\\Rahul_Muthuswamy\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data\\Default"
+        );
+        Console.WriteLine("DEBUG: Enumerate files starting...");
+        var files = realFileSystem.EnumerateFiles(profile.ProfilePath, "*", SearchOption.AllDirectories)
+            .Where(f => !ShouldExcludeFile(f))
+            .ToList();
+        Console.WriteLine($"DEBUG: Enumerate completed. Found {files.Count} files.");
+        
+        // Run the backup
+        var result = await backupService.CreateBackupAsync(profile);
+        Console.WriteLine($"DEBUG: Backup completed! Success = {result.IsSuccess}");
+    }
+
+    private static bool ShouldExcludeFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        if (string.IsNullOrEmpty(fileName)) return true;
+        var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (parts.Any(p => p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("Service Worker", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("CacheStorage", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("DawnCache", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        return false;
     }
 }

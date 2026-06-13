@@ -70,11 +70,10 @@ public class ProfilesViewModel : BaseViewModel
     public bool HasProfiles => !IsLoading && FilteredProfiles.Count > 0;
 
     // ── Commands ───────────────────────────────────────────────────────
-    public ICommand AnalyzeCommand { get; }
-    public ICommand CloneCommand   { get; }
-    public ICommand ExportCommand  { get; }
-    public ICommand RefreshCommand { get; }
-    public ICommand SearchCommand  { get; }
+    public ICommand CloneCommand          { get; }
+    public ICommand CreateTemplateCommand { get; }
+    public ICommand RefreshCommand        { get; }
+    public ICommand SearchCommand          { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
     public ProfilesViewModel(
@@ -92,11 +91,10 @@ public class ProfilesViewModel : BaseViewModel
         _templateBuilder = templateBuilder ?? throw new ArgumentNullException(nameof(templateBuilder));
         _templateSerializer = templateSerializer ?? throw new ArgumentNullException(nameof(templateSerializer));
 
-        AnalyzeCommand = new RelayCommand<ProfileCardItem>(OnAnalyze);
-        CloneCommand   = new RelayCommand<ProfileCardItem>(OnClone);
-        ExportCommand  = new RelayCommand<ProfileCardItem>(OnExport);
-        RefreshCommand = new RelayCommand(() => Task.Run(async () => await LoadProfilesAsync()));
-        SearchCommand  = new RelayCommand(ApplyFilter);
+        CloneCommand          = new RelayCommand<ProfileCardItem>(OnClone);
+        CreateTemplateCommand = new RelayCommand<ProfileCardItem>(OnCreateTemplate);
+        RefreshCommand        = new RelayCommand(() => Task.Run(async () => await LoadProfilesAsync()));
+        SearchCommand          = new RelayCommand(ApplyFilter);
 
         // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadProfilesAsync());
@@ -105,18 +103,31 @@ public class ProfilesViewModel : BaseViewModel
     // ── Data Loading ──────────────────────────────────────────────────
     private async Task LoadProfilesAsync()
     {
-        IsLoading = true;
-        ErrorMessage = null;
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+
+        if (dispatcher != null)
+        {
+            await dispatcher.InvokeAsync(() =>
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+            });
+        }
+        else
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+        }
 
         try
         {
             // ── Step A — Discover profiles ────────────────────────────
             var profiles = await _profileDiscoveryService.GetProfilesAsync();
-            _rawProfiles = profiles ?? new List<BraveProfile>();
+            var rawProfiles = profiles ?? new List<BraveProfile>();
 
             var cardItems = new List<ProfileCardItem>();
 
-            foreach (var profile in _rawProfiles)
+            foreach (var profile in rawProfiles)
             {
                 // ── Step B — Build base ProfileCardItem ───────────────
                 var card = new ProfileCardItem
@@ -147,30 +158,61 @@ public class ProfilesViewModel : BaseViewModel
             }
 
             // ── Step E — Populate collections on UI thread ────────────
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            if (dispatcher != null)
             {
+                await dispatcher.InvokeAsync(() =>
+                {
+                    _rawProfiles = rawProfiles;
+                    Profiles.Clear();
+                    foreach (var card in cardItems)
+                    {
+                        Profiles.Add(card);
+                    }
+                    ApplyFilter();
+                });
+            }
+            else
+            {
+                _rawProfiles = rawProfiles;
                 Profiles.Clear();
                 foreach (var card in cardItems)
                 {
                     Profiles.Add(card);
                 }
                 ApplyFilter();
-            });
+            }
         }
         catch (Exception ex)
         {
             // Discovery failed — show empty state with error message
-            ErrorMessage = ex.Message;
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            if (dispatcher != null)
             {
+                await dispatcher.InvokeAsync(() =>
+                {
+                    ErrorMessage = ex.Message;
+                    Profiles.Clear();
+                    FilteredProfiles.Clear();
+                    OnPropertyChanged(nameof(HasProfiles));
+                });
+            }
+            else
+            {
+                ErrorMessage = ex.Message;
                 Profiles.Clear();
                 FilteredProfiles.Clear();
                 OnPropertyChanged(nameof(HasProfiles));
-            });
+            }
         }
         finally
         {
-            IsLoading = false;
+            if (dispatcher != null)
+            {
+                await dispatcher.InvokeAsync(() => IsLoading = false);
+            }
+            else
+            {
+                IsLoading = false;
+            }
         }
     }
 
@@ -304,46 +346,6 @@ public class ProfilesViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasProfiles));
     }
 
-    // ── Command Handlers ───────────────────────────────────────────────
-
-    /// <summary>
-    /// Analyze: re-scans the profile for security + re-counts extensions,
-    /// then updates the card in place.
-    /// </summary>
-    private void OnAnalyze(ProfileCardItem? p)
-    {
-        if (p?.SourceProfile == null) return;
-        SelectedProfile = p;
-
-        Task.Run(async () =>
-        {
-            IsLoading = true;
-            try
-            {
-                // Re-run security scan
-                var scanResult = await _securityScanner.ScanAsync(p.SourceProfile);
-
-                // Re-count extensions
-                int extCount = await GetExtensionCountAsync(p.SourceProfile);
-
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    MapSecurityResult(p, scanResult);
-                    p.ExtensionCount = extCount;
-                    p.LastUsed = GetLastUsedTime(p.SourceProfile.ProfilePath);
-                });
-            }
-            catch
-            {
-                // Degrade gracefully — keep existing card values
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        });
-    }
-
     /// <summary>
     /// Clone: navigates to Clone Wizard with selected profile context.
     /// </summary>
@@ -353,23 +355,38 @@ public class ProfilesViewModel : BaseViewModel
         SelectedProfile = p;
 
         // Navigate to Clone Wizard page
-        _navigationService.NavigateTo<CloneWizardViewModel>();
-        // TODO: pass selected profile name via ViewModel messaging
-        //       so Clone Wizard can pre-select this profile
+        _navigationService.NavigateTo<CloneWizardViewModel>(vm =>
+        {
+            vm.PreselectSourceProfileAndAdvance(p.ProfileName);
+        });
     }
 
     /// <summary>
-    /// Export: builds an AevorTemplate from the profile's analysis + scan,
+    /// Create Template: builds an AevorTemplate from the profile's analysis + scan,
     /// then saves it as a JSON file in the user's Documents folder.
     /// </summary>
-    private void OnExport(ProfileCardItem? p)
+    private void OnCreateTemplate(ProfileCardItem? p)
     {
         if (p?.SourceProfile == null) return;
         SelectedProfile = p;
 
         Task.Run(async () =>
         {
-            IsLoading = true;
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher != null)
+            {
+                await dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                    ErrorMessage = null;
+                });
+            }
+            else
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+            }
+
             try
             {
                 // Run analysis and security scan
@@ -394,22 +411,45 @@ public class ProfilesViewModel : BaseViewModel
 
                 await _templateSerializer.SaveToFileAsync(outputPath, template);
 
-                // Update the UI with success feedback via a recent activity-style notification
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                // Update UI and Navigate to Templates page (the proper page) on the UI thread
+                if (dispatcher != null)
+                {
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        ErrorMessage = null;
+                        _navigationService.NavigateTo<TemplatesViewModel>();
+                    });
+                }
+                else
                 {
                     ErrorMessage = null;
-                });
+                    _navigationService.NavigateTo<TemplatesViewModel>();
+                }
             }
             catch (Exception ex)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                if (dispatcher != null)
                 {
-                    ErrorMessage = $"Export failed: {ex.Message}";
-                });
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        ErrorMessage = $"Create Template failed: {ex.Message}";
+                    });
+                }
+                else
+                {
+                    ErrorMessage = $"Create Template failed: {ex.Message}";
+                }
             }
             finally
             {
-                IsLoading = false;
+                if (dispatcher != null)
+                {
+                    await dispatcher.InvokeAsync(() => IsLoading = false);
+                }
+                else
+                {
+                    IsLoading = false;
+                }
             }
         });
     }

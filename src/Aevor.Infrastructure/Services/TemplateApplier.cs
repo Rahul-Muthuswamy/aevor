@@ -31,7 +31,7 @@ public class TemplateApplier : ITemplateApplier
         _logger = logger;
     }
 
-    public async Task<TemplateApplicationResult> ApplyTemplateAsync(AevorTemplate template, BraveProfile profile)
+    public async Task<TemplateApplicationResult> ApplyTemplateAsync(AevorTemplate template, BraveProfile profile, bool skipBackup = false)
     {
         if (template == null) throw new ArgumentNullException(nameof(template));
         if (profile == null) throw new ArgumentNullException(nameof(profile));
@@ -63,16 +63,21 @@ public class TemplateApplier : ITemplateApplier
             return new TemplateApplicationResult(false, "Profile preferences or secure preferences files are missing.");
         }
 
-        // 3. Automatically create backup before modification
-        _logger.LogInformation("Creating pre-modification backup of profile: {ProfileName}", profile.DisplayName);
-        var backupResult = await _backupService.CreateBackupAsync(profile);
-        if (!backupResult.IsSuccess || backupResult.Metadata == null)
+        Guid? backupId = null;
+        if (!skipBackup)
         {
-            _logger.LogError("Template application failed. Pre-modification backup failed: {Error}", backupResult.ErrorMessage);
-            return new TemplateApplicationResult(false, $"Pre-modification backup failed: {backupResult.ErrorMessage}");
+            // 3. Automatically create backup before modification
+            _logger.LogInformation("Creating pre-modification backup of profile: {ProfileName}", profile.DisplayName);
+            var backupResult = await _backupService.CreateBackupAsync(profile);
+            if (!backupResult.IsSuccess || backupResult.Metadata == null)
+            {
+                _logger.LogError("Template application failed. Pre-modification backup failed: {Error}", backupResult.ErrorMessage);
+                return new TemplateApplicationResult(false, $"Pre-modification backup failed: {backupResult.ErrorMessage}");
+            }
+
+            backupId = backupResult.Metadata.BackupId;
         }
 
-        var backupId = backupResult.Metadata.BackupId;
         var appliedChanges = new List<string>();
 
         try
@@ -133,24 +138,31 @@ public class TemplateApplier : ITemplateApplier
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Template application encountered an error. Triggering automatic rollback to backup: {BackupId}", backupId);
-            
-            // Execute Rollback
-            try
+            if (backupId.HasValue)
             {
-                var restoreResult = await _backupService.RestoreBackupAsync(backupId);
-                if (restoreResult.IsSuccess)
+                _logger.LogError(ex, "Template application encountered an error. Triggering automatic rollback to backup: {BackupId}", backupId.Value);
+                
+                // Execute Rollback
+                try
                 {
-                    _logger.LogInformation("Rollback completed successfully. Target profile reverted.");
+                    var restoreResult = await _backupService.RestoreBackupAsync(backupId.Value);
+                    if (restoreResult.IsSuccess)
+                    {
+                        _logger.LogInformation("Rollback completed successfully. Target profile reverted.");
+                    }
+                    else
+                    {
+                        _logger.LogCritical("Rollback failed! Profile may be in corrupted state. Error: {Error}", restoreResult.ErrorMessage);
+                    }
                 }
-                else
+                catch (Exception rollbackEx)
                 {
-                    _logger.LogCritical("Rollback failed! Profile may be in corrupted state. Error: {Error}", restoreResult.ErrorMessage);
+                    _logger.LogCritical(rollbackEx, "Rollback failed with exception.");
                 }
             }
-            catch (Exception rollbackEx)
+            else
             {
-                _logger.LogCritical(rollbackEx, "Rollback failed with exception.");
+                _logger.LogError(ex, "Template application encountered an error. No backup was created to roll back to.");
             }
 
             throw new TemplateApplicationException($"Template application failed. Rollback executed: {ex.Message}", ex);

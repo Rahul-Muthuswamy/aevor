@@ -7,5 +7,5 @@ public interface INavigationService
 {
     BaseViewModel? CurrentView { get; }
     event Action? NavigationChanged;
-    void NavigateTo<TViewModel>() where TViewModel : BaseViewModel;
+    void NavigateTo<TViewModel>(Action<TViewModel>? configure = null) where TViewModel : BaseViewModel;
 }

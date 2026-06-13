@@ -47,15 +47,30 @@ public class ProfileHasher
             // Hash the relative path to distinguish directories and file locations
             sha256.TransformBlock(relativePathBytes, 0, relativePathBytes.Length, relativePathBytes, 0);
 
-            // Hash file contents
+            // Hash file contents/metadata
             if (_fileSystem.FileExists(file))
             {
-                using var stream = _fileSystem.OpenRead(file);
-                var buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                var fileName = Path.GetFileName(file);
+                bool shouldHashContent = fileName.Equals("Preferences", StringComparison.OrdinalIgnoreCase) ||
+                                         fileName.Equals("Secure Preferences", StringComparison.OrdinalIgnoreCase) ||
+                                         fileName.Equals("Bookmarks", StringComparison.OrdinalIgnoreCase) ||
+                                         fileName.Equals("Bookmarks.bak", StringComparison.OrdinalIgnoreCase);
+
+                if (shouldHashContent)
                 {
-                    sha256.TransformBlock(buffer, 0, bytesRead, buffer, 0);
+                    using var stream = _fileSystem.OpenRead(file);
+                    var buffer = new byte[65536];
+                    int bytesRead;
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        sha256.TransformBlock(buffer, 0, bytesRead, buffer, 0);
+                    }
+                }
+                else
+                {
+                    var fileLength = _fileSystem.GetFileLength(file);
+                    var lengthBytes = BitConverter.GetBytes(fileLength);
+                    sha256.TransformBlock(lengthBytes, 0, lengthBytes.Length, lengthBytes, 0);
                 }
             }
         }
@@ -82,11 +97,14 @@ public class ProfileHasher
             return true;
         }
 
-        // Exclude cache directories
+        // Exclude cache and service worker directories
         var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (parts.Any(p => p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
                            p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
-                           p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase)))
+                           p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("Service Worker", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("CacheStorage", StringComparison.OrdinalIgnoreCase) ||
+                           p.Equals("DawnCache", StringComparison.OrdinalIgnoreCase)))
         {
             return true;
         }

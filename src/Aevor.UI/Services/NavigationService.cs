@@ -29,9 +29,10 @@ public class NavigationService : INavigationService
 
     public event Action? NavigationChanged;
 
-    public void NavigateTo<TViewModel>() where TViewModel : BaseViewModel
+    public void NavigateTo<TViewModel>(Action<TViewModel>? configure = null) where TViewModel : BaseViewModel
     {
         var viewModel = _serviceProvider.GetRequiredService<TViewModel>();
+        configure?.Invoke(viewModel);
         CurrentView = viewModel;
     }
 }

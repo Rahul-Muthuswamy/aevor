@@ -135,12 +135,52 @@
         </Border>
 
         <!-- ════════════════════════════════════════════════════════════
-             Row 3 — Step Content (scrollable)
+             Row 3 — Step Content Area (with Banner + Scrollable Content)
              ════════════════════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Row="2"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <Grid Margin="32">
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Error Banner -->
+            <Border Grid.Row="0"
+                    Background="#FEF2F2"
+                    BorderBrush="{StaticResource DangerBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="32,12">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding WizardErrorMessage}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding WizardErrorMessage}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="⚠️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding WizardErrorMessage}"
+                               Foreground="#991B1B"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <Grid Margin="32">
 
                 <!-- ──────────────────────────────────────────────────
                      STEP 1 — Source Profile Selection
@@ -410,10 +450,17 @@
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,6" />
                         <TextBox Text="{Binding BackupLocation, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Text="Aevor will save a full snapshot of your profile to this folder."
+                    </StackPanel>
+
+                    <!-- Backup Progress / Status -->
+                    <StackPanel Margin="0,20,0,0"
+                                Visibility="{Binding IsBackingUp, Converter={StaticResource BoolToVis}}">
+                        <ProgressBar IsIndeterminate="True" Height="6" Margin="0,0,0,8" Foreground="{StaticResource PrimaryBrush}" />
+                        <TextBlock Text="{Binding BackupStatusMessage}"
                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                   Foreground="{StaticResource MutedBrush}"
-                                   Margin="0,6,0,0" />
+                                   Foreground="{StaticResource PrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
 
@@ -694,6 +741,7 @@
 
             </Grid>
         </ScrollViewer>
+        </Grid>
 
         <!-- ════════════════════════════════════════════════════════════
              Row 4 — Footer Navigation (always visible, never scrolls)
