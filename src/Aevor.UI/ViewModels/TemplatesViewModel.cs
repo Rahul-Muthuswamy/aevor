@@ -76,6 +76,7 @@ public class TemplatesViewModel : BaseViewModel
     public ICommand DeleteCommand         { get; }
     public ICommand ImportTemplateCommand { get; }
     public ICommand RefreshCommand        { get; }
+    public ICommand CreateTemplateCommand { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
     public TemplatesViewModel(
@@ -100,6 +101,7 @@ public class TemplatesViewModel : BaseViewModel
         DeleteCommand         = new RelayCommand<TemplateCardItem>(OnDelete);
         ImportTemplateCommand = new RelayCommand(OnImport);
         RefreshCommand        = new RelayCommand(() => Task.Run(async () => await LoadTemplatesAsync()));
+        CreateTemplateCommand = new RelayCommand(OnCreateTemplate);
 
         // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadTemplatesAsync());
@@ -471,5 +473,10 @@ public class TemplatesViewModel : BaseViewModel
                 }
             });
         }
+    }
+
+    private void OnCreateTemplate()
+    {
+        _navigationService.NavigateTo<ProfilesViewModel>();
     }
 }

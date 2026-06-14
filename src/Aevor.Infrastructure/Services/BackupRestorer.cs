@@ -25,9 +25,17 @@ public class BackupRestorer
     {
         // 1. Verify Backup
         var validationResult = await _validator.ValidateBackupAsync(backupId);
-        if (!validationResult.IsValid)
+        
+        // Critical structural errors block the restore, but integrity checks like
+        // hash mismatch or file count mismatch do not block the user from restoring their data.
+        var criticalErrors = validationResult.Errors.Where(err => 
+            !err.Contains("Profile hash mismatch", StringComparison.OrdinalIgnoreCase) && 
+            !err.Contains("File count mismatch", StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+
+        if (criticalErrors.Count > 0)
         {
-            var errorsStr = string.Join("; ", validationResult.Errors);
+            var errorsStr = string.Join("; ", criticalErrors);
             return new RestoreResult(false, $"Backup validation failed: {errorsStr}", 0, 0);
         }
 

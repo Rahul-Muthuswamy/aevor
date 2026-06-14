@@ -50,7 +50,10 @@
 
                 <!-- Left -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Security Reports" Style="{StaticResource H1TextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                        <TextBlock Text="Security Reports" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <TextBlock Text="Scan results and risk assessment for all profiles"
                                Style="{StaticResource BodyTextBlockStyle}"
                                Foreground="{StaticResource MutedBrush}"
@@ -154,7 +157,7 @@
                         <Border Style="{StaticResource CardStyle}" Width="200" Padding="20" Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}">
                             <StackPanel>
                                 <!-- Profile Avatar -->
-                                <Border Width="36" Height="36" CornerRadius="18" Background="#EDE9FE" HorizontalAlignment="Left">
+                                <Border Width="36" Height="36" CornerRadius="18" Background="#F7E5FC" HorizontalAlignment="Left">
                                     <TextBlock Text="{Binding Initial}" 
                                                Style="{StaticResource BodyTextBlockStyle}" 
                                                FontWeight="Bold" 

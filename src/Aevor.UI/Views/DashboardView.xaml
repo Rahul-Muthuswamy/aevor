@@ -44,7 +44,10 @@
             <!-- ══════════════════════════════════════════════════════════
                  Section 1 — Page Header
                  ══════════════════════════════════════════════════════════ -->
-            <TextBlock Text="Dashboard" Style="{StaticResource H1TextBlockStyle}" />
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                <TextBlock Text="Dashboard" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+            </StackPanel>
             <TextBlock Text="Welcome back. Here's what's happening with your profiles."
                        Style="{StaticResource BodyTextBlockStyle}"
                        Foreground="{StaticResource MutedBrush}"

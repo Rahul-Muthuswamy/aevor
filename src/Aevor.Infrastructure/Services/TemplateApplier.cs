@@ -237,10 +237,51 @@ public class TemplateApplier : ITemplateApplier
 
     private void ApplyTheme(JsonNode root, ThemeInformation theme)
     {
+        if (theme == null)
+        {
+            var browserThemeNode = root["browser"]?["theme"]?.AsObject();
+            if (browserThemeNode != null)
+            {
+                browserThemeNode.Remove("color");
+                if (browserThemeNode.Count == 0)
+                {
+                    root["browser"]?.AsObject()?.Remove("theme");
+                }
+            }
+            root["profile"]?.AsObject()?.Remove("theme_color");
+
+            SetJsonValue(root, new[] { "brave", "colors", "theme_mode" }, 0);
+
+            var extensionsThemeNode = root["extensions"]?["theme"]?.AsObject();
+            if (extensionsThemeNode != null)
+            {
+                extensionsThemeNode.Remove("id");
+                if (extensionsThemeNode.Count == 0)
+                {
+                    root["extensions"]?.AsObject()?.Remove("theme");
+                }
+            }
+            RemoveWallpaperSettings(root);
+            return;
+        }
+
         if (theme.ThemeColor.HasValue)
         {
             SetJsonValue(root, new[] { "browser", "theme", "color" }, theme.ThemeColor.Value);
             SetJsonValue(root, new[] { "profile", "theme_color" }, theme.ThemeColor.Value);
+        }
+        else
+        {
+            var browserThemeNode = root["browser"]?["theme"]?.AsObject();
+            if (browserThemeNode != null)
+            {
+                browserThemeNode.Remove("color");
+                if (browserThemeNode.Count == 0)
+                {
+                    root["browser"]?.AsObject()?.Remove("theme");
+                }
+            }
+            root["profile"]?.AsObject()?.Remove("theme_color");
         }
 
         if (theme.SystemThemeMode != null)
@@ -259,6 +300,44 @@ public class TemplateApplier : ITemplateApplier
         {
             SetJsonValue(root, new[] { "extensions", "theme", "id" }, theme.ThemeId);
         }
+        else
+        {
+            var extensionsThemeNode = root["extensions"]?["theme"]?.AsObject();
+            if (extensionsThemeNode != null)
+            {
+                extensionsThemeNode.Remove("id");
+                if (extensionsThemeNode.Count == 0)
+                {
+                    root["extensions"]?.AsObject()?.Remove("theme");
+                }
+            }
+            if (!theme.ThemeColor.HasValue)
+            {
+                RemoveWallpaperSettings(root);
+            }
+        }
+    }
+
+    private void RemoveWallpaperSettings(JsonNode root)
+    {
+        root["ntp"]?.AsObject()?.Remove("custom_background");
+        
+        var ntpNode = root["ntp"]?.AsObject();
+        if (ntpNode != null && ntpNode.Count == 0)
+        {
+            root.AsObject().Remove("ntp");
+        }
+
+        var braveNewTabPage = root["brave"]?["new_tab_page"]?.AsObject();
+        if (braveNewTabPage != null)
+        {
+            braveNewTabPage.Remove("background_image_source");
+            braveNewTabPage.Remove("custom_background_source");
+            if (braveNewTabPage.Count == 0)
+            {
+                root["brave"]?.AsObject()?.Remove("new_tab_page");
+            }
+        }
     }
 
     private void ApplySearchEngine(JsonNode root, SearchEngineInformation search)
@@ -266,6 +345,13 @@ public class TemplateApplier : ITemplateApplier
         if (search.Name != null) SetJsonValue(root, new[] { "default_search_provider", "name" }, search.Name);
         if (search.Keyword != null) SetJsonValue(root, new[] { "default_search_provider", "keyword" }, search.Keyword);
         if (search.SearchUrl != null) SetJsonValue(root, new[] { "default_search_provider", "search_url" }, search.SearchUrl);
+
+        if (search.Name == "Brave" || string.IsNullOrEmpty(search.Name))
+        {
+            root.AsObject().Remove("synced_default_search_provider_guid");
+            root.AsObject().Remove("default_search_provider_data");
+            root.AsObject().Remove("default_search_provider_data_signature");
+        }
     }
 
     private void ApplySidebar(JsonNode root, SidebarConfiguration sidebar)

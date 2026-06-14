@@ -79,15 +79,19 @@ public class CloneEngine : ICloneEngine
                 $"Clone template from {sourceProfile.DisplayName}"
             );
 
-            // Filter template based on user preferences in the CloneRequest
+            _logger.LogInformation("IncludeExtensions flag: {Flag}", request.IncludeExtensions);
+            _logger.LogInformation("Extensions in template before filter: {Count}", tempTemplate.Extensions.Count);
+
             if (!request.IncludeExtensions || !request.CopyExtensions)
             {
                 tempTemplate = tempTemplate with { Extensions = Array.Empty<ExtensionInfo>() };
             }
 
+            _logger.LogInformation("Extensions in template after filter: {Count}", tempTemplate.Extensions.Count);
+
             if (!request.IncludeThemes)
             {
-                tempTemplate = tempTemplate with { Settings = tempTemplate.Settings with { Theme = null! } };
+                tempTemplate = tempTemplate with { Settings = tempTemplate.Settings with { Theme = new ThemeInformation(null, "System", null) } };
             }
             else if (!request.CopyThemes)
             {
@@ -96,7 +100,7 @@ public class CloneEngine : ICloneEngine
 
             if (!request.IncludeSearchEngines)
             {
-                tempTemplate = tempTemplate with { Settings = tempTemplate.Settings with { SearchEngine = null! } };
+                tempTemplate = tempTemplate with { Settings = tempTemplate.Settings with { SearchEngine = new SearchEngineInformation("Brave", "brave", "https://search.brave.com/search?q={searchTerms}") } };
             }
             else if (!request.CopySearchEngines)
             {
@@ -162,14 +166,126 @@ public class CloneEngine : ICloneEngine
                             profileNode = prefRoot["profile"];
                         }
                         profileNode!.AsObject()["name"] = System.Text.Json.Nodes.JsonValue.Create(request.DestinationProfileName);
+
+                        if (!request.IncludeExtensions)
+                        {
+                            var themeId = tempTemplate.Settings?.Theme?.ThemeId;
+                            if (string.IsNullOrEmpty(themeId))
+                            {
+                                prefRoot.AsObject().Remove("extensions");
+                                _logger.LogInformation("Removed extensions from Preferences.");
+                            }
+                            else
+                            {
+                                var extensionsNode = prefRoot["extensions"]?.AsObject();
+                                if (extensionsNode != null)
+                                {
+                                    var keysToRemove = extensionsNode.Select(kvp => kvp.Key).Where(k => k != "theme" && k != "settings").ToList();
+                                    foreach (var key in keysToRemove)
+                                    {
+                                        extensionsNode.Remove(key);
+                                    }
+
+                                    var settingsNode = extensionsNode["settings"]?.AsObject();
+                                    if (settingsNode != null)
+                                    {
+                                        var settingsKeysToRemove = settingsNode.Select(kvp => kvp.Key).Where(k => k != themeId).ToList();
+                                        foreach (var key in settingsKeysToRemove)
+                                        {
+                                            settingsNode.Remove(key);
+                                        }
+                                    }
+                                }
+                                _logger.LogInformation("Removed all extensions from Preferences except theme: {ThemeId}", themeId);
+                            }
+                        }
+
                         await _fileSystem.WriteAllTextAsync(destPrefPath, prefRoot.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                         _logger.LogInformation("Updated profile name to '{DestName}' in Preferences.", request.DestinationProfileName);
+                    }
+                }
+
+                var destSecPrefPath = Path.Combine(destProfile.ProfilePath, "Secure Preferences");
+                if (_fileSystem.FileExists(destSecPrefPath))
+                {
+                    var secPrefText = await _fileSystem.ReadAllTextAsync(destSecPrefPath);
+                    var secPrefRoot = System.Text.Json.Nodes.JsonNode.Parse(secPrefText);
+                    if (secPrefRoot != null)
+                    {
+                        if (!request.IncludeExtensions)
+                        {
+                            var themeId = tempTemplate.Settings?.Theme?.ThemeId;
+                            if (string.IsNullOrEmpty(themeId))
+                            {
+                                secPrefRoot.AsObject().Remove("extensions");
+                                _logger.LogInformation("Removed extensions from Secure Preferences.");
+                            }
+                            else
+                            {
+                                var extensionsNode = secPrefRoot["extensions"]?.AsObject();
+                                if (extensionsNode != null)
+                                {
+                                    var keysToRemove = extensionsNode.Select(kvp => kvp.Key).Where(k => k != "theme" && k != "settings").ToList();
+                                    foreach (var key in keysToRemove)
+                                    {
+                                        extensionsNode.Remove(key);
+                                    }
+
+                                    var settingsNode = extensionsNode["settings"]?.AsObject();
+                                    if (settingsNode != null)
+                                    {
+                                        var settingsKeysToRemove = settingsNode.Select(kvp => kvp.Key).Where(k => k != themeId).ToList();
+                                        foreach (var key in settingsKeysToRemove)
+                                        {
+                                            settingsNode.Remove(key);
+                                        }
+                                    }
+                                }
+                                _logger.LogInformation("Removed all extensions from Secure Preferences except theme: {ThemeId}", themeId);
+                            }
+                            await _fileSystem.WriteAllTextAsync(destSecPrefPath, secPrefRoot.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to update profile name in cloned Preferences file.");
+                _logger.LogWarning(ex, "Failed to update profile name or cleanup preferences in cloned profile.");
+            }
+
+            // Copy Extensions folder recursively if requested
+            if (request.IncludeExtensions)
+            {
+                var sourceExtPath = Path.Combine(sourceProfile.ProfilePath, "Extensions");
+                var destExtPath = Path.Combine(destProfile.ProfilePath, "Extensions");
+
+                if (Directory.Exists(sourceExtPath))
+                {
+                    Directory.CreateDirectory(destExtPath);
+                    foreach (var dir in Directory.GetDirectories(sourceExtPath))
+                    {
+                        var folderName = Path.GetFileName(dir);
+                        _logger.LogInformation("Copying extension folder: {Folder}", folderName);
+                        CopyDirectoryRecursive(dir, Path.Combine(destExtPath, folderName));
+                    }
+                    _logger.LogInformation("Extensions folder copied from {Src} to {Dest}", sourceExtPath, destExtPath);
+                }
+            }
+            else
+            {
+                var themeId = tempTemplate.Settings?.Theme?.ThemeId;
+                if (!string.IsNullOrEmpty(themeId))
+                {
+                    var sourceThemePath = Path.Combine(sourceProfile.ProfilePath, "Extensions", themeId);
+                    var destThemePath = Path.Combine(destProfile.ProfilePath, "Extensions", themeId);
+
+                    if (Directory.Exists(sourceThemePath))
+                    {
+                        _logger.LogInformation("Copying theme extension folder specifically: {ThemeId}", themeId);
+                        Directory.CreateDirectory(Path.Combine(destProfile.ProfilePath, "Extensions"));
+                        CopyDirectoryRecursive(sourceThemePath, destThemePath);
+                    }
+                }
             }
 
             // 7. Apply template to destination profile (skip backup since it is a brand new cloned profile)
@@ -420,6 +536,17 @@ public class CloneEngine : ICloneEngine
             }
         }
 
+        // Exclude wallpapers/backgrounds if CopyThemes or IncludeThemes is false
+        if (!request.CopyThemes || !request.IncludeThemes)
+        {
+            var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (parts.Any(p => p.Equals("sanitized_background_images", StringComparison.OrdinalIgnoreCase) ||
+                               p.Equals("BraveBackgrounds", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
         // Exclude preferences files if CopySettings/IncludeSettings, CopyThemes/IncludeThemes, and CopySearchEngines/IncludeSearchEngines are all false
         bool copySettings = request.CopySettings && request.IncludeSettings;
         bool copyThemes = request.CopyThemes && request.IncludeThemes;
@@ -464,5 +591,18 @@ public class CloneEngine : ICloneEngine
         }
 
         return false;
+    }
+
+    private void CopyDirectoryRecursive(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            File.Copy(file, Path.Combine(destDir, Path.GetFileName(file)), overwrite: true);
+        }
+        foreach (var dir in Directory.GetDirectories(sourceDir))
+        {
+            CopyDirectoryRecursive(dir, Path.Combine(destDir, Path.GetFileName(dir)));
+        }
     }
 }

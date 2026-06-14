@@ -33,8 +33,10 @@
 
                 <!-- Left: Title + Subtitle -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Settings"
-                               Style="{StaticResource H1TextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                        <TextBlock Text="Settings" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <TextBlock Text="Configure Aevor preferences, directory locations, and safety settings"
                                Style="{StaticResource BodyTextBlockStyle}"
                                Foreground="{StaticResource MutedBrush}"

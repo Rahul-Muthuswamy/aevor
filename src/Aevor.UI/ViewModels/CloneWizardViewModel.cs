@@ -111,8 +111,8 @@ public class CloneWizardViewModel : BaseViewModel
         _ => string.Empty
     };
 
-    public bool CanGoBack  => CurrentStepIndex > 0 && CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading;
-    public bool CanGoNext  => CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading;
+    public bool CanGoBack  => CurrentStepIndex > 0 && CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading && !IsCloning;
+    public bool CanGoNext  => CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading && !IsCloning;
     public bool IsLastStep => CurrentStepIndex == 5;
 
     // ════════════════════════════════════════════════════════════════════
@@ -270,7 +270,11 @@ public class CloneWizardViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _isCloning, value))
+            {
                 OnPropertyChanged(nameof(ShowStartButton));
+                OnPropertyChanged(nameof(CanGoBack));
+                OnPropertyChanged(nameof(CanGoNext));
+            }
         }
     }
 
@@ -695,9 +699,10 @@ public class CloneWizardViewModel : BaseViewModel
             CreateBackup:                 CreateBackupBeforeClone,
             IncludeExtensions:            CopyExtensions,
             IncludeBookmarks:             CopyBookmarks,
-            IncludeSettings:              CopySettings,
-            IncludeThemes:                CopyThemes,
-            IncludeSearchEngines:         CopySearchEngines);
+            IncludeSettings:              true, // Always true to avoid null settings in TemplateValidator
+            IncludeThemes:                true, // Always true to avoid null themes in TemplateValidator
+            IncludeSearchEngines:         true  // Always true to avoid null search engines in TemplateValidator
+        );
 
         try
         {
@@ -771,9 +776,10 @@ public class CloneWizardViewModel : BaseViewModel
             CreateBackup:                 CreateBackupBeforeClone,
             IncludeExtensions:            copyExtensions,
             IncludeBookmarks:             copyBookmarks,
-            IncludeSettings:              copySettings,
-            IncludeThemes:                copyThemes,
-            IncludeSearchEngines:         copySearchEngines);
+            IncludeSettings:              true, // Always true to avoid null settings in TemplateValidator
+            IncludeThemes:                true, // Always true to avoid null themes in TemplateValidator
+            IncludeSearchEngines:         true  // Always true to avoid null search engines in TemplateValidator
+        );
 
         Task.Run(async () =>
         {
@@ -797,10 +803,41 @@ public class CloneWizardViewModel : BaseViewModel
                 try
                 {
                     result = await engine.CloneProfileAsync(request);
+                    if (result.IsSuccess && result.Report != null && copyBookmarks)
+                    {
+                        var sourceBookmarks = System.IO.Path.Combine(rawProfile.ProfilePath, "Bookmarks");
+                        var destBookmarks = System.IO.Path.Combine(result.Report.DestinationProfile.ProfilePath, "Bookmarks");
+                        if (System.IO.File.Exists(sourceBookmarks))
+                        {
+                            try
+                            {
+                                System.IO.File.Copy(sourceBookmarks, destBookmarks, true);
+                            }
+                            catch (System.IO.IOException)
+                            {
+                                // Fallback to stream-based copy with FileShare.ReadWrite if file is locked by Brave
+                                try
+                                {
+                                    using var sourceStream = new System.IO.FileStream(sourceBookmarks, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
+                                    using var destStream = new System.IO.FileStream(destBookmarks, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+                                    sourceStream.CopyTo(destStream);
+                                }
+                                catch
+                                {
+                                    // Fail silently / ignore
+                                }
+                            }
+                            catch
+                            {
+                                // Fail silently / ignore
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     if (dispatcher != null)
+                    {
                         await dispatcher.InvokeAsync(() =>
                         {
                             CloneStatusMessage = $"Clone failed: {ex.Message}";
@@ -808,7 +845,18 @@ public class CloneWizardViewModel : BaseViewModel
                             CloneSuccessful    = false;
                             CompletionMessage  = $"An unexpected error occurred: {ex.Message}";
                             CurrentStepIndex   = 5;
+                            UpdateStepStates();
                         });
+                    }
+                    else
+                    {
+                        CloneStatusMessage = $"Clone failed: {ex.Message}";
+                        IsCloning          = false;
+                        CloneSuccessful    = false;
+                        CompletionMessage  = $"An unexpected error occurred: {ex.Message}";
+                        CurrentStepIndex   = 5;
+                        UpdateStepStates();
+                    }
                     return;
                 }
 
@@ -821,6 +869,7 @@ public class CloneWizardViewModel : BaseViewModel
                 await Task.Delay(400);
 
                 if (dispatcher != null)
+                {
                     await dispatcher.InvokeAsync(() =>
                     {
                         IsCloning         = false;
@@ -828,13 +877,34 @@ public class CloneWizardViewModel : BaseViewModel
                         CompletionMessage = result.IsSuccess
                             ? $"Your new profile \"{profileName}\" is ready and can be launched from Brave Browser."
                             : $"Clone failed: {result.ErrorMessage ?? "Unknown error."}";
-                        CurrentStepIndex  = 5;
+                        if (result.IsSuccess)
+                        {
+                            CurrentStepIndex = 5;
+                            UpdateStepStates();
+                        }
+                        else
+                        {
+                            CurrentStepIndex = 5;
+                            UpdateStepStates();
+                        }
                     });
+                }
+                else
+                {
+                    IsCloning         = false;
+                    CloneSuccessful   = result.IsSuccess;
+                    CompletionMessage = result.IsSuccess
+                        ? $"Your new profile \"{profileName}\" is ready and can be launched from Brave Browser."
+                        : $"Clone failed: {result.ErrorMessage ?? "Unknown error."}";
+                    CurrentStepIndex  = 5;
+                    UpdateStepStates();
+                }
             }
             catch (Exception ex)
             {
                 // Outer safety net — catches anything not caught above
                 if (dispatcher != null)
+                {
                     await dispatcher.InvokeAsync(() =>
                     {
                         CloneStatusMessage = $"Unexpected error: {ex.Message}";
@@ -842,7 +912,18 @@ public class CloneWizardViewModel : BaseViewModel
                         CloneSuccessful    = false;
                         CompletionMessage  = $"Clone aborted: {ex.Message}";
                         CurrentStepIndex   = 5;
+                        UpdateStepStates();
                     });
+                }
+                else
+                {
+                    CloneStatusMessage = $"Unexpected error: {ex.Message}";
+                    IsCloning          = false;
+                    CloneSuccessful    = false;
+                    CompletionMessage  = $"Clone aborted: {ex.Message}";
+                    CurrentStepIndex   = 5;
+                    UpdateStepStates();
+                }
             }
         });
     }

@@ -77,7 +77,70 @@ public class PhysicalFileSystem : IFileSystem
 
     public void DeleteDirectory(string path, bool recursive)
     {
-        Directory.Delete(path, recursive);
+        if (!recursive)
+        {
+            Directory.Delete(path, false);
+            return;
+        }
+
+        if (!Directory.Exists(path)) return;
+
+        // Recursively remove read-only attribute from files
+        try
+        {
+            foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    var attributes = File.GetAttributes(file);
+                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                    {
+                        File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
+                    }
+                }
+                catch
+                {
+                    // Ignore transient file access errors during attribute clearing
+                }
+            }
+
+            // Recursively remove read-only attribute from subdirectories
+            foreach (var dir in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    var attributes = File.GetAttributes(dir);
+                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                    {
+                        File.SetAttributes(dir, attributes & ~FileAttributes.ReadOnly);
+                    }
+                }
+                catch
+                {
+                    // Ignore transient directory access errors during attribute clearing
+                }
+            }
+        }
+        catch
+        {
+            // Ignore search enumeration errors, try deleting anyway
+        }
+
+        // Try to delete with retries
+        int retries = 5;
+        for (int i = 0; i < retries; i++)
+        {
+            try
+            {
+                Directory.Delete(path, true);
+                return;
+            }
+            catch (Exception)
+            {
+                if (i == retries - 1) throw;
+                System.Threading.Thread.Sleep(150);
+            }
+        }
     }
 
     public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)

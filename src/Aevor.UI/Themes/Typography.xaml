@@ -2,11 +2,13 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Fonts -->
-    <FontFamily x:Key="DefaultFontFamily">Inter, Segoe UI, Arial, sans-serif</FontFamily>
+    <FontFamily x:Key="DefaultFontFamily">pack://application:,,,/Aevor.UI;component/Assets/Fonts/#Plus Jakarta Sans, Segoe UI</FontFamily>
+    <FontFamily x:Key="HeaderFontFamily">pack://application:,,,/Aevor.UI;component/Assets/Fonts/#Plus Jakarta Sans, Segoe UI</FontFamily>
+    <FontFamily x:Key="SmallFontFamily">pack://application:,,,/Aevor.UI;component/Assets/Fonts/#Plus Jakarta Sans, Segoe UI</FontFamily>
 
     <!-- Base TextBlock Style -->
     <Style x:Key="BaseTextBlockStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="UseLayoutRounding" Value="True" />
@@ -14,30 +16,35 @@
 
     <!-- H1 (Heading Large) -->
     <Style x:Key="H1TextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="24" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
 
     <!-- H2 (Heading Medium) -->
     <Style x:Key="H2TextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="20" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
 
     <!-- H3 (Heading Small) -->
     <Style x:Key="H3TextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
 
     <!-- Body -->
     <Style x:Key="BodyTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="FontWeight" Value="Regular" />
     </Style>
 
     <!-- Body Small -->
     <Style x:Key="BodySmallTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Regular" />
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
@@ -45,6 +52,7 @@
 
     <!-- Caption -->
     <Style x:Key="CaptionTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="Regular" />
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
@@ -52,6 +60,7 @@
 
     <!-- Label -->
     <Style x:Key="LabelTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>

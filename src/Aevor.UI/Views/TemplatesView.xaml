@@ -55,8 +55,10 @@
 
                 <!-- Left: Title + Subtitle -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Templates"
-                               Style="{StaticResource H1TextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                        <TextBlock Text="Templates" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <TextBlock Text="Reusable browser environments ready to apply"
                                Style="{StaticResource BodyTextBlockStyle}"
                                Foreground="{StaticResource MutedBrush}"
@@ -114,7 +116,7 @@
                     <!-- New Template Button -->
                     <Button Content="New Template"
                             Style="{StaticResource PrimaryButton}"
-                            Command="{Binding RefreshCommand}"
+                            Command="{Binding CreateTemplateCommand}"
                             Margin="8,0,0,0" />
                 </StackPanel>
             </Grid>
@@ -158,11 +160,8 @@
                     </Style>
                 </StackPanel.Style>
 
-                <Rectangle Width="48" Height="48"
-                           Fill="{StaticResource MutedBrush}"
-                           Opacity="0.3"
-                           RadiusX="8" RadiusY="8"
-                           HorizontalAlignment="Center" />
+                <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" Opacity="0.15"
+                       RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" />
                 <TextBlock Text="No templates yet"
                            Style="{StaticResource H3TextBlockStyle}"
                            HorizontalAlignment="Center"
@@ -174,7 +173,7 @@
                            Margin="0,8,0,0" />
                 <Button Content="Create First Template"
                         Style="{StaticResource PrimaryButton}"
-                        Command="{Binding RefreshCommand}"
+                        Command="{Binding CreateTemplateCommand}"
                         HorizontalAlignment="Center"
                         Margin="0,16,0,0" />
             </StackPanel>
@@ -211,7 +210,7 @@
                                         <Border Grid.Column="0"
                                                 Width="44" Height="44"
                                                 CornerRadius="22"
-                                                Background="#EDE9FE"
+                                                Background="#F7E5FC"
                                                 HorizontalAlignment="Left">
                                             <TextBlock Text="{Binding Initial}"
                                                        Style="{StaticResource H3TextBlockStyle}"

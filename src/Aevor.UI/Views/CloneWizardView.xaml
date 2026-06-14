@@ -44,8 +44,10 @@
                 Padding="32,28,32,0"
                 Background="{StaticResource BackgroundBrush}">
             <StackPanel>
-                <TextBlock Text="Clone Profile"
-                           Style="{StaticResource H1TextBlockStyle}" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                    <TextBlock Text="Clone Profile" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+                </StackPanel>
                 <TextBlock Text="Create an identical copy of an existing profile"
                            Style="{StaticResource BodyTextBlockStyle}"
                            Foreground="{StaticResource MutedBrush}"
@@ -239,7 +241,7 @@
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
                                                     <Setter Property="BorderBrush"    Value="{StaticResource PrimaryBrush}" />
                                                     <Setter Property="BorderThickness" Value="2" />
-                                                    <Setter Property="Background"      Value="#F5F3FF" />
+                                                    <Setter Property="Background"      Value="#FAF5FF" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -253,7 +255,7 @@
                                         <!-- Avatar -->
                                         <Border Grid.Column="0"
                                                 Width="36" Height="36" CornerRadius="18"
-                                                Background="#EDE9FE" Margin="0,0,12,0">
+                                                Background="#F7E5FC" Margin="0,0,12,0">
                                             <TextBlock Text="{Binding [0]}"
                                                        Foreground="{StaticResource PrimaryBrush}"
                                                        FontWeight="Bold" FontSize="14"
@@ -563,29 +565,8 @@
                                               VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
-                            <!-- Settings -->
-                            <Border Style="{StaticResource OptionRowStyle}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"    />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Settings"
-                                                   Style="{StaticResource BodyTextBlockStyle}"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="Copy browser preferences and configuration"
-                                                   Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
-                                                   Margin="0,3,0,0" />
-                                    </StackPanel>
-                                    <CheckBox Grid.Column="1"
-                                              IsChecked="{Binding CopySettings}"
-                                              VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
-                            <!-- Themes -->
-                            <Border Style="{StaticResource OptionRowStyle}">
+                            <!-- Themes (no bottom border) -->
+                            <Border Padding="20,14" Background="Transparent">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"    />
@@ -602,27 +583,6 @@
                                     </StackPanel>
                                     <CheckBox Grid.Column="1"
                                               IsChecked="{Binding CopyThemes}"
-                                              VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
-                            <!-- Search Engines (no bottom border) -->
-                            <Border Padding="20,14" Background="Transparent">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"    />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Search Engines"
-                                                   Style="{StaticResource BodyTextBlockStyle}"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="Copy custom search engine configurations"
-                                                   Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
-                                                   Margin="0,3,0,0" />
-                                    </StackPanel>
-                                    <CheckBox Grid.Column="1"
-                                              IsChecked="{Binding CopySearchEngines}"
                                               VerticalAlignment="Center" />
                                 </Grid>
                             </Border>

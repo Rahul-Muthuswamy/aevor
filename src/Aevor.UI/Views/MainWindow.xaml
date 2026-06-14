@@ -7,8 +7,12 @@
         xmlns:views="clr-namespace:Aevor.UI.Views"
         mc:Ignorable="d"
         Title="Aevor" Height="700" Width="1000"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/aevor_logo.png">
     <Window.Resources>
+        <!-- Boolean to Visibility Converter -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
         <!-- DataTemplates mapping ViewModel to View -->
         <DataTemplate DataType="{x:Type viewmodels:DashboardViewModel}">
             <views:DashboardView />
@@ -34,52 +38,17 @@
 
         <!-- Sidebar Navigation Item Style -->
         <Style x:Key="SidebarNavItemStyle" TargetType="{x:Type Button}">
-            <Setter Property="Height" Value="44" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="16,0" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}" />
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
-                                BorderThickness="0"
-                                SnapsToDevicePixels="true">
-                            <Grid>
-                                <!-- Left accent bar (active only) -->
-                                <Border x:Name="accentBar" 
-                                        HorizontalAlignment="Left" 
-                                        Width="3" 
-                                        Background="{StaticResource PrimaryBrush}" 
-                                        Visibility="Collapsed" />
-                                
-                                <ContentPresenter x:Name="contentPresenter" 
-                                                  Focusable="false" 
-                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
-                                                  Margin="{TemplateBinding Padding}" 
-                                                  RecognizesAccessKey="True" 
-                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="true">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource GhostHoverBrush}" />
-                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                            </Trigger>
-                            <DataTrigger Binding="{Binding Path=Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#F3EFFE" />
-                                <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
-                                <Setter TargetName="accentBar" Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </ControlTemplate.Triggers>
+                        <ContentPresenter SnapsToDevicePixels="True" />
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -100,8 +69,11 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Logo -->
-                <TextBlock Grid.Column="0" Text="Aevor" Foreground="{StaticResource PrimaryBrush}" Style="{StaticResource H2TextBlockStyle}" VerticalAlignment="Center" Padding="24,0,0,0"/>
+                <!-- Left: Logo + Text -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                    <Image Source="{StaticResource AevorIcon}" Height="28" Width="28" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <TextBlock Text="Aevor" Foreground="{StaticResource PrimaryBrush}" Style="{StaticResource H2TextBlockStyle}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
 
                 <!-- Right: Placeholder Icons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,24,0">
@@ -133,61 +105,418 @@
                     <!-- Top section: nav items -->
                     <StackPanel Grid.Row="0" Margin="0,16,0,0">
                         <!-- Dashboard -->
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateDashboardCommand}" Tag="{Binding IsDashboardActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Dashboard" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateDashboardCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsDashboardActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDashboardActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsDashboardActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=DashboardText}" Stretch="Uniform" Data="M4 13h6c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1zm0 8h6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1zm10 0h6c.55 0 1-.45 1-1v-8c0-.55-.45-1-1-1h-6c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1zM14 4v4c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1h-6c-.55 0-1 .45-1 1z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="DashboardText" Text="Dashboard" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDashboardActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsDashboardActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
 
                         <!-- Profiles -->
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateProfilesCommand}" Tag="{Binding IsProfilesActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Profiles" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateProfilesCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsProfilesActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsProfilesActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsProfilesActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=ProfilesText}" Stretch="Uniform" Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="ProfilesText" Text="Profiles" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsProfilesActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsProfilesActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
 
                         <!-- Templates -->
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateTemplatesCommand}" Tag="{Binding IsTemplatesActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Templates" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateTemplatesCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsTemplatesActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTemplatesActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsTemplatesActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=TemplatesText}" Stretch="Uniform" Data="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="TemplatesText" Text="Templates" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsTemplatesActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsTemplatesActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
 
                         <!-- Clone -->
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateCloneCommand}" Tag="{Binding IsCloneActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Clone" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateCloneCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsCloneActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCloneActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsCloneActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=CloneText}" Stretch="Uniform" Data="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="CloneText" Text="Clone" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCloneActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsCloneActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
 
                         <!-- Backups -->
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateBackupsCommand}" Tag="{Binding IsBackupsActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Backups" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateBackupsCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsBackupsActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsBackupsActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsBackupsActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=BackupsText}" Stretch="Uniform" Data="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.41l.83-1zM5 19V8h14v11H5zm3-5h2.55v3h2.9v-3H16l-4-4-4 4z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="BackupsText" Text="Backups" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsBackupsActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsBackupsActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
 
                         <!-- Security -->
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateSecurityCommand}" Tag="{Binding IsSecurityActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Security" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateSecurityCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsSecurityActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSecurityActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsSecurityActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=SecurityText}" Stretch="Uniform" Data="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="SecurityText" Text="Security" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSecurityActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsSecurityActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
                     </StackPanel>
 
                     <!-- Bottom section: Settings -->
                     <StackPanel Grid.Row="1" Margin="0,0,0,16">
-                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateSettingsCommand}" Tag="{Binding IsSettingsActive}">
-                            <DockPanel>
-                                <Rectangle DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,12,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}" />
-                                <TextBlock Text="Settings" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource SidebarNavItemStyle}" Command="{Binding NavigateSettingsCommand}">
+                            <Grid>
+                                <!-- Left accent bar -->
+                                <Border Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource PrimaryBrush}"
+                                        Visibility="{Binding IsSettingsActive, Converter={StaticResource BoolToVisibility}}"/>
+
+                                <!-- Nav item background + content -->
+                                <Border Padding="16,0" Height="44">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSettingsActive}" Value="True">
+                                                    <Setter Property="Background" Value="#FAF2FE"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                        <Condition Binding="{Binding IsSettingsActive}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#F9FAFB" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <DockPanel VerticalAlignment="Center">
+                                        <Viewbox Width="16" Height="16" Margin="0,0,12,0">
+                                            <Path Fill="{Binding Foreground, ElementName=SettingsText}" Stretch="Uniform" Data="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+                                        </Viewbox>
+                                        <TextBlock x:Name="SettingsText" Text="Settings" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="FontWeight" Value="Regular"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSettingsActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
+                                                                <Condition Binding="{Binding IsSettingsActive}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Button>
                     </StackPanel>
                 </Grid>

@@ -30,7 +30,10 @@
 
                 <!-- Left Column -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Backups" Style="{StaticResource H1TextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                        <TextBlock Text="Backups" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <TextBlock Text="Profile snapshots you can restore at any time"
                                Style="{StaticResource BodyTextBlockStyle}"
                                Foreground="{StaticResource MutedBrush}"
@@ -132,9 +135,8 @@
                     </StackPanel.Style>
                     
                     <!-- Icon Placeholder -->
-                    <Border Width="48" Height="48" CornerRadius="24" Background="#F3F4F6" HorizontalAlignment="Center">
-                        <TextBlock Text="🗄️" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+                    <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" Opacity="0.15"
+                           RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" />
                     
                     <TextBlock Text="No backups yet"
                                Style="{StaticResource H3TextBlockStyle}"
@@ -191,7 +193,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Col 1: Avatar circle -->
-                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Background="#EDE9FE" VerticalAlignment="Center">
+                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Background="#F7E5FC" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding ProfileName[0]}" 
                                                    Style="{StaticResource H3TextBlockStyle}" 
                                                    Foreground="{StaticResource PrimaryBrush}" 
@@ -233,11 +235,6 @@
 
                                     <!-- Col 5: Actions -->
                                     <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Content="Restore" 
-                                                Style="{StaticResource SecondaryButton}" 
-                                                Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}"
-                                                Height="32" Padding="12,0" FontSize="12" Margin="0,0,8,0" />
                                         <Button Content="Delete" 
                                                 Style="{StaticResource DangerButton}" 
                                                 Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 

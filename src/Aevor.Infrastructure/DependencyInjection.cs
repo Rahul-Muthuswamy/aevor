@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.AddTransient<IBackupService, BackupService>();
         services.AddTransient<IProfileCreator, ProfileCreator>();
         services.AddTransient<ICloneEngine, CloneEngine>();
+        services.AddTransient<IPdfReportService, PdfReportService>();
 
         return services;
     }
