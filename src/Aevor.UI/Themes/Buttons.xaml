@@ -16,7 +16,7 @@
 
     <!-- Primary Button -->
     <Style x:Key="PrimaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
-        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
@@ -37,14 +37,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryHoverBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryPressedBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryPressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource ControlBackgroundDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource ControlTextDisabledBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource ControlBackgroundDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource ControlTextDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -55,8 +55,8 @@
     <!-- Secondary Button -->
     <Style x:Key="SecondaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
@@ -77,19 +77,19 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource GhostHoverBrush}" />
-                            <Setter Property="BorderBrush" Value="{StaticResource PrimaryHoverBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource PrimaryHoverBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource GhostHoverBrush}" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHoverBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource BorderBrush}" />
-                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryPressedBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource BorderBrush}" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryPressedBrush}" />
                             <Setter Property="Foreground" Value="White" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
                             <Setter TargetName="border" Property="Background" Value="Transparent" />
-                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource ControlBackgroundDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource ControlTextDisabledBrush}" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ControlBackgroundDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource ControlTextDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -100,7 +100,7 @@
     <!-- Ghost Button -->
     <Style x:Key="GhostButton" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
@@ -120,14 +120,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource GhostHoverBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource GhostHoverBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource BorderBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource BorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter Property="Foreground" Value="{StaticResource ControlTextDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource ControlTextDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -137,7 +137,7 @@
 
     <!-- Danger Button -->
     <Style x:Key="DangerButton" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
-        <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
@@ -158,14 +158,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource DangerHoverBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource DangerHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource DangerPressedBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource DangerPressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource ControlBackgroundDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource ControlTextDisabledBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource ControlBackgroundDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource ControlTextDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -174,3 +174,4 @@
     </Style>
 
 </ResourceDictionary>
+

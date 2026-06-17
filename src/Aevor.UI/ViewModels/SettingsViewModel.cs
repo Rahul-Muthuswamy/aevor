@@ -26,12 +26,6 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _backupsPath, value);
     }
 
-    private string _appTheme = "System";
-    public string AppTheme
-    {
-        get => _appTheme;
-        set => SetProperty(ref _appTheme, value);
-    }
 
     private bool _autoScanOnStartup = true;
     public bool AutoScanOnStartup
@@ -95,10 +89,48 @@ public class SettingsViewModel : BaseViewModel
         SaveSettingsCommand  = new RelayCommand(async () => await SaveSettingsAsync());
         ResetSettingsCommand = new RelayCommand(ResetSettings);
 
-        LoadDefaultSettings();
+        LoadSettings();
     }
 
     // ── Methods ────────────────────────────────────────────────────────
+    private string GetSettingsFilePath()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Aevor",
+            "settings.json"
+        );
+    }
+
+    private void LoadSettings()
+    {
+        LoadDefaultSettings();
+
+        try
+        {
+            var path = GetSettingsFilePath();
+            if (File.Exists(path))
+            {
+                var json = File.ReadAllText(path);
+                var data = System.Text.Json.JsonSerializer.Deserialize<SettingsData>(json);
+                if (data != null)
+                {
+                    if (!string.IsNullOrEmpty(data.BraveUserDataPath)) BraveUserDataPath = data.BraveUserDataPath;
+                    if (!string.IsNullOrEmpty(data.BackupsPath)) BackupsPath = data.BackupsPath;
+                    AutoScanOnStartup = data.AutoScanOnStartup;
+                    SafeBackupBeforeTemplate = data.SafeBackupBeforeTemplate;
+                    BlockActiveCookiesOnClone = data.BlockActiveCookiesOnClone;
+                    AlwaysExcludeHistory = data.AlwaysExcludeHistory;
+                    AlwaysExcludePasswords = data.AlwaysExcludePasswords;
+                }
+            }
+        }
+        catch
+        {
+            // fallback to defaults
+        }
+    }
+
     private void LoadDefaultSettings()
     {
         try
@@ -117,8 +149,6 @@ public class SettingsViewModel : BaseViewModel
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Aevor", "Backups"
         );
-
-        AppTheme                  = "System";
         AutoScanOnStartup        = true;
         SafeBackupBeforeTemplate = true;
         BlockActiveCookiesOnClone = true;
@@ -131,16 +161,65 @@ public class SettingsViewModel : BaseViewModel
         StatusMessage = "Saving settings...";
         IsMessageSuccess = null;
 
-        await Task.Delay(500); // Simulate local state persistence
+        try
+        {
+            var data = new SettingsData
+            {
+                BraveUserDataPath = BraveUserDataPath,
+                BackupsPath = BackupsPath,
+                AutoScanOnStartup = AutoScanOnStartup,
+                SafeBackupBeforeTemplate = SafeBackupBeforeTemplate,
+                BlockActiveCookiesOnClone = BlockActiveCookiesOnClone,
+                AlwaysExcludeHistory = AlwaysExcludeHistory,
+                AlwaysExcludePasswords = AlwaysExcludePasswords
+            };
 
-        StatusMessage = "Settings saved successfully.";
-        IsMessageSuccess = true;
+            var json = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            var path = GetSettingsFilePath();
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            await File.WriteAllTextAsync(path, json);
+
+            StatusMessage = "Settings saved successfully.";
+            IsMessageSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Failed to save settings: " + ex.Message;
+            IsMessageSuccess = false;
+        }
     }
 
     private void ResetSettings()
     {
         LoadDefaultSettings();
+        try
+        {
+            var path = GetSettingsFilePath();
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
         StatusMessage = "Settings reset to defaults.";
         IsMessageSuccess = true;
     }
+}
+
+public class SettingsData
+{
+    public string BraveUserDataPath { get; set; } = string.Empty;
+    public string BackupsPath { get; set; } = string.Empty;
+    public bool AutoScanOnStartup { get; set; } = true;
+    public bool SafeBackupBeforeTemplate { get; set; } = true;
+    public bool BlockActiveCookiesOnClone { get; set; } = true;
+    public bool AlwaysExcludeHistory { get; set; } = true;
+    public bool AlwaysExcludePasswords { get; set; } = true;
 }

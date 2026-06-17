@@ -23,6 +23,7 @@ public class TemplatesViewModel : BaseViewModel
     private readonly ITemplateApplier _templateApplier;
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly INavigationService _navigationService;
+    private readonly SettingsViewModel _settingsViewModel;
 
     // ── Template Storage ───────────────────────────────────────────────
     private readonly string _templatesDirectory;
@@ -83,12 +84,14 @@ public class TemplatesViewModel : BaseViewModel
         ITemplateSerializer templateSerializer,
         ITemplateApplier templateApplier,
         IProfileDiscoveryService profileDiscoveryService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        SettingsViewModel settingsViewModel)
     {
         _templateSerializer = templateSerializer ?? throw new ArgumentNullException(nameof(templateSerializer));
         _templateApplier = templateApplier ?? throw new ArgumentNullException(nameof(templateApplier));
         _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _settingsViewModel = settingsViewModel ?? throw new ArgumentNullException(nameof(settingsViewModel));
 
         // Set up templates directory
         _templatesDirectory = Path.Combine(
@@ -316,7 +319,7 @@ public class TemplatesViewModel : BaseViewModel
 
                 // Step 4: Apply the template
                 var result = await _templateApplier.ApplyTemplateAsync(
-                    t.SourceTemplate, targetProfile);
+                    t.SourceTemplate, targetProfile, skipBackup: !_settingsViewModel.SafeBackupBeforeTemplate);
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {

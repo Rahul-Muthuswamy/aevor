@@ -17,10 +17,35 @@ public class BackupsViewModel : BaseViewModel
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly IBraveInstallationService _braveInstallationService;
     private List<BackupMetadata> _rawBackups = new();
+    private bool _isUpdatingSelection;
+    private bool? _isAllSelected = false;
 
     // ── Collections ────────────────────────────────────────────────────
     public ObservableCollection<BackupItem> Backups         { get; } = new();
     public ObservableCollection<BackupItem> FilteredBackups { get; } = new();
+
+    public bool? IsAllSelected
+    {
+        get => _isAllSelected;
+        set
+        {
+            if (SetProperty(ref _isAllSelected, value))
+            {
+                if (value.HasValue && !_isUpdatingSelection)
+                {
+                    _isUpdatingSelection = true;
+                    foreach (var b in FilteredBackups)
+                    {
+                        b.IsSelected = value.Value;
+                    }
+                    _isUpdatingSelection = false;
+                    OnPropertyChanged(nameof(HasSelectedBackups));
+                }
+            }
+        }
+    }
+
+    public bool HasSelectedBackups => FilteredBackups.Any(b => b.IsSelected);
 
     // ── Properties ─────────────────────────────────────────────────────
     private string _searchQuery = string.Empty;
@@ -92,6 +117,7 @@ public class BackupsViewModel : BaseViewModel
     // ── Commands ───────────────────────────────────────────────────────
     public ICommand RestoreCommand      { get; }
     public ICommand DeleteCommand       { get; }
+    public ICommand DeleteSelectedCommand { get; }
     public ICommand CreateBackupCommand { get; }
     public ICommand RefreshCommand      { get; }
 
@@ -104,6 +130,7 @@ public class BackupsViewModel : BaseViewModel
 
         RestoreCommand      = new RelayCommand<BackupItem>(OnRestore);
         DeleteCommand       = new RelayCommand<BackupItem>(OnDelete);
+        DeleteSelectedCommand = new RelayCommand(OnDeleteSelected, () => HasSelectedBackups);
         CreateBackupCommand = new RelayCommand(OnCreateBackup);
         RefreshCommand      = new RelayCommand(OnRefresh);
 
@@ -117,7 +144,7 @@ public class BackupsViewModel : BaseViewModel
 
         try
         {
-            var raw = await _backupService.GetBackupsAsync();
+            var raw = await Task.Run(() => _backupService.GetBackupsAsync());
             _rawBackups = raw ?? new List<BackupMetadata>();
 
             var mapped = _rawBackups.Select(metadata =>
@@ -130,7 +157,7 @@ public class BackupsViewModel : BaseViewModel
                     _ => "Unknown"
                 };
 
-                return new BackupItem
+                var item = new BackupItem
                 {
                     BackupId = metadata.BackupId,
                     BackupName = metadata.ProfileName + " Backup",
@@ -141,6 +168,8 @@ public class BackupsViewModel : BaseViewModel
                     ValidationStatus = validationStatus,
                     Notes = "Version " + metadata.BackupVersion
                 };
+                item.PropertyChanged += BackupItem_PropertyChanged;
+                return item;
             }).ToList();
 
             var totalCount = _rawBackups.Count;
@@ -194,7 +223,60 @@ public class BackupsViewModel : BaseViewModel
             }
         }
 
+        if (!_isUpdatingSelection)
+        {
+            _isUpdatingSelection = true;
+            if (FilteredBackups.Count == 0)
+            {
+                IsAllSelected = false;
+            }
+            else if (FilteredBackups.All(b => b.IsSelected))
+            {
+                IsAllSelected = true;
+            }
+            else if (FilteredBackups.All(b => !b.IsSelected))
+            {
+                IsAllSelected = false;
+            }
+            else
+            {
+                IsAllSelected = null;
+            }
+            _isUpdatingSelection = false;
+        }
+
         OnPropertyChanged(nameof(HasBackups));
+        OnPropertyChanged(nameof(HasSelectedBackups));
+    }
+
+    private void BackupItem_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BackupItem.IsSelected))
+        {
+            OnPropertyChanged(nameof(HasSelectedBackups));
+
+            if (!_isUpdatingSelection)
+            {
+                _isUpdatingSelection = true;
+                if (FilteredBackups.Count == 0)
+                {
+                    IsAllSelected = false;
+                }
+                else if (FilteredBackups.All(b => b.IsSelected))
+                {
+                    IsAllSelected = true;
+                }
+                else if (FilteredBackups.All(b => !b.IsSelected))
+                {
+                    IsAllSelected = false;
+                }
+                else
+                {
+                    IsAllSelected = null;
+                }
+                _isUpdatingSelection = false;
+            }
+        }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────
@@ -289,51 +371,44 @@ public class BackupsViewModel : BaseViewModel
     {
         if (item == null) return;
 
-        bool confirmed = false;
+        bool success = false;
         await RunOnUIAsync(() =>
         {
             var dialog = new Aevor.UI.Views.ConfirmDeleteWindow(
-                $"Are you sure you want to delete the backup for '{item.ProfileName}' created on {item.CreatedDate}?")
+                $"Are you sure you want to delete the backup for '{item.ProfileName}' created on {item.CreatedDate}?",
+                async () =>
+                {
+                    return await Task.Run(() => _backupService.DeleteBackupAsync(item.BackupId));
+                })
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
-            confirmed = (dialog.ShowDialog() == true);
+            success = (dialog.ShowDialog() == true);
         });
 
-        if (!confirmed) return;
+        if (!success) return;
 
         try
         {
-            var success = await _backupService.DeleteBackupAsync(item.BackupId);
-            if (success)
+            var rawItem = _rawBackups.FirstOrDefault(b => b.BackupId == item.BackupId);
+            if (rawItem != null)
             {
-                var rawItem = _rawBackups.FirstOrDefault(b => b.BackupId == item.BackupId);
-                if (rawItem != null)
-                {
-                    _rawBackups.Remove(rawItem);
-                }
-
-                var totalCount = _rawBackups.Count;
-                var totalBytesSum = _rawBackups.Sum(b => b.BackupSize);
-                var formattedTotalSize = FormatBytes(totalBytesSum);
-
-                await RunOnUIAsync(() =>
-                {
-                    Backups.Remove(item);
-                    FilteredBackups.Remove(item);
-                    TotalBackups = totalCount;
-                    TotalSize = formattedTotalSize;
-                    StatusMessage = "Backup deleted";
-                    ApplyFilter();
-                });
+                _rawBackups.Remove(rawItem);
             }
-            else
+
+            var totalCount = _rawBackups.Count;
+            var totalBytesSum = _rawBackups.Sum(b => b.BackupSize);
+            var formattedTotalSize = FormatBytes(totalBytesSum);
+
+            await RunOnUIAsync(() =>
             {
-                await RunOnUIAsync(() =>
-                {
-                    StatusMessage = "Delete failed";
-                });
-            }
+                Backups.Remove(item);
+                FilteredBackups.Remove(item);
+                TotalBackups = totalCount;
+                TotalSize = formattedTotalSize;
+                StatusMessage = "Backup deleted";
+                ApplyFilter();
+            });
         }
         catch (Exception ex)
         {
@@ -342,6 +417,82 @@ public class BackupsViewModel : BaseViewModel
                 StatusMessage = "Delete failed: " + ex.Message;
             });
         }
+    }
+
+    private async void OnDeleteSelected()
+    {
+        var selectedItems = FilteredBackups.Where(b => b.IsSelected).ToList();
+        if (selectedItems.Count == 0) return;
+
+        int deletedCount = 0;
+        int failedCount = 0;
+
+        bool success = false;
+        await RunOnUIAsync(() =>
+        {
+            var dialog = new Aevor.UI.Views.ConfirmDeleteWindow(
+                $"Are you sure you want to delete the selected {selectedItems.Count} backup(s)?",
+                async () =>
+                {
+                    deletedCount = 0;
+                    failedCount = 0;
+                    foreach (var item in selectedItems)
+                    {
+                        try
+                        {
+                            var itemSuccess = await Task.Run(() => _backupService.DeleteBackupAsync(item.BackupId));
+                            if (itemSuccess)
+                            {
+                                var rawItem = _rawBackups.FirstOrDefault(b => b.BackupId == item.BackupId);
+                                if (rawItem != null)
+                                {
+                                    _rawBackups.Remove(rawItem);
+                                }
+                                await RunOnUIAsync(() =>
+                                {
+                                    Backups.Remove(item);
+                                    FilteredBackups.Remove(item);
+                                });
+                                deletedCount++;
+                            }
+                            else
+                            {
+                                failedCount++;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            failedCount++;
+                        }
+                    }
+                    return deletedCount > 0;
+                })
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            success = (dialog.ShowDialog() == true);
+        });
+
+        if (!success) return;
+
+        var totalCount = _rawBackups.Count;
+        var totalBytesSum = _rawBackups.Sum(b => b.BackupSize);
+        var formattedTotalSize = FormatBytes(totalBytesSum);
+
+        await RunOnUIAsync(() =>
+        {
+            TotalBackups = totalCount;
+            TotalSize = formattedTotalSize;
+            if (failedCount == 0)
+            {
+                StatusMessage = $"{deletedCount} backup(s) deleted";
+            }
+            else
+            {
+                StatusMessage = $"{deletedCount} deleted, {failedCount} failed";
+            }
+            ApplyFilter();
+        });
     }
 
     private async void OnCreateBackup()
@@ -358,72 +509,65 @@ public class BackupsViewModel : BaseViewModel
                 return;
             }
 
-            // Show a simple profile picker dialog
-            BraveProfile? selectedProfile = null;
+            // Show simple profile picker dialog with async creation callback
             await RunOnUIAsync(() =>
             {
-                var dialog = new Aevor.UI.Views.CreateBackupWindow(profiles)
+                var dialog = new Aevor.UI.Views.CreateBackupWindow(profiles, async (profile) =>
+                {
+                    var result = await Task.Run(() => _backupService.CreateBackupAsync(profile));
+                    if (result.IsSuccess && result.Metadata != null)
+                    {
+                        _rawBackups.Insert(0, result.Metadata);
+
+                        var totalCount = _rawBackups.Count;
+                        var totalBytesSum = _rawBackups.Sum(b => b.BackupSize);
+                        var formattedTotalSize = FormatBytes(totalBytesSum);
+
+                        string validationStatus = result.Metadata.Status switch
+                        {
+                            BackupStatus.Completed => "Valid",
+                            BackupStatus.Corrupted => "Warning",
+                            BackupStatus.Failed => "Invalid",
+                            _ => "Unknown"
+                        };
+
+                        var newItem = new BackupItem
+                        {
+                            BackupId = result.Metadata.BackupId,
+                            BackupName = result.Metadata.ProfileName + " Backup",
+                            ProfileName = result.Metadata.ProfileName,
+                            CreatedDate = result.Metadata.CreatedTimestamp.ToString("MMM d, yyyy hh:mm tt"),
+                            Size = FormatBytes(result.Metadata.BackupSize),
+                            SizeBytes = result.Metadata.BackupSize,
+                            ValidationStatus = validationStatus,
+                            Notes = "Version " + result.Metadata.BackupVersion
+                        };
+                        newItem.PropertyChanged += BackupItem_PropertyChanged;
+
+                        await RunOnUIAsync(() =>
+                        {
+                            Backups.Insert(0, newItem);
+                            TotalBackups = totalCount;
+                            TotalSize = formattedTotalSize;
+                            StatusMessage = "Backup created — " + FormatBytes(result.Metadata.BackupSize);
+                            ApplyFilter();
+                        });
+                        return true;
+                    }
+                    else
+                    {
+                        await RunOnUIAsync(() =>
+                        {
+                            StatusMessage = "Backup failed: " + (result.ErrorMessage ?? "Unknown error");
+                        });
+                        return false;
+                    }
+                })
                 {
                     Owner = System.Windows.Application.Current.MainWindow
                 };
-                if (dialog.ShowDialog() == true)
-                {
-                    selectedProfile = dialog.SelectedProfile;
-                }
+                dialog.ShowDialog();
             });
-
-            if (selectedProfile == null)
-            {
-                return;
-            }
-
-            var profile = selectedProfile;
-
-            var result = await _backupService.CreateBackupAsync(profile);
-            if (result.IsSuccess && result.Metadata != null)
-            {
-                _rawBackups.Insert(0, result.Metadata);
-
-                var totalCount = _rawBackups.Count;
-                var totalBytesSum = _rawBackups.Sum(b => b.BackupSize);
-                var formattedTotalSize = FormatBytes(totalBytesSum);
-
-                string validationStatus = result.Metadata.Status switch
-                {
-                    BackupStatus.Completed => "Valid",
-                    BackupStatus.Corrupted => "Warning",
-                    BackupStatus.Failed => "Invalid",
-                    _ => "Unknown"
-                };
-
-                var newItem = new BackupItem
-                {
-                    BackupId = result.Metadata.BackupId,
-                    BackupName = result.Metadata.ProfileName + " Backup",
-                    ProfileName = result.Metadata.ProfileName,
-                    CreatedDate = result.Metadata.CreatedTimestamp.ToString("MMM d, yyyy hh:mm tt"),
-                    Size = FormatBytes(result.Metadata.BackupSize),
-                    SizeBytes = result.Metadata.BackupSize,
-                    ValidationStatus = validationStatus,
-                    Notes = "Version " + result.Metadata.BackupVersion
-                };
-
-                await RunOnUIAsync(() =>
-                {
-                    Backups.Insert(0, newItem);
-                    TotalBackups = totalCount;
-                    TotalSize = formattedTotalSize;
-                    StatusMessage = "Backup created — " + FormatBytes(result.Metadata.BackupSize);
-                    ApplyFilter();
-                });
-            }
-            else
-            {
-                await RunOnUIAsync(() =>
-                {
-                    StatusMessage = "Backup failed: " + (result.ErrorMessage ?? "Unknown error");
-                });
-            }
         }
         catch (Exception ex)
         {

@@ -388,12 +388,48 @@ public class CloneEngine : ICloneEngine
             }
 
             // 5. Verify security exclusions respected
+            bool excludePasswords = true;
+            bool blockActiveCookies = true;
+
+            try
+            {
+                var settingsPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Aevor",
+                    "settings.json"
+                );
+
+                if (_fileSystem.FileExists(settingsPath))
+                {
+                    var json = await _fileSystem.ReadAllTextAsync(settingsPath);
+                    var root = System.Text.Json.Nodes.JsonNode.Parse(json);
+                    if (root != null)
+                    {
+                        var alwaysExcludePasswordsNode = root["AlwaysExcludePasswords"];
+                        if (alwaysExcludePasswordsNode != null)
+                        {
+                            excludePasswords = alwaysExcludePasswordsNode.GetValue<bool>();
+                        }
+                        
+                        var blockActiveCookiesOnCloneNode = root["BlockActiveCookiesOnClone"];
+                        if (blockActiveCookiesOnCloneNode != null)
+                        {
+                            blockActiveCookies = blockActiveCookiesOnCloneNode.GetValue<bool>();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load/parse settings.json for clone validation, using defaults.");
+            }
+
             var destScan = await _securityScanner.ScanAsync(destProfile);
-            if (destScan.HasPasswords)
+            if (excludePasswords && destScan.HasPasswords)
             {
                 errors.Add("Security violation: Cloned profile contains password database.");
             }
-            if (destScan.HasCookies)
+            if (blockActiveCookies && destScan.HasCookies)
             {
                 errors.Add("Security violation: Cloned profile contains active session cookies database.");
             }
@@ -453,9 +489,15 @@ public class CloneEngine : ICloneEngine
             }
 
             var scan = await _securityScanner.ScanAsync(sourceProfile);
-            if (scan.HasPasswords || scan.HasCookies || scan.HasWalletData)
+            var itemsExcluded = new List<string>();
+            if (request.ExcludePasswords && scan.HasPasswords) itemsExcluded.Add("saved credentials");
+            if (request.BlockActiveCookies && scan.HasCookies) itemsExcluded.Add("session cookies");
+            if (scan.HasWalletData) itemsExcluded.Add("cryptocurrency wallet data");
+
+            if (itemsExcluded.Count > 0)
             {
-                warnings.Add("Sensitive credentials or session data detected in source profile. These will be automatically sanitized and excluded from the clone.");
+                var joined = string.Join(" and ", itemsExcluded);
+                warnings.Add($"Sensitive {joined} detected in source profile. These will be automatically sanitized and excluded from the clone based on your settings.");
             }
         }
         catch (Exception ex)
@@ -567,25 +609,21 @@ public class CloneEngine : ICloneEngine
             p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("BraveWallet", StringComparison.OrdinalIgnoreCase) ||
-            p.Equals("Sessions", StringComparison.OrdinalIgnoreCase) ||
-            p.Equals("Session Storage", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("IndexedDB", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("Local Storage", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("Local Extension Settings", StringComparison.OrdinalIgnoreCase) ||
-            p.Equals("Extension State", StringComparison.OrdinalIgnoreCase)))
+            p.Equals("Extension State", StringComparison.OrdinalIgnoreCase) ||
+            (request.BlockActiveCookies && (p.Equals("Sessions", StringComparison.OrdinalIgnoreCase) || p.Equals("Session Storage", StringComparison.OrdinalIgnoreCase)))))
         {
             return true;
         }
 
         // Exclude specific sensitive files
-        if (fileName.Equals("Login Data", StringComparison.OrdinalIgnoreCase) ||
-            fileName.Equals("Login Data For Account", StringComparison.OrdinalIgnoreCase) ||
-            fileName.Equals("Cookies", StringComparison.OrdinalIgnoreCase) ||
-            fileName.Equals("Cookies-journal", StringComparison.OrdinalIgnoreCase) ||
+        if ((request.ExcludePasswords && (fileName.Equals("Login Data", StringComparison.OrdinalIgnoreCase) || fileName.Equals("Login Data For Account", StringComparison.OrdinalIgnoreCase))) ||
+            (request.BlockActiveCookies && (fileName.Equals("Cookies", StringComparison.OrdinalIgnoreCase) || fileName.Equals("Cookies-journal", StringComparison.OrdinalIgnoreCase))) ||
+            (request.ExcludeHistory && (fileName.Equals("History", StringComparison.OrdinalIgnoreCase) || fileName.Equals("History-journal", StringComparison.OrdinalIgnoreCase))) ||
             fileName.Equals("Web Data", StringComparison.OrdinalIgnoreCase) ||
-            fileName.Equals("Web Data-journal", StringComparison.OrdinalIgnoreCase) ||
-            fileName.Equals("History", StringComparison.OrdinalIgnoreCase) ||
-            fileName.Equals("History-journal", StringComparison.OrdinalIgnoreCase))
+            fileName.Equals("Web Data-journal", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

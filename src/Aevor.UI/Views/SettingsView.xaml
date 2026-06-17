@@ -11,7 +11,7 @@
     </UserControl.Resources>
 
     <!-- Root Grid: 2 rows — Header | Content -->
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"    />
@@ -22,9 +22,9 @@
              ══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
                 Padding="32,32,32,20"
-                BorderBrush="{StaticResource BorderBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
-                Background="{StaticResource BackgroundBrush}">
+                Background="{DynamicResource BackgroundBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"    />
@@ -39,7 +39,7 @@
                     </StackPanel>
                     <TextBlock Text="Configure Aevor preferences, directory locations, and safety settings"
                                Style="{StaticResource BodyTextBlockStyle}"
-                               Foreground="{StaticResource MutedBrush}"
+                               Foreground="{DynamicResource MutedBrush}"
                                Margin="0,6,0,0" />
                 </StackPanel>
             </Grid>
@@ -90,11 +90,11 @@
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text" Value="✓" />
-                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsMessageSuccess}" Value="False">
                                         <Setter Property="Text" Value="⚠" />
-                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -128,12 +128,12 @@
                                 <TextBlock Text="BRAVE USER DATA DIRECTORY"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            FontWeight="SemiBold"
-                                           Foreground="{StaticResource MutedBrush}"
+                                           Foreground="{DynamicResource MutedBrush}"
                                            Margin="0,0,0,6" />
                                 <TextBox Text="{Binding BraveUserDataPath, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Text="Aevor discovers Brave profiles from this parent folder."
                                            Style="{StaticResource BodySmallTextBlockStyle}"
-                                           Foreground="{StaticResource MutedBrush}"
+                                           Foreground="{DynamicResource MutedBrush}"
                                            Margin="0,4,0,0" />
                             </StackPanel>
 
@@ -142,48 +142,15 @@
                                 <TextBlock Text="AEVOR BACKUPS DIRECTORY"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            FontWeight="SemiBold"
-                                           Foreground="{StaticResource MutedBrush}"
+                                           Foreground="{DynamicResource MutedBrush}"
                                            Margin="0,0,0,6" />
                                 <TextBox Text="{Binding BackupsPath, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Text="Root directory where all profile zip snapshots and manifests are saved."
                                            Style="{StaticResource BodySmallTextBlockStyle}"
-                                           Foreground="{StaticResource MutedBrush}"
+                                           Foreground="{DynamicResource MutedBrush}"
                                            Margin="0,4,0,0" />
                             </StackPanel>
                         </StackPanel>
-                    </Border>
-
-                    <!-- Section: Interface Theme -->
-                    <TextBlock Text="Appearance"
-                               Style="{StaticResource H2TextBlockStyle}"
-                               Margin="0,0,0,12" />
-
-                    <Border Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,24">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="Application Theme"
-                                           Style="{StaticResource BodyTextBlockStyle}"
-                                           FontWeight="SemiBold" />
-                                <TextBlock Text="Choose the preferred color mode for Aevor's window interface"
-                                           Style="{StaticResource BodySmallTextBlockStyle}"
-                                           Foreground="{StaticResource MutedBrush}"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                            <ComboBox Grid.Column="1"
-                                      Width="160"
-                                      Height="32"
-                                      SelectedValuePath="Content"
-                                      SelectedValue="{Binding AppTheme, UpdateSourceTrigger=PropertyChanged}"
-                                      VerticalContentAlignment="Center">
-                                <ComboBoxItem Content="System" />
-                                <ComboBoxItem Content="Light" />
-                                <ComboBoxItem Content="Dark" />
-                            </ComboBox>
-                        </Grid>
                     </Border>
 
                     <!-- Section: Safety Configurations -->
@@ -194,7 +161,7 @@
                     <Border Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,0,24">
                         <StackPanel>
                             <!-- Auto-scan -->
-                            <Border Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Padding="20,16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -206,7 +173,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Discover risks and passwords automatically when the app loads"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
                                     <CheckBox Grid.Column="1"
@@ -216,7 +183,7 @@
                             </Border>
 
                             <!-- Safe backup -->
-                            <Border Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Padding="20,16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -228,7 +195,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Create a snapshot automatically prior to writing template settings"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
                                     <CheckBox Grid.Column="1"
@@ -250,7 +217,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Fail profile clone validation if target includes active session cookies"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
                                     <CheckBox Grid.Column="1"
@@ -269,7 +236,7 @@
                     <Border Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,0,32">
                         <StackPanel>
                             <!-- Always exclude history -->
-                            <Border Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Padding="20,16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -281,7 +248,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Do not transfer browsing and download history in cloned profiles"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
                                     <CheckBox Grid.Column="1"
@@ -303,7 +270,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Do not clone Login Data database to destination folders (Recommended)"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
                                     <CheckBox Grid.Column="1"
@@ -333,3 +300,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

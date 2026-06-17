@@ -13,7 +13,7 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="#E5E7EB" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
             <Setter Property="Padding" Value="16,6" />
             <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -56,7 +56,8 @@
                     </StackPanel>
                     <TextBlock Text="Scan results and risk assessment for all profiles"
                                Style="{StaticResource BodyTextBlockStyle}"
-                               Foreground="{StaticResource MutedBrush}"
+                               Foreground="{DynamicResource MutedBrush}"
+                               TextWrapping="Wrap"
                                Margin="0,4,0,0" />
                 </StackPanel>
 
@@ -95,7 +96,7 @@
                                        FontSize="36" />
                             <TextBlock Text=" / 100" 
                                        Style="{StaticResource H2TextBlockStyle}" 
-                                       Foreground="{StaticResource MutedBrush}" 
+                                       Foreground="{DynamicResource MutedBrush}" 
                                        VerticalAlignment="Bottom" 
                                        Margin="0,0,0,6" />
                         </StackPanel>
@@ -107,7 +108,7 @@
                         
                         <TextBlock Text="Overall Security Score" 
                                    Style="{StaticResource BodyTextBlockStyle}" 
-                                   Foreground="{StaticResource MutedBrush}" 
+                                   Foreground="{DynamicResource MutedBrush}" 
                                    Margin="0,2,0,0" />
                     </StackPanel>
 
@@ -115,26 +116,26 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Stat 1: Total Findings -->
                         <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding TotalFindings}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Text="Total Findings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding TotalFindings}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Total Findings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
                         </StackPanel>
 
                         <!-- Stat 2: Critical -->
                         <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding CriticalCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource DangerBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Text="Critical" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding CriticalCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource DangerBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Critical" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
                         </StackPanel>
 
                         <!-- Stat 3: Warnings -->
                         <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding WarningCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource WarningBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Text="Warnings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding WarningCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource WarningBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Warnings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
                         </StackPanel>
 
                         <!-- Stat 4: Excluded -->
                         <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding ExcludedCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Text="Excluded" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding ExcludedCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource SuccessBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Excluded" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -154,14 +155,14 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <!-- Profile Card -->
-                        <Border Style="{StaticResource CardStyle}" Width="200" Padding="20" Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}">
+                        <Border Style="{StaticResource CardStyle}" Width="200" Padding="20" Margin="0,0,12,12" Background="{DynamicResource SurfaceBrush}">
                             <StackPanel>
                                 <!-- Profile Avatar -->
                                 <Border Width="36" Height="36" CornerRadius="18" Background="#F7E5FC" HorizontalAlignment="Left">
                                     <TextBlock Text="{Binding Initial}" 
                                                Style="{StaticResource BodyTextBlockStyle}" 
                                                FontWeight="Bold" 
-                                               Foreground="{StaticResource PrimaryBrush}" 
+                                               Foreground="{DynamicResource PrimaryBrush}" 
                                                HorizontalAlignment="Center" 
                                                VerticalAlignment="Center" />
                                 </Border>
@@ -176,13 +177,13 @@
                                 <TextBlock Text="{Binding RiskLabel}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{Binding RiskColor}" FontWeight="Bold" />
 
                                 <!-- Findings Count -->
-                                <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0">
+                                <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0">
                                     <Run Text="{Binding FindingCount}" />
                                     <Run Text=" findings" />
                                 </TextBlock>
 
                                 <!-- Last Scanned -->
-                                <TextBlock Text="{Binding LastScanned}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                <TextBlock Text="{Binding LastScanned}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>
@@ -208,7 +209,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsFilterAllActive}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                         <Setter Property="Foreground" Value="White" />
                                         <Setter Property="BorderThickness" Value="0" />
                                     </DataTrigger>
@@ -223,7 +224,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsFilterCriticalActive}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                         <Setter Property="Foreground" Value="White" />
                                         <Setter Property="BorderThickness" Value="0" />
                                     </DataTrigger>
@@ -238,7 +239,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsFilterWarningActive}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                         <Setter Property="Foreground" Value="White" />
                                         <Setter Property="BorderThickness" Value="0" />
                                     </DataTrigger>
@@ -253,7 +254,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsFilterInfoActive}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                         <Setter Property="Foreground" Value="White" />
                                         <Setter Property="BorderThickness" Value="0" />
                                     </DataTrigger>
@@ -282,10 +283,10 @@
 
                                 <!-- Col 2: Middle Text -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding FindingTitle}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                                    <TextBlock Text="{Binding FindingDetail}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding FindingTitle}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" />
+                                    <TextBlock Text="{Binding FindingDetail}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                     
-                                    <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0">
+                                    <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0">
                                         <Run Text="Affected: " />
                                         <Run Text="{Binding AffectedProfile}" />
                                     </TextBlock>
@@ -305,3 +306,4 @@
         </Border>
     </ScrollViewer>
 </UserControl>
+

@@ -7,6 +7,7 @@
         xmlns:views="clr-namespace:Aevor.UI.Views"
         mc:Ignorable="d"
         Title="Aevor" Height="700" Width="1000"
+        MinWidth="1000" MinHeight="700"
         WindowStartupLocation="CenterScreen"
         Icon="/Assets/aevor_logo.png">
     <Window.Resources>
@@ -55,14 +56,14 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="56" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- TopBar -->
-        <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Background="White">
+        <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Background="White">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="220" />
@@ -72,15 +73,15 @@
                 <!-- Left: Logo + Text -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
                     <Image Source="{StaticResource AevorIcon}" Height="28" Width="28" RenderOptions.BitmapScalingMode="HighQuality" />
-                    <TextBlock Text="Aevor" Foreground="{StaticResource PrimaryBrush}" Style="{StaticResource H2TextBlockStyle}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    <TextBlock Text="Aevor" Foreground="{DynamicResource PrimaryBrush}" Style="{StaticResource H2TextBlockStyle}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
 
                 <!-- Right: Placeholder Icons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,24,0">
-                    <Border Width="32" Height="32" CornerRadius="16" Background="{StaticResource SurfaceBrush}" Margin="0,0,8,0">
+                    <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SurfaceBrush}" Margin="0,0,8,0">
                         <TextBlock Text="🔍" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <Border Width="32" Height="32" CornerRadius="16" Background="{StaticResource SurfaceBrush}">
+                    <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SurfaceBrush}">
                         <TextBlock Text="👤" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                 </StackPanel>
@@ -95,7 +96,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
-            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -110,7 +111,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsDashboardActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -140,11 +141,11 @@
                                         <TextBlock x:Name="DashboardText" Text="Dashboard" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsDashboardActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -152,7 +153,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsDashboardActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -169,7 +170,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsProfilesActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -199,11 +200,11 @@
                                         <TextBlock x:Name="ProfilesText" Text="Profiles" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsProfilesActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -211,7 +212,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsProfilesActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -228,7 +229,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsTemplatesActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -258,11 +259,11 @@
                                         <TextBlock x:Name="TemplatesText" Text="Templates" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsTemplatesActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -270,7 +271,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsTemplatesActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -287,7 +288,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsCloneActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -317,11 +318,11 @@
                                         <TextBlock x:Name="CloneText" Text="Clone" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsCloneActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -329,7 +330,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsCloneActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -346,7 +347,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsBackupsActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -376,11 +377,11 @@
                                         <TextBlock x:Name="BackupsText" Text="Backups" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsBackupsActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -388,7 +389,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsBackupsActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -405,7 +406,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsSecurityActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -435,11 +436,11 @@
                                         <TextBlock x:Name="SecurityText" Text="Security" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSecurityActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -447,7 +448,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsSecurityActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -466,7 +467,7 @@
                                 <!-- Left accent bar -->
                                 <Border Width="3"
                                         HorizontalAlignment="Left"
-                                        Background="{StaticResource PrimaryBrush}"
+                                        Background="{DynamicResource PrimaryBrush}"
                                         Visibility="{Binding IsSettingsActive, Converter={StaticResource BoolToVisibility}}"/>
 
                                 <!-- Nav item background + content -->
@@ -496,11 +497,11 @@
                                         <TextBlock x:Name="SettingsText" Text="Settings" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                                                     <Setter Property="FontWeight" Value="Regular"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSettingsActive}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                         <MultiDataTrigger>
@@ -508,7 +509,7 @@
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True" />
                                                                 <Condition Binding="{Binding IsSettingsActive}" Value="False" />
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                                         </MultiDataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -529,3 +530,4 @@
         </Grid>
     </Grid>
 </Window>
+

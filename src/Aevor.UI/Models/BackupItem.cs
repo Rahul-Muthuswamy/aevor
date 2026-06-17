@@ -1,10 +1,17 @@
 using System;
 using System.Windows.Media;
+using Aevor.UI.ViewModels;
 
 namespace Aevor.UI.Models;
 
-public class BackupItem
+public class BackupItem : BaseViewModel
 {
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
     public Guid   BackupId        { get; set; }
     public string BackupName      { get; set; } = string.Empty;
     public string ProfileName     { get; set; } = string.Empty;

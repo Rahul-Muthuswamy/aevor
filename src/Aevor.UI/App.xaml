@@ -15,21 +15,6 @@
 
             <!-- Cropped logo icon (excluding the AEVOR text at the bottom of the 2000x2000 image) -->
             <CroppedBitmap x:Key="AevorIcon" Source="/Assets/aevor_logo.png" SourceRect="0,0,2000,1520" />
-
-            <FontFamily x:Key="AppFont">pack://application:,,,/Aevor.UI;component/Assets/Fonts/#Plus Jakarta Sans, Segoe UI</FontFamily>
-
-            <Style TargetType="Control">
-                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-            </Style>
-            <Style TargetType="TextBlock">
-                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-            </Style>
-            <Style TargetType="TextBox">
-                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-            </Style>
-            <Style TargetType="Button">
-                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

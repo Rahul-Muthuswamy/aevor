@@ -46,6 +46,7 @@ public class DashboardViewModel : BaseViewModel
     private readonly IBackupService _backupService;
     private readonly ISecurityScanner _securityScanner;
     private readonly INavigationService _navigationService;
+    private readonly SettingsViewModel _settingsViewModel;
 
     // ── Stats ──────────────────────────────────────────────────────────
     private int _totalProfiles;
@@ -120,12 +121,14 @@ public class DashboardViewModel : BaseViewModel
         IProfileDiscoveryService profileDiscoveryService,
         IBackupService backupService,
         ISecurityScanner securityScanner,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        SettingsViewModel settingsViewModel)
     {
         _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
         _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
         _securityScanner = securityScanner ?? throw new ArgumentNullException(nameof(securityScanner));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _settingsViewModel = settingsViewModel ?? throw new ArgumentNullException(nameof(settingsViewModel));
 
         AnalyzeProfilesCommand = new RelayCommand(OnAnalyzeProfiles);
         CreateTemplateCommand  = new RelayCommand(OnCreateTemplate);
@@ -157,7 +160,7 @@ public class DashboardViewModel : BaseViewModel
             SecurityScanResult? scanResult = null;
             BraveProfile? scannedProfile = null;
 
-            if (profiles != null && profiles.Count > 0)
+            if (_settingsViewModel.AutoScanOnStartup && profiles != null && profiles.Count > 0)
             {
                 scannedProfile = profiles[0];
                 scanResult = await _securityScanner.ScanAsync(scannedProfile);

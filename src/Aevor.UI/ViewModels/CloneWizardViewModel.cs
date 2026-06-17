@@ -24,6 +24,7 @@ public class CloneWizardViewModel : BaseViewModel
     private readonly IBackupService           _backupService;
     private readonly INavigationService       _navigationService;
     private readonly IBraveInstallationService _braveInstallationService;
+    private readonly SettingsViewModel         _settingsViewModel;
 
     // ════════════════════════════════════════════════════════════════════
     // Internal State
@@ -316,7 +317,8 @@ public class CloneWizardViewModel : BaseViewModel
         ISecurityScanner         securityScanner,
         IBackupService           backupService,
         INavigationService       navigationService,
-        IBraveInstallationService braveInstallationService)
+        IBraveInstallationService braveInstallationService,
+        SettingsViewModel         settingsViewModel)
     {
         _cloneEngine             = cloneEngine;
         _profileDiscoveryService = profileDiscoveryService;
@@ -324,6 +326,7 @@ public class CloneWizardViewModel : BaseViewModel
         _backupService           = backupService;
         _navigationService       = navigationService;
         _braveInstallationService = braveInstallationService;
+        _settingsViewModel       = settingsViewModel;
 
         NextStepCommand            = new RelayCommand(OnNextStep,     () => CanGoNext && !IsLastStep);
         PreviousStepCommand        = new RelayCommand(OnPreviousStep, () => CanGoBack);
@@ -701,7 +704,10 @@ public class CloneWizardViewModel : BaseViewModel
             IncludeBookmarks:             CopyBookmarks,
             IncludeSettings:              true, // Always true to avoid null settings in TemplateValidator
             IncludeThemes:                true, // Always true to avoid null themes in TemplateValidator
-            IncludeSearchEngines:         true  // Always true to avoid null search engines in TemplateValidator
+            IncludeSearchEngines:         true, // Always true to avoid null search engines in TemplateValidator
+            BlockActiveCookies:           _settingsViewModel.BlockActiveCookiesOnClone,
+            ExcludeHistory:               _settingsViewModel.AlwaysExcludeHistory,
+            ExcludePasswords:             _settingsViewModel.AlwaysExcludePasswords
         );
 
         try
@@ -778,7 +784,10 @@ public class CloneWizardViewModel : BaseViewModel
             IncludeBookmarks:             copyBookmarks,
             IncludeSettings:              true, // Always true to avoid null settings in TemplateValidator
             IncludeThemes:                true, // Always true to avoid null themes in TemplateValidator
-            IncludeSearchEngines:         true  // Always true to avoid null search engines in TemplateValidator
+            IncludeSearchEngines:         true, // Always true to avoid null search engines in TemplateValidator
+            BlockActiveCookies:           _settingsViewModel.BlockActiveCookiesOnClone,
+            ExcludeHistory:               _settingsViewModel.AlwaysExcludeHistory,
+            ExcludePasswords:             _settingsViewModel.AlwaysExcludePasswords
         );
 
         Task.Run(async () =>

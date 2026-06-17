@@ -42,7 +42,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<CloneWizardViewModel>();
         services.AddTransient<BackupsViewModel>();
         services.AddTransient<SecurityViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        services.AddSingleton<SettingsViewModel>();
 
         _serviceProvider = services.BuildServiceProvider();
 

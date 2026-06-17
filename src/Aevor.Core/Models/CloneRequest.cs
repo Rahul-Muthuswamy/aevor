@@ -14,5 +14,8 @@ public record CloneRequest(
     bool IncludeBookmarks = true,
     bool IncludeSettings = true,
     bool IncludeThemes = true,
-    bool IncludeSearchEngines = true
+    bool IncludeSearchEngines = true,
+    bool BlockActiveCookies = true,
+    bool ExcludeHistory = true,
+    bool ExcludePasswords = true
 );

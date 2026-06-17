@@ -30,7 +30,7 @@
         <!-- ─── Separator Line ──────────────────────────────────────── -->
         <Style x:Key="SeparatorLine" TargetType="{x:Type Border}">
             <Setter Property="Height" Value="1" />
-            <Setter Property="Background" Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
             <Setter Property="Margin" Value="24,0" />
         </Style>
 
@@ -38,7 +38,7 @@
 
     <!-- ─────────────────── Root ScrollViewer ─────────────────────────── -->
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                  Background="{StaticResource BackgroundBrush}">
+                  Background="{DynamicResource BackgroundBrush}">
         <StackPanel Margin="32" MaxWidth="1100">
 
             <!-- ══════════════════════════════════════════════════════════
@@ -50,7 +50,7 @@
             </StackPanel>
             <TextBlock Text="Welcome back. Here's what's happening with your profiles."
                        Style="{StaticResource BodyTextBlockStyle}"
-                       Foreground="{StaticResource MutedBrush}"
+                       Foreground="{DynamicResource MutedBrush}"
                        Margin="0,6,0,0" />
 
             <!-- ══════════════════════════════════════════════════════════
@@ -64,7 +64,7 @@
                         <TextBlock Text="PROFILES"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    FontWeight="SemiBold"
-                                   Foreground="{StaticResource MutedBrush}" />
+                                   Foreground="{DynamicResource MutedBrush}" />
                         <TextBlock Text="{Binding TotalProfiles}"
                                    Style="{StaticResource H1TextBlockStyle}"
                                    Margin="0,10,0,0" />
@@ -80,7 +80,7 @@
                         <TextBlock Text="TEMPLATES"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    FontWeight="SemiBold"
-                                   Foreground="{StaticResource MutedBrush}" />
+                                   Foreground="{DynamicResource MutedBrush}" />
                         <TextBlock Text="{Binding TotalTemplates}"
                                    Style="{StaticResource H1TextBlockStyle}"
                                    Margin="0,10,0,0" />
@@ -96,7 +96,7 @@
                         <TextBlock Text="BACKUPS"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    FontWeight="SemiBold"
-                                   Foreground="{StaticResource MutedBrush}" />
+                                   Foreground="{DynamicResource MutedBrush}" />
                         <TextBlock Text="{Binding TotalBackups}"
                                    Style="{StaticResource H1TextBlockStyle}"
                                    Margin="0,10,0,0" />
@@ -112,7 +112,7 @@
                         <TextBlock Text="SECURITY"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    FontWeight="SemiBold"
-                                   Foreground="{StaticResource MutedBrush}" />
+                                   Foreground="{DynamicResource MutedBrush}" />
                         <TextBlock Text="{Binding SecurityStatus}"
                                    Style="{StaticResource H1TextBlockStyle}"
                                    FontSize="22"
@@ -178,7 +178,7 @@
                                                                FontWeight="SemiBold" />
                                                     <TextBlock Text="{Binding Description}"
                                                                Style="{StaticResource BodySmallTextBlockStyle}"
-                                                               Foreground="{StaticResource MutedBrush}"
+                                                               Foreground="{DynamicResource MutedBrush}"
                                                                Margin="0,3,0,0"
                                                                TextTrimming="CharacterEllipsis" />
                                                 </StackPanel>
@@ -187,7 +187,7 @@
                                                 <TextBlock Grid.Column="2"
                                                            Text="{Binding TimeAgo}"
                                                            Style="{StaticResource CaptionTextBlockStyle}"
-                                                           Foreground="{StaticResource MutedBrush}"
+                                                           Foreground="{DynamicResource MutedBrush}"
                                                            VerticalAlignment="Center"
                                                            Margin="16,0,0,0" />
                                             </Grid>
@@ -234,7 +234,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Rectangle Grid.Column="0" Width="20" Height="20"
-                                               Fill="{StaticResource PrimaryBrush}"
+                                               Fill="{DynamicResource PrimaryBrush}"
                                                Opacity="0.7" RadiusX="4" RadiusY="4"
                                                Margin="0,0,14,0" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -243,12 +243,12 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Scan and analyze all profiles"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,2,0,0" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="›"
                                                FontSize="18" FontWeight="Light"
-                                               Foreground="{StaticResource MutedBrush}"
+                                               Foreground="{DynamicResource MutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="12,0,0,0" />
                                 </Grid>
@@ -266,7 +266,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Rectangle Grid.Column="0" Width="20" Height="20"
-                                               Fill="{StaticResource PrimaryBrush}"
+                                               Fill="{DynamicResource PrimaryBrush}"
                                                Opacity="0.7" RadiusX="4" RadiusY="4"
                                                Margin="0,0,14,0" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -275,12 +275,12 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Save a profile as a template"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,2,0,0" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="›"
                                                FontSize="18" FontWeight="Light"
-                                               Foreground="{StaticResource MutedBrush}"
+                                               Foreground="{DynamicResource MutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="12,0,0,0" />
                                 </Grid>
@@ -298,7 +298,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Rectangle Grid.Column="0" Width="20" Height="20"
-                                               Fill="{StaticResource PrimaryBrush}"
+                                               Fill="{DynamicResource PrimaryBrush}"
                                                Opacity="0.7" RadiusX="4" RadiusY="4"
                                                Margin="0,0,14,0" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -307,12 +307,12 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="Backup a profile safely"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,2,0,0" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="›"
                                                FontSize="18" FontWeight="Light"
-                                               Foreground="{StaticResource MutedBrush}"
+                                               Foreground="{DynamicResource MutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="12,0,0,0" />
                                 </Grid>
@@ -330,7 +330,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Rectangle Grid.Column="0" Width="20" Height="20"
-                                               Fill="{StaticResource PrimaryBrush}"
+                                               Fill="{DynamicResource PrimaryBrush}"
                                                Opacity="0.7" RadiusX="4" RadiusY="4"
                                                Margin="0,0,14,0" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -339,12 +339,12 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="View detailed security findings"
                                                    Style="{StaticResource BodySmallTextBlockStyle}"
-                                                   Foreground="{StaticResource MutedBrush}"
+                                                   Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,2,0,0" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="›"
                                                FontSize="18" FontWeight="Light"
-                                               Foreground="{StaticResource MutedBrush}"
+                                               Foreground="{DynamicResource MutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="12,0,0,0" />
                                 </Grid>
@@ -364,3 +364,4 @@
     </ScrollViewer>
 
 </UserControl>
+

@@ -36,7 +36,8 @@
                     </StackPanel>
                     <TextBlock Text="Profile snapshots you can restore at any time"
                                Style="{StaticResource BodyTextBlockStyle}"
-                               Foreground="{StaticResource MutedBrush}"
+                               Foreground="{DynamicResource MutedBrush}"
+                               TextWrapping="Wrap"
                                Margin="0,4,0,0" />
                 </StackPanel>
 
@@ -44,10 +45,10 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Search Input -->
                     <Border Width="240"
-                            BorderBrush="{StaticResource ControlBorderBrush}"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="{StaticResource CornerRadiusMD}"
-                            Background="{StaticResource SurfaceBrush}">
+                            Background="{DynamicResource SurfaceBrush}">
                         <Grid>
                             <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                                      BorderThickness="0"
@@ -55,12 +56,12 @@
                                      Padding="10,8"
                                      FontSize="13"
                                      FontFamily="{StaticResource DefaultFontFamily}"
-                                     Foreground="{StaticResource TextBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
                                      VerticalContentAlignment="Center"
                                      x:Name="SearchBox" />
                             <!-- Placeholder -->
                             <TextBlock Text="Search backups..."
-                                       Foreground="{StaticResource MutedBrush}"
+                                       Foreground="{DynamicResource MutedBrush}"
                                        FontSize="13"
                                        FontFamily="{StaticResource DefaultFontFamily}"
                                        Padding="12,9,0,0"
@@ -82,6 +83,13 @@
                         </Grid>
                     </Border>
 
+                    <!-- Delete Selected Button -->
+                    <Button Content="Delete Selected"
+                            Style="{StaticResource DangerButton}"
+                            Command="{Binding DeleteSelectedCommand}"
+                            Visibility="{Binding HasSelectedBackups, Converter={StaticResource BoolToVis}}"
+                            Margin="12,0,0,0" />
+
                     <!-- Create Backup Button -->
                     <Button Content="Create Backup"
                             Style="{StaticResource PrimaryButton}"
@@ -101,18 +109,18 @@
                 <!-- Summary Row (margin bottom 24) -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                     <!-- Card 1: Total Backups -->
-                    <Border Style="{StaticResource CardStyle}" Padding="16,20" Margin="0,0,12,0" Background="{StaticResource SurfaceBrush}">
+                    <Border Style="{StaticResource CardStyle}" Padding="16,20" Margin="0,0,12,0" Background="{DynamicResource SurfaceBrush}">
                         <StackPanel Width="120">
                             <TextBlock Text="{Binding TotalBackups}" Style="{StaticResource H2TextBlockStyle}" />
-                            <TextBlock Text="Total Backups" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                            <TextBlock Text="Total Backups" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                         </StackPanel>
                     </Border>
 
                     <!-- Card 2: Storage Used -->
-                    <Border Style="{StaticResource CardStyle}" Padding="16,20" Margin="0,0,12,0" Background="{StaticResource SurfaceBrush}">
+                    <Border Style="{StaticResource CardStyle}" Padding="16,20" Margin="0,0,12,0" Background="{DynamicResource SurfaceBrush}">
                         <StackPanel Width="120">
                             <TextBlock Text="{Binding TotalSize}" Style="{StaticResource H2TextBlockStyle}" />
-                            <TextBlock Text="Storage Used" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                            <TextBlock Text="Storage Used" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -145,7 +153,7 @@
                     
                     <TextBlock Text="Create a backup before cloning or making changes"
                                Style="{StaticResource BodyTextBlockStyle}"
-                               Foreground="{StaticResource MutedBrush}"
+                               Foreground="{DynamicResource MutedBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,4,0,0" />
                     
@@ -159,9 +167,24 @@
                 <!-- Loading State -->
                 <StackPanel HorizontalAlignment="Center" Margin="0,64,0,0"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="⏳" FontSize="32" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                    <TextBlock Text="Loading backups..." Style="{StaticResource BodyTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,12,0,0" />
+                    <TextBlock Text="⏳" FontSize="32" HorizontalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
+                    <TextBlock Text="Loading backups..." Style="{StaticResource BodyTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,12,0,0" />
                 </StackPanel>
+
+                <!-- Select All Bar -->
+                <Grid Margin="0,8,0,12" Visibility="{Binding HasBackups, Converter={StaticResource BoolToVis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0" 
+                              IsChecked="{Binding IsAllSelected, UpdateSourceTrigger=PropertyChanged}" 
+                              Content="Select All" 
+                              FontSize="13" 
+                              FontFamily="{StaticResource DefaultFontFamily}"
+                              VerticalAlignment="Center" 
+                              Margin="8,0,0,0" />
+                </Grid>
 
                 <!-- Backup List (HasBackups=true, IsLoading=false) -->
                 <ItemsControl ItemsSource="{Binding FilteredBackups}">
@@ -185,6 +208,7 @@
                             <Border Style="{StaticResource CardStyle}" Padding="20,24" Margin="0,0,0,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" /> <!-- Col 0: CheckBox -->
                                         <ColumnDefinition Width="Auto" /> <!-- Col 1: Avatar -->
                                         <ColumnDefinition Width="*"    /> <!-- Col 2: Info   -->
                                         <ColumnDefinition Width="Auto" /> <!-- Col 3: Size & Date -->
@@ -192,23 +216,29 @@
                                         <ColumnDefinition Width="Auto" /> <!-- Col 5: Actions -->
                                     </Grid.ColumnDefinitions>
 
+                                    <!-- Col 0: CheckBox -->
+                                    <CheckBox Grid.Column="0" 
+                                              IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" 
+                                              VerticalAlignment="Center" 
+                                              Margin="8,0,16,0" />
+
                                     <!-- Col 1: Avatar circle -->
-                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Background="#F7E5FC" VerticalAlignment="Center">
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="20" Background="#F7E5FC" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding ProfileName[0]}" 
                                                    Style="{StaticResource H3TextBlockStyle}" 
-                                                   Foreground="{StaticResource PrimaryBrush}" 
+                                                   Foreground="{DynamicResource PrimaryBrush}" 
                                                    HorizontalAlignment="Center" 
                                                    VerticalAlignment="Center" />
                                     </Border>
 
                                     <!-- Col 2: Info (margin left 16) -->
-                                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding BackupName}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                                        <TextBlock Text="{Binding ProfileName}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                    <StackPanel Grid.Column="2" Margin="16,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding BackupName}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" />
+                                        <TextBlock Text="{Binding ProfileName}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                         <TextBlock Text="{Binding Notes}" Margin="0,2,0,0">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource BodySmallTextBlockStyle}">
-                                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
                                                     <Style.Triggers>
                                                         <Trigger Property="Text" Value="">
                                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -223,18 +253,18 @@
                                     </StackPanel>
 
                                     <!-- Col 3: Size and date (right aligned, margin right 24) -->
-                                    <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,24,0">
-                                        <TextBlock Text="{Binding Size}" Style="{StaticResource BodyTextBlockStyle}" Foreground="{StaticResource TextBrush}" HorizontalAlignment="Right" />
-                                        <TextBlock Text="{Binding CreatedDate}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" HorizontalAlignment="Right" />
+                                    <StackPanel Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,24,0">
+                                        <TextBlock Text="{Binding Size}" Style="{StaticResource BodyTextBlockStyle}" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding CreatedDate}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" HorizontalAlignment="Right" />
                                     </StackPanel>
 
                                     <!-- Col 4: Validation badge (margin right 16) -->
-                                    <Border Grid.Column="3" CornerRadius="12" Padding="6,12" VerticalAlignment="Center" Margin="0,0,16,0" Background="{Binding ValidationBadgeBackground}">
+                                    <Border Grid.Column="4" CornerRadius="12" Padding="6,12" VerticalAlignment="Center" Margin="0,0,16,0" Background="{Binding ValidationBadgeBackground}">
                                         <TextBlock Text="{Binding ValidationStatus}" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="Bold" Foreground="{Binding ValidationBadgeText}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                     </Border>
 
                                     <!-- Col 5: Actions -->
-                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
                                         <Button Content="Delete" 
                                                 Style="{StaticResource DangerButton}" 
                                                 Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
@@ -252,3 +282,4 @@
         </ScrollViewer>
     </Grid>
 </UserControl>
+

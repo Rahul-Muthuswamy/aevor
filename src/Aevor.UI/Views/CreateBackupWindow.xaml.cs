@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Aevor.Core.Models;
@@ -11,14 +12,16 @@ namespace Aevor.UI.Views
     /// </summary>
     public partial class CreateBackupWindow : Window
     {
+        private readonly Func<BraveProfile, Task<bool>> _createBackupFunc;
         public BraveProfile? SelectedProfile { get; private set; }
 
-        public CreateBackupWindow(IEnumerable<BraveProfile> profiles)
+        public CreateBackupWindow(IEnumerable<BraveProfile> profiles, Func<BraveProfile, Task<bool>> createBackupFunc)
         {
             InitializeComponent();
             ProfileComboBox.ItemsSource = profiles;
             ProfileComboBox.DisplayMemberPath = "DisplayName";
             ProfileComboBox.SelectedIndex = 0;
+            _createBackupFunc = createBackupFunc;
         }
 
         private void HeaderGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -35,11 +38,42 @@ namespace Aevor.UI.Views
             Close();
         }
 
-        private void BackupButton_Click(object sender, RoutedEventArgs e)
+        private async void BackupButton_Click(object sender, RoutedEventArgs e)
         {
             SelectedProfile = ProfileComboBox.SelectedItem as BraveProfile;
-            DialogResult = true;
-            Close();
+            if (SelectedProfile == null) return;
+
+            // Switch to loading state
+            SelectionPanel.Visibility = Visibility.Collapsed;
+            FooterBorder.Visibility = Visibility.Collapsed;
+            LoadingPanel.Visibility = Visibility.Visible;
+            HeaderGrid.IsEnabled = false; // Disable close/drag during backup
+
+            try
+            {
+                bool success = await _createBackupFunc(SelectedProfile);
+                if (success)
+                {
+                    DialogResult = true;
+                    Close();
+                }
+                else
+                {
+                    // Restore Selection view
+                    SelectionPanel.Visibility = Visibility.Visible;
+                    FooterBorder.Visibility = Visibility.Visible;
+                    LoadingPanel.Visibility = Visibility.Collapsed;
+                    HeaderGrid.IsEnabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                SelectionPanel.Visibility = Visibility.Visible;
+                FooterBorder.Visibility = Visibility.Visible;
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                HeaderGrid.IsEnabled = true;
+                MessageBox.Show($"Backup failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

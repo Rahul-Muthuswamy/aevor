@@ -14,9 +14,5 @@
 
   <ItemGroup>
     <Resource Include="Assets\aevor_logo.png" />
-    <Resource Include="Assets/Fonts/PlusJakartaSans-Regular.ttf"/>
-    <Resource Include="Assets/Fonts/PlusJakartaSans-Medium.ttf"/>
-    <Resource Include="Assets/Fonts/PlusJakartaSans-SemiBold.ttf"/>
-    <Resource Include="Assets/Fonts/PlusJakartaSans-Bold.ttf"/>
   </ItemGroup>
 </Project>

@@ -27,7 +27,7 @@
     </UserControl.Resources>
 
     <!-- ─── Root: two rows ─── -->
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"    />
@@ -38,9 +38,9 @@
              ══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
                 Padding="32,32,32,20"
-                BorderBrush="{StaticResource BorderBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
-                Background="{StaticResource BackgroundBrush}">
+                Background="{DynamicResource BackgroundBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"    />
@@ -55,7 +55,8 @@
                     </StackPanel>
                     <TextBlock Text="Discover and manage your Brave browser profiles"
                                Style="{StaticResource BodyTextBlockStyle}"
-                               Foreground="{StaticResource MutedBrush}"
+                               Foreground="{DynamicResource MutedBrush}"
+                               TextWrapping="Wrap"
                                Margin="0,6,0,0" />
                 </StackPanel>
 
@@ -64,10 +65,10 @@
 
                     <!-- Search TextBox -->
                     <Border Width="240"
-                            BorderBrush="{StaticResource ControlBorderBrush}"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="{StaticResource CornerRadiusMD}"
-                            Background="{StaticResource SurfaceBrush}">
+                            Background="{DynamicResource SurfaceBrush}">
                         <Grid>
                             <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                                      BorderThickness="0"
@@ -75,12 +76,12 @@
                                      Padding="10,8"
                                      FontSize="13"
                                      FontFamily="{StaticResource DefaultFontFamily}"
-                                     Foreground="{StaticResource TextBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
                                      VerticalContentAlignment="Center"
                                      x:Name="SearchBox" />
                             <!-- Placeholder -->
                             <TextBlock Text="Search profiles..."
-                                       Foreground="{StaticResource MutedBrush}"
+                                       Foreground="{DynamicResource MutedBrush}"
                                        FontSize="13"
                                        FontFamily="{StaticResource DefaultFontFamily}"
                                        Padding="12,9,0,0"
@@ -123,10 +124,10 @@
                 <TextBlock Text="⏳"
                            FontSize="40"
                            HorizontalAlignment="Center"
-                           Foreground="{StaticResource MutedBrush}" />
+                           Foreground="{DynamicResource MutedBrush}" />
                 <TextBlock Text="Discovering profiles..."
                            Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{StaticResource MutedBrush}"
+                           Foreground="{DynamicResource MutedBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
             </StackPanel>
@@ -156,7 +157,7 @@
                            Margin="0,16,0,0" />
                 <TextBlock Text="Make sure Brave Browser is installed and has profiles"
                            Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{StaticResource MutedBrush}"
+                           Foreground="{DynamicResource MutedBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,8,0,0" />
                 <Button Content="Refresh"
@@ -202,7 +203,7 @@
                                                 HorizontalAlignment="Left">
                                             <TextBlock Text="{Binding Initial}"
                                                        Style="{StaticResource H3TextBlockStyle}"
-                                                       Foreground="{StaticResource PrimaryBrush}"
+                                                       Foreground="{DynamicResource PrimaryBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center" />
                                         </Border>
@@ -228,12 +229,12 @@
                                     <!-- Browser -->
                                     <TextBlock Text="{Binding Browser}"
                                                Style="{StaticResource BodyTextBlockStyle}"
-                                               Foreground="{StaticResource MutedBrush}"
+                                               Foreground="{DynamicResource MutedBrush}"
                                                Margin="0,3,0,0" />
 
                                     <!-- Divider -->
                                     <Border Height="1"
-                                            Background="{StaticResource BorderBrush}"
+                                            Background="{DynamicResource BorderBrush}"
                                             Margin="0,16" />
 
                                     <!-- Stats Row -->
@@ -247,10 +248,10 @@
                                         <StackPanel Grid.Column="0">
                                             <TextBlock Text="{Binding ExtensionCount}"
                                                        Style="{StaticResource H3TextBlockStyle}"
-                                                       Foreground="{StaticResource TextBrush}" />
+                                                       Foreground="{DynamicResource TextBrush}" />
                                             <TextBlock Text="Extensions"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                                       Foreground="{StaticResource MutedBrush}"
+                                                       Foreground="{DynamicResource MutedBrush}"
                                                        Margin="0,3,0,0" />
                                         </StackPanel>
 
@@ -258,11 +259,11 @@
                                         <StackPanel Grid.Column="1" HorizontalAlignment="Right">
                                             <TextBlock Text="{Binding LastUsed}"
                                                        Style="{StaticResource BodyTextBlockStyle}"
-                                                       Foreground="{StaticResource TextBrush}"
+                                                       Foreground="{DynamicResource TextBrush}"
                                                        HorizontalAlignment="Right" />
                                             <TextBlock Text="Last Used"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                                       Foreground="{StaticResource MutedBrush}"
+                                                       Foreground="{DynamicResource MutedBrush}"
                                                        HorizontalAlignment="Right"
                                                        Margin="0,3,0,0" />
                                         </StackPanel>
@@ -302,3 +303,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

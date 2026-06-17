@@ -9,7 +9,7 @@
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
     
-    <Border Margin="16" Background="White" CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}">
+    <Border Margin="16" Background="White" CornerRadius="12" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}">
         <Border.Effect>
             <DropShadowEffect BlurRadius="15" Direction="315" ShadowDepth="1" Opacity="0.15" Color="Black" />
         </Border.Effect>
@@ -46,18 +46,51 @@
             </Grid>
             
             <!-- Content -->
-            <StackPanel Grid.Row="1" Margin="24,12,24,12">
+            <StackPanel x:Name="SelectionPanel" Grid.Row="1" Margin="24,12,24,12">
                 <TextBlock Text="Select the Brave profile you want to back up:" 
                            Style="{StaticResource BodySmallTextBlockStyle}" 
-                           Foreground="{StaticResource MutedBrush}"
+                           Foreground="{DynamicResource MutedBrush}"
                            Margin="0,0,0,8" />
                            
                 <!-- ComboBox styled with custom resources -->
                 <ComboBox x:Name="ProfileComboBox" Height="38" VerticalContentAlignment="Center" FontSize="13" />
             </StackPanel>
+
+            <!-- Loading Panel -->
+            <Grid x:Name="LoadingPanel" Grid.Row="1" Visibility="Collapsed" Margin="24,12,24,12">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Image Source="{StaticResource AevorIcon}" Width="44" Height="44" RenderOptions.BitmapScalingMode="HighQuality" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center">
+                        <Image.RenderTransform>
+                            <RotateTransform x:Name="SpinnerRotate" Angle="0" />
+                        </Image.RenderTransform>
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Visibility, ElementName=LoadingPanel}" Value="Visible">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="RotationStoryboard">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(Image.RenderTransform).(RotateTransform.Angle)"
+                                                                     From="0" To="360" Duration="0:0:1.5"
+                                                                     RepeatBehavior="Forever" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="RotationStoryboard" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                    <TextBlock Text="Creating backup..." Style="{StaticResource BodyTextBlockStyle}" HorizontalAlignment="Center" Margin="0,12,0,0" FontWeight="SemiBold"/>
+                    <TextBlock Text="Please keep Brave Browser closed" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
             
             <!-- Footer -->
-            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="0,0,11,11" BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderBrush}" Padding="24,12">
+            <Border x:Name="FooterBorder" Grid.Row="2" Background="{DynamicResource SurfaceBrush}" CornerRadius="0,0,11,11" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource BorderBrush}" Padding="24,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Width="90" Height="34" Margin="0,0,8,0" Click="CloseButton_Click" IsCancel="True" />
                     <Button Content="Backup" Style="{StaticResource PrimaryButton}" Width="90" Height="34" Click="BackupButton_Click" IsDefault="True" />
@@ -66,3 +99,4 @@
         </Grid>
     </Border>
 </Window>
+

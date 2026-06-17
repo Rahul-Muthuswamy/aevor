@@ -83,11 +83,11 @@ public class ProfileCreator : IProfileCreator
             }
 
             // Determine folder name
-            string folderName = request.FolderName;
+            string? folderName = request.FolderName;
             if (string.IsNullOrWhiteSpace(folderName))
             {
                 int index = 1;
-                while (infoCacheNode.ContainsKey($"Profile {index}"))
+                while (infoCacheNode.ContainsKey($"Profile {index}") || _fileSystem.DirectoryExists(Path.Combine(userDataPath, $"Profile {index}")))
                 {
                     index++;
                 }
