@@ -365,7 +365,7 @@ public class SecurityViewModel : BaseViewModel
             FilteredFindings.Clear();
             StatusMessage = "Scanning all profiles...";
         });
-        await LoadSecurityDataAsync();
+        await Task.Run(async () => await LoadSecurityDataAsync());
         await RunOnUIAsync(() =>
         {
             StatusMessage = $"Scan complete — {TotalFindings} findings across {_profiles.Count} profiles";

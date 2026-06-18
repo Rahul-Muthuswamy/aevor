@@ -24,8 +24,40 @@ public class BraveInstallationService : IBraveInstallationService
     public string GetUserDataPath()
     {
         EnsureWindowsPlatform();
+
+        try
+        {
+            var settingsPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Aevor",
+                "settings.json"
+            );
+
+            if (_fileSystem.FileExists(settingsPath))
+            {
+                var json = _fileSystem.ReadAllTextAsync(settingsPath).GetAwaiter().GetResult();
+                var root = System.Text.Json.Nodes.JsonNode.Parse(json);
+                if (root != null)
+                {
+                    var customPathNode = root["BraveUserDataPath"];
+                    if (customPathNode != null)
+                    {
+                        var customPath = customPathNode.GetValue<string>();
+                        if (!string.IsNullOrEmpty(customPath) && _fileSystem.DirectoryExists(customPath))
+                        {
+                            return customPath;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fallback to default on any settings loading/parsing error
+        }
+
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(localAppData, "BraveSoftware", "Brave-Browser", "User Data");
+        return System.IO.Path.Combine(localAppData, "BraveSoftware", "Brave-Browser", "User Data");
     }
 
     public bool IsBraveRunning()

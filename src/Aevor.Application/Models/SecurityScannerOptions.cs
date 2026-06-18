@@ -2,12 +2,12 @@ namespace Aevor.Application.Models;
 
 public class SecurityScannerOptions
 {
-    public int PasswordWeight { get; set; } = 30;
-    public int CookieWeight { get; set; } = 25;
-    public int WalletWeight { get; set; } = 30;
-    public int AutofillWeight { get; set; } = 15;
-    public int SessionWeight { get; set; } = 10;
-    public int ExtensionStorageWeight { get; set; } = 10;
-    public int HistoryWeight { get; set; } = 20;
-    public int CacheWeight { get; set; } = 5;
+    public int PasswordWeight { get; set; } = 2;
+    public int CookieWeight { get; set; } = 2;
+    public int WalletWeight { get; set; } = 17;
+    public int AutofillWeight { get; set; } = 3;
+    public int SessionWeight { get; set; } = 2;
+    public int ExtensionStorageWeight { get; set; } = 1;
+    public int HistoryWeight { get; set; } = 2;
+    public int CacheWeight { get; set; } = 1;
 }
