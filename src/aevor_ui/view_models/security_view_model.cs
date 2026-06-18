@@ -55,10 +55,11 @@ public class SecurityViewModel : BaseViewModel
     {
         get
         {
-            var score = 100 - OverallRiskScore;
-            if (score >= 75) return "Secure";
-            if (score >= 50) return "Medium";
-            return "At Risk";
+            // Thresholds mirror the scanner's RiskLevel bands
+            if (OverallRiskScore <= 40) return "Secure";
+            if (OverallRiskScore <= 65) return "Low Risk";
+            if (OverallRiskScore <= 85) return "High Risk";
+            return "Critical";
         }
     }
 
@@ -66,10 +67,10 @@ public class SecurityViewModel : BaseViewModel
     {
         get
         {
-            var score = 100 - OverallRiskScore;
-            if (score >= 75) return new SolidColorBrush(Color.FromRgb(16, 185, 129)); // SuccessBrush: #10B981
-            if (score >= 50) return new SolidColorBrush(Color.FromRgb(245, 158, 11)); // WarningBrush: #F59E0B
-            return new SolidColorBrush(Color.FromRgb(220, 38, 38)); // DangerBrush: #DC2626
+            if (OverallRiskScore <= 40) return new SolidColorBrush(Color.FromRgb( 16, 185, 129)); // #10B981 green
+            if (OverallRiskScore <= 65) return new SolidColorBrush(Color.FromRgb(245, 158,  11)); // #F59E0B amber
+            if (OverallRiskScore <= 85) return new SolidColorBrush(Color.FromRgb(239,  68,  68)); // #EF4444 red
+            return new SolidColorBrush(Color.FromRgb(153, 27, 27));                               // #991B1B deep-red
         }
     }
 
@@ -77,10 +78,10 @@ public class SecurityViewModel : BaseViewModel
     {
         get
         {
-            var score = 100 - OverallRiskScore;
-            if (score >= 75) return new SolidColorBrush(Color.FromRgb(240, 253, 244)); // #F0FDF4
-            if (score >= 50) return new SolidColorBrush(Color.FromRgb(255, 251, 235)); // #FFFBEB
-            return new SolidColorBrush(Color.FromRgb(255, 241, 242)); // #FFF1F2
+            if (OverallRiskScore <= 40) return new SolidColorBrush(Color.FromRgb(240, 253, 244)); // #F0FDF4
+            if (OverallRiskScore <= 65) return new SolidColorBrush(Color.FromRgb(255, 251, 235)); // #FFFBEB
+            if (OverallRiskScore <= 85) return new SolidColorBrush(Color.FromRgb(255, 241, 242)); // #FFF1F2
+            return new SolidColorBrush(Color.FromRgb(254, 226, 226));                             // #FEE2E2
         }
     }
 
@@ -245,11 +246,11 @@ public class SecurityViewModel : BaseViewModel
                     string severityLabel = finding.Severity switch
                     {
                         SecuritySeverity.Critical => "Critical",
-                        SecuritySeverity.High => "Critical",
-                        SecuritySeverity.Medium => "Warning",
-                        SecuritySeverity.Low => "Info",
-                        SecuritySeverity.Info => "Info",
-                        _ => "Info"
+                        SecuritySeverity.High     => "Critical",
+                        SecuritySeverity.Medium   => "Warning",
+                        SecuritySeverity.Low      => "Warning",
+                        SecuritySeverity.Info     => "Info",
+                        _                         => "Info"
                     };
 
                     return new SecurityFinding

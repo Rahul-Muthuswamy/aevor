@@ -51,8 +51,8 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Saved Passwords",
                 "Credentials",
-                SecuritySeverity.Low,
-                "Saved passwords database containing credentials detected.",
+                SecuritySeverity.Medium,
+                "Saved passwords database detected. This is normal for active browser profiles but should never be exported.",
                 loginDataPath
             ));
             _logger.LogWarning("Passwords detected in profile: {ProfileName}", profile.DisplayName);
@@ -68,8 +68,8 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Session Cookies",
                 "Cookies",
-                SecuritySeverity.Low,
-                "Active session cookies database detected.",
+                SecuritySeverity.Medium,
+                "Session cookies database detected. Standard in all browser profiles; cookies are blocked from export.",
                 cookiesPath
             ));
             _logger.LogWarning("Cookies detected in profile: {ProfileName}", profile.DisplayName);
@@ -85,7 +85,7 @@ public class SecurityScanner : ISecurityScanner
                 "Brave Wallet Data",
                 "Cryptocurrency Wallet",
                 SecuritySeverity.High,
-                "Brave Cryptocurrency Wallet local configuration folder detected.",
+                "Brave Cryptocurrency Wallet folder detected. Wallet keys are encrypted but the folder is present and never exported.",
                 walletPath
             ));
             _logger.LogWarning("Brave Wallet detected in profile: {ProfileName}", profile.DisplayName);
@@ -100,8 +100,8 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Autofill Profiles & Credit Cards",
                 "Autofill Profile Data",
-                SecuritySeverity.Medium,
-                "Autofill profile, addresses, and saved payment metadata database detected.",
+                SecuritySeverity.Low,
+                "Autofill addresses and saved payment metadata database detected. Present in all active profiles.",
                 webDataPath
             ));
             _logger.LogWarning("Autofill data detected in profile: {ProfileName}", profile.DisplayName);
@@ -123,7 +123,7 @@ public class SecurityScanner : ISecurityScanner
                 "Active Session & Local Storage States",
                 "Session & Local Storage Data",
                 SecuritySeverity.Low,
-                "Active login sessions and local databases detected.",
+                "Session and local storage folders present. Normal in all active browser profiles.",
                 profile.ProfilePath
             ));
             _logger.LogWarning("Session storage folders detected in profile: {ProfileName}", profile.DisplayName);
@@ -157,9 +157,9 @@ public class SecurityScanner : ISecurityScanner
             cumulativeWeight += _options.HistoryWeight;
             findings.Add(new SecurityFinding(
                 "Browsing History Trails",
-                "Browsing History Trails",
-                SecuritySeverity.Low,
-                "Visited URLs and downloads database detected.",
+                "Browsing History",
+                SecuritySeverity.Info,
+                "Visited URLs and downloads database detected. Present in all active profiles.",
                 historyPath
             ));
             _logger.LogWarning("Browsing history detected in profile: {ProfileName}", profile.DisplayName);
@@ -204,10 +204,10 @@ public class SecurityScanner : ISecurityScanner
 
         var riskLevel = riskScore switch
         {
-            <= 20 => RiskLevel.Low,
-            <= 50 => RiskLevel.Medium,
-            <= 80 => RiskLevel.High,
-            _ => RiskLevel.Critical
+            <= 40 => RiskLevel.Low,
+            <= 65 => RiskLevel.Medium,
+            <= 85 => RiskLevel.High,
+            _     => RiskLevel.Critical
         };
 
         var exportSafe = _safetyEvaluator.Evaluate(hasPasswords, hasCookies, hasWalletData);

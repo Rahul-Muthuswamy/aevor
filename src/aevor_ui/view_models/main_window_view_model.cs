@@ -1,4 +1,10 @@
 using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Aevor.UI.Commands;
 using Aevor.UI.Services;
@@ -10,6 +16,18 @@ public class MainWindowViewModel : BaseViewModel
     private readonly INavigationService _navigationService;
     private string _currentPageTitle = "Dashboard";
 
+    // ── Version / update ──────────────────────────────────────────────────
+    private string _latestVersion  = string.Empty;
+    private bool   _updateAvailable;
+
+    private const string GitHubOwner = "Rahul-Muthuswamy";
+    private const string GitHubRepo  = "aevor";
+    private const string ReleasesUrl =
+        $"https://github.com/{GitHubOwner}/{GitHubRepo}/releases";
+    private const string ApiUrl =
+        $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases/latest";
+
+    // ── Nav active-state fields ───────────────────────────────────────────
     private bool _isDashboardActive;
     private bool _isProfilesActive;
     private bool _isTemplatesActive;
@@ -17,6 +35,35 @@ public class MainWindowViewModel : BaseViewModel
     private bool _isBackupsActive;
     private bool _isSecurityActive;
     private bool _isSettingsActive;
+
+    // ── Version properties ────────────────────────────────────────────────
+
+    /// <summary>Assembly version formatted as "v1.0.0".</summary>
+    public string CurrentVersion
+    {
+        get
+        {
+            var v = Assembly.GetExecutingAssembly().GetName().Version;
+            if (v is null) return "v0.0.0";
+            return $"v{v.Major}.{v.Minor}.{v.Build}";
+        }
+    }
+
+    public string LatestVersion
+    {
+        get => _latestVersion;
+        private set => SetProperty(ref _latestVersion, value);
+    }
+
+    public bool UpdateAvailable
+    {
+        get => _updateAvailable;
+        private set => SetProperty(ref _updateAvailable, value);
+    }
+
+    public ICommand OpenReleasesPageCommand { get; }
+
+    // ── Nav active-state properties ───────────────────────────────────────
 
     public bool IsDashboardActive
     {
@@ -65,6 +112,15 @@ public class MainWindowViewModel : BaseViewModel
         _navigationService = navigationService;
         _navigationService.NavigationChanged += OnNavigationChanged;
 
+        OpenReleasesPageCommand = new RelayCommand(() =>
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(ReleasesUrl) { UseShellExecute = true });
+            }
+            catch { /* ignore — browser may not be available */ }
+        });
+
         NavigateDashboardCommand = new RelayCommand(() => 
         {
             SetAllActiveFalse();
@@ -109,6 +165,9 @@ public class MainWindowViewModel : BaseViewModel
         });
 
         OnNavigationChanged();
+
+        // Kick off silent background update check
+        Task.Run(CheckForUpdatesAsync);
     }
 
     public BaseViewModel? CurrentView => _navigationService.CurrentView;
@@ -120,12 +179,53 @@ public class MainWindowViewModel : BaseViewModel
     }
 
     public ICommand NavigateDashboardCommand { get; }
-    public ICommand NavigateProfilesCommand { get; }
+    public ICommand NavigateProfilesCommand  { get; }
     public ICommand NavigateTemplatesCommand { get; }
-    public ICommand NavigateCloneCommand { get; }
-    public ICommand NavigateBackupsCommand { get; }
-    public ICommand NavigateSecurityCommand { get; }
-    public ICommand NavigateSettingsCommand { get; }
+    public ICommand NavigateCloneCommand     { get; }
+    public ICommand NavigateBackupsCommand   { get; }
+    public ICommand NavigateSecurityCommand  { get; }
+    public ICommand NavigateSettingsCommand  { get; }
+
+    // ── Update check ──────────────────────────────────────────────────────
+
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.Add(
+                new ProductInfoHeaderValue("Aevor-App", CurrentVersion.TrimStart('v')));
+            client.Timeout = TimeSpan.FromSeconds(10);
+
+            var json = await client.GetStringAsync(ApiUrl).ConfigureAwait(false);
+            using var doc = JsonDocument.Parse(json);
+
+            if (!doc.RootElement.TryGetProperty("tag_name", out var tagElement))
+                return;
+
+            var tag = tagElement.GetString();
+            if (string.IsNullOrWhiteSpace(tag))
+                return;
+
+            // Normalise both to "vX.Y.Z" for comparison
+            var remote  = tag.StartsWith('v') ? tag : $"v{tag}";
+            var current = CurrentVersion;
+
+            if (!string.Equals(remote, current, StringComparison.OrdinalIgnoreCase))
+            {
+                // Marshal property updates back to the UI thread
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    LatestVersion   = remote;
+                    UpdateAvailable = true;
+                });
+            }
+        }
+        catch
+        {
+            // Fail silently — no internet or API error must never crash the app
+        }
+    }
 
     private void SetAllActiveFalse()
     {

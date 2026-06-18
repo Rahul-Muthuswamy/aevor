@@ -76,14 +76,157 @@
                     <TextBlock Text="Aevor" Foreground="{DynamicResource PrimaryBrush}" Style="{StaticResource H2TextBlockStyle}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
 
-                <!-- Right: Placeholder Icons -->
+                <!-- Right: Icons + Profile Flyout -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <!-- Search icon (placeholder) -->
                     <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SurfaceBrush}" Margin="0,0,8,0">
                         <TextBlock Text="🔍" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SurfaceBrush}">
-                        <TextBlock Text="👤" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+
+                    <!-- Profile button + flyout -->
+                    <Grid>
+                        <!-- Trigger button -->
+                        <Button x:Name="ProfileBtn"
+                                Width="32" Height="32"
+                                Padding="0"
+                                Style="{StaticResource GhostButton}"
+                                Click="ProfileBtn_Click">
+                            <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SurfaceBrush}">
+                                <TextBlock Text="👤" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                        </Button>
+
+                        <!-- Flyout popup -->
+                        <Popup x:Name="ProfilePopup"
+                               PlacementTarget="{Binding ElementName=ProfileBtn}"
+                               Placement="Bottom"
+                               HorizontalOffset="-172"
+                               VerticalOffset="6"
+                               StaysOpen="False"
+                               AllowsTransparency="True"
+                               PopupAnimation="Fade">
+                            <Border Width="220"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Color="#000000" Opacity="0.10" Direction="270"/>
+                                </Border.Effect>
+
+                                <StackPanel>
+                                    <!-- Avatar section -->
+                                    <StackPanel Orientation="Horizontal" Margin="16,14,16,12">
+                                        <Border Width="34" Height="34" CornerRadius="17" Background="#EDE9FE">
+                                            <Image Source="{StaticResource AevorIcon}" Width="20" Height="20"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="Aevor"
+                                                       Style="{StaticResource BodyTextBlockStyle}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextBrush}" />
+                                            <TextBlock Text="Local vault"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                       Foreground="{DynamicResource MutedBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- ═══ Version row ═══ -->
+                                    <Grid Margin="16,0,16,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Left: "Version" label -->
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Version"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{DynamicResource MutedBrush}"
+                                                   VerticalAlignment="Center" />
+
+                                        <!-- Right: version + optional badge -->
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center">
+
+                                            <!-- Current version number -->
+                                            <TextBlock Text="{Binding CurrentVersion}"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                       Foreground="{DynamicResource TextBrush}"
+                                                       VerticalAlignment="Center" />
+
+                                            <!-- Update Available badge (hidden until UpdateAvailable=true) -->
+                                            <Button Margin="6,0,0,0"
+                                                    Padding="0"
+                                                    BorderThickness="0"
+                                                    Background="Transparent"
+                                                    Cursor="Hand"
+                                                    Command="{Binding OpenReleasesPageCommand}"
+                                                    ToolTip="{Binding LatestVersion, StringFormat='Update to {0} available — click to open releases page'}"
+                                                    FocusVisualStyle="{x:Null}">
+                                                <Button.Visibility>
+                                                    <Binding Path="UpdateAvailable">
+                                                        <Binding.Converter>
+                                                            <BooleanToVisibilityConverter />
+                                                        </Binding.Converter>
+                                                    </Binding>
+                                                </Button.Visibility>
+                                                <Border CornerRadius="8" Background="#D1FAE5" Padding="6,2">
+                                                    <TextBlock Text="Update Available"
+                                                               FontFamily="{StaticResource DefaultFontFamily}"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#065F46" />
+                                                </Border>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Divider -->
+                                    <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,8" />
+
+                                    <!-- Settings link -->
+                                    <Button Margin="8,0,8,4"
+                                            Height="34"
+                                            HorizontalContentAlignment="Left"
+                                            Style="{StaticResource GhostButton}"
+                                            Command="{Binding NavigateSettingsCommand}"
+                                            Click="ProfilePopup_CloseOnNav">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="⚙" FontSize="13" Margin="0,0,8,0"
+                                                       Foreground="{DynamicResource MutedBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="Settings"
+                                                       Style="{StaticResource BodyTextBlockStyle}"
+                                                       Foreground="{DynamicResource TextBrush}"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <!-- Security link -->
+                                    <Button Margin="8,0,8,10"
+                                            Height="34"
+                                            HorizontalContentAlignment="Left"
+                                            Style="{StaticResource GhostButton}"
+                                            Command="{Binding NavigateSecurityCommand}"
+                                            Click="ProfilePopup_CloseOnNav">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="🔒" FontSize="13" Margin="0,0,8,0"
+                                                       Foreground="{DynamicResource MutedBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="Security"
+                                                       Style="{StaticResource BodyTextBlockStyle}"
+                                                       Foreground="{DynamicResource TextBrush}"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
                 </StackPanel>
             </Grid>
         </Border>

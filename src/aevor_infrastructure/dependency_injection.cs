@@ -37,6 +37,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IFileSystem, PhysicalFileSystem>();
         services.AddSingleton<IBraveInstallationService, BraveInstallationService>();
+        services.AddSingleton<IMasterPasswordService, MasterPasswordService>();
         services.AddSingleton<ILocalStateParser, LocalStateParser>();
         services.AddSingleton<IProfileDiscoveryService, ProfileDiscoveryService>();
         services.AddSingleton<IDiscoveredSettingRegistry, DiscoveredSettingRegistry>();
