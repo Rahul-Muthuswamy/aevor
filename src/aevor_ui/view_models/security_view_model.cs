@@ -235,7 +235,7 @@ public class SecurityViewModel : BaseViewModel
                 throw new Exception("All profile scans failed.");
             }
 
-            var overallScore = _scanResults.Any() ? (int)Math.Round(_scanResults.Average(r => r.RiskScore)) : 0;
+            var overallScore = _scanResults.Any() ? (int)Math.Round(_scanResults.Average(r => r.RiskScore), MidpointRounding.AwayFromZero) : 0;
             var totalFindings = _scanResults.Sum(r => r.Findings.Count);
 
             var findingsList = _scanResults.SelectMany(result =>
@@ -326,7 +326,11 @@ public class SecurityViewModel : BaseViewModel
     // ── Helpers ────────────────────────────────────────────────────────
     private string GetRelativeTimeString(DateTime scanTime)
     {
-        var elapsed = DateTime.Now - scanTime;
+        var elapsed = DateTime.UtcNow - scanTime.ToUniversalTime();
+        if (elapsed.TotalSeconds < 0)
+        {
+            elapsed = TimeSpan.Zero;
+        }
         if (elapsed.TotalSeconds < 60)
         {
             return "Scanned just now";

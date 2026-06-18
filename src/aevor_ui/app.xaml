@@ -5,16 +5,17 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Themes/Colors.xaml" />
-                <ResourceDictionary Source="Themes/Typography.xaml" />
-                <ResourceDictionary Source="Themes/Spacing.xaml" />
-                <ResourceDictionary Source="Themes/Controls.xaml" />
-                <ResourceDictionary Source="Themes/Cards.xaml" />
-                <ResourceDictionary Source="Themes/Buttons.xaml" />
+                <ResourceDictionary Source="themes/colors.xaml" />
+                <ResourceDictionary Source="themes/typography.xaml" />
+                <ResourceDictionary Source="themes/spacing.xaml" />
+                <ResourceDictionary Source="themes/controls.xaml" />
+                <ResourceDictionary Source="themes/cards.xaml" />
+                <ResourceDictionary Source="themes/buttons.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Cropped logo icon (excluding the AEVOR text at the bottom of the 2000x2000 image) -->
-            <CroppedBitmap x:Key="AevorIcon" Source="/Assets/aevor_logo.png" SourceRect="0,0,2000,1520" />
+            <CroppedBitmap x:Key="AevorIcon" Source="/assets/aevor_logo.png" SourceRect="0,0,2000,1520" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
+

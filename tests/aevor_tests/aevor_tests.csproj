@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Aevor.Infrastructure\Aevor.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\aevor_infrastructure\aevor_infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

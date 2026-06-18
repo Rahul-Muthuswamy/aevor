@@ -9,10 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Aevor.Infrastructure\Aevor.Infrastructure.csproj" />
+    <ProjectReference Include="..\aevor_infrastructure\aevor_infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\aevor_logo.png" />
+    <Resource Include="assets\aevor_logo.png" />
   </ItemGroup>
 </Project>
+

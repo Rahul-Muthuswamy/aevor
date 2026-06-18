@@ -9,7 +9,7 @@
         Title="Aevor" Height="700" Width="1000"
         MinWidth="1000" MinHeight="700"
         WindowStartupLocation="CenterScreen"
-        Icon="/Assets/aevor_logo.png">
+        Icon="/assets/aevor_logo.png">
     <Window.Resources>
         <!-- Boolean to Visibility Converter -->
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -530,4 +530,5 @@
         </Grid>
     </Grid>
 </Window>
+
 

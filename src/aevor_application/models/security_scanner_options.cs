@@ -10,4 +10,5 @@ public class SecurityScannerOptions
     public int ExtensionStorageWeight { get; set; } = 1;
     public int HistoryWeight { get; set; } = 2;
     public int CacheWeight { get; set; } = 1;
+    public int BrowserRunningWeight { get; set; } = 30;
 }

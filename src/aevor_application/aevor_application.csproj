@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\aevor_core\aevor_core.csproj" />
+  </ItemGroup>
+
 </Project>
+

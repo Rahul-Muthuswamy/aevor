@@ -11,17 +11,20 @@ public class SecurityScanner : ISecurityScanner
     private readonly IFileSystem _fileSystem;
     private readonly ExportSafetyEvaluator _safetyEvaluator;
     private readonly SecurityScannerOptions _options;
+    private readonly IBraveInstallationService _installationService;
     private readonly ILogger<SecurityScanner> _logger;
 
     public SecurityScanner(
         IFileSystem fileSystem,
         ExportSafetyEvaluator safetyEvaluator,
         SecurityScannerOptions options,
+        IBraveInstallationService installationService,
         ILogger<SecurityScanner> logger)
     {
         _fileSystem = fileSystem;
         _safetyEvaluator = safetyEvaluator;
         _options = options;
+        _installationService = installationService;
         _logger = logger;
     }
 
@@ -48,7 +51,7 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Saved Passwords",
                 "Credentials",
-                SecuritySeverity.Critical,
+                SecuritySeverity.Low,
                 "Saved passwords database containing credentials detected.",
                 loginDataPath
             ));
@@ -65,7 +68,7 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Session Cookies",
                 "Cookies",
-                SecuritySeverity.High,
+                SecuritySeverity.Low,
                 "Active session cookies database detected.",
                 cookiesPath
             ));
@@ -97,7 +100,7 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Autofill Profiles & Credit Cards",
                 "Autofill Profile Data",
-                SecuritySeverity.High,
+                SecuritySeverity.Medium,
                 "Autofill profile, addresses, and saved payment metadata database detected.",
                 webDataPath
             ));
@@ -119,7 +122,7 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Active Session & Local Storage States",
                 "Session & Local Storage Data",
-                SecuritySeverity.Medium,
+                SecuritySeverity.Low,
                 "Active login sessions and local databases detected.",
                 profile.ProfilePath
             ));
@@ -139,7 +142,7 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Extension Local Cache Databases",
                 "Extension Local Caches",
-                SecuritySeverity.Medium,
+                SecuritySeverity.Info,
                 "Installed extension storage state folders detected.",
                 profile.ProfilePath
             ));
@@ -155,7 +158,7 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Browsing History Trails",
                 "Browsing History Trails",
-                SecuritySeverity.High,
+                SecuritySeverity.Low,
                 "Visited URLs and downloads database detected.",
                 historyPath
             ));
@@ -175,15 +178,29 @@ public class SecurityScanner : ISecurityScanner
             findings.Add(new SecurityFinding(
                 "Temporary Local Cache",
                 "Local Cache Footprint",
-                SecuritySeverity.Low,
+                SecuritySeverity.Info,
                 "Temporary internet files and code cache folders detected.",
                 profile.ProfilePath
             ));
             _logger.LogWarning("Local cache folders detected in profile: {ProfileName}", profile.DisplayName);
         }
 
-        var maxPossibleWeight = _options.PasswordWeight + _options.CookieWeight + _options.WalletWeight + _options.AutofillWeight + _options.SessionWeight + _options.ExtensionStorageWeight + _options.HistoryWeight + _options.CacheWeight;
-        var riskScore = (int)Math.Round((double)cumulativeWeight / maxPossibleWeight * 100.0);
+        var isRunning = _installationService.IsBraveRunning();
+        if (isRunning)
+        {
+            cumulativeWeight += _options.BrowserRunningWeight;
+            findings.Add(new SecurityFinding(
+                "Brave Browser is Running",
+                "Process State",
+                SecuritySeverity.High,
+                "Brave Browser is currently running. Active session data and credentials may be unlocked and vulnerable to local access.",
+                "Running Process"
+            ));
+            _logger.LogWarning("Brave Browser is currently running during scan.");
+        }
+
+        var maxPossibleWeight = _options.PasswordWeight + _options.CookieWeight + _options.WalletWeight + _options.AutofillWeight + _options.SessionWeight + _options.ExtensionStorageWeight + _options.HistoryWeight + _options.CacheWeight + _options.BrowserRunningWeight;
+        var riskScore = (int)Math.Round((double)cumulativeWeight / maxPossibleWeight * 100.0, MidpointRounding.AwayFromZero);
 
         var riskLevel = riskScore switch
         {

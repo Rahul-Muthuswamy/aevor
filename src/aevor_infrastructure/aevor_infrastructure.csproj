@@ -16,7 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Aevor.Application\Aevor.Application.csproj" />
+    <ProjectReference Include="..\aevor_application\aevor_application.csproj" />
   </ItemGroup>
 
 </Project>
+

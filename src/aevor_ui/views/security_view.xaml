@@ -309,7 +309,7 @@
         </ScrollViewer>
 
         <!-- Loading Overlay -->
-        <Grid Background="White" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+        <Grid x:Name="LoadingPanel" Background="White" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" RenderOptions.BitmapScalingMode="HighQuality" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center">
                     <Image.RenderTransform>
@@ -318,7 +318,7 @@
                     <Image.Style>
                         <Style TargetType="Image">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <DataTrigger Binding="{Binding Visibility, ElementName=LoadingPanel}" Value="Visible">
                                     <DataTrigger.EnterActions>
                                         <BeginStoryboard x:Name="RotationStoryboard">
                                             <Storyboard>
