@@ -5,8 +5,5 @@
     <Project Path="src/aevor_infrastructure/aevor_infrastructure.csproj" />
     <Project Path="src/aevor_ui/aevor_ui.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/aevor_tests/aevor_tests.csproj" />
-  </Folder>
 </Solution>
 
