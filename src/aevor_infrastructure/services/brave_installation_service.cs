@@ -35,7 +35,7 @@ public class BraveInstallationService : IBraveInstallationService
 
             if (_fileSystem.FileExists(settingsPath))
             {
-                var json = _fileSystem.ReadAllTextAsync(settingsPath).GetAwaiter().GetResult();
+                var json = _fileSystem.ReadAllText(settingsPath);
                 var root = System.Text.Json.Nodes.JsonNode.Parse(json);
                 if (root != null)
                 {

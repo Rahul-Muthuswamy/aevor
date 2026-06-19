@@ -47,6 +47,7 @@ public class DashboardViewModel : BaseViewModel
     private readonly ISecurityScanner _securityScanner;
     private readonly INavigationService _navigationService;
     private readonly SettingsViewModel _settingsViewModel;
+    private readonly IToastService _toastService;
 
     // ── Stats ──────────────────────────────────────────────────────────
     private int _totalProfiles;
@@ -122,13 +123,15 @@ public class DashboardViewModel : BaseViewModel
         IBackupService backupService,
         ISecurityScanner securityScanner,
         INavigationService navigationService,
-        SettingsViewModel settingsViewModel)
+        SettingsViewModel settingsViewModel,
+        IToastService toastService)
     {
         _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
         _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
         _securityScanner = securityScanner ?? throw new ArgumentNullException(nameof(securityScanner));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _settingsViewModel = settingsViewModel ?? throw new ArgumentNullException(nameof(settingsViewModel));
+        _toastService = toastService ?? throw new ArgumentNullException(nameof(toastService));
 
         AnalyzeProfilesCommand = new RelayCommand(OnAnalyzeProfiles);
         CreateTemplateCommand  = new RelayCommand(OnCreateTemplate);

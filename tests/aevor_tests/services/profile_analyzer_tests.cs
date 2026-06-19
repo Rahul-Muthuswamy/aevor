@@ -130,4 +130,37 @@ public class ProfileAnalyzerTests
         result.Warnings.Should().HaveCount(1);
         result.Warnings[0].Should().Contain("state mismatch");
     }
+
+    [Fact]
+    public async Task AnalyzeAsync_ShouldFallbackToSecurePreferencesExtensions_WhenPreferencesExtensionsIsEmpty()
+    {
+        var preferencesParser = Substitute.For<IPreferencesParser>();
+        var securePreferencesParser = Substitute.For<ISecurePreferencesParser>();
+        var registry = Substitute.For<IDiscoveredSettingRegistry>();
+        var fileSystem = Substitute.For<IFileSystem>();
+        var logger = Substitute.For<ILogger<ProfileAnalyzer>>();
+
+        var profile = new BraveProfile("Default", "Personal", true, true, @"C:\Brave\Default");
+        fileSystem.DirectoryExists(profile.ProfilePath).Returns(true);
+
+        var theme = new ThemeInformation("theme1", "Dark", 123);
+        var search = new SearchEngineInformation("Google", "google.com", "url");
+        var sidebar = new SidebarConfiguration(true, "right");
+        var verticalTabs = new VerticalTabsConfiguration(true);
+        var prefExtensions = new List<ExtensionInfo>();
+        var secExtensions = new List<ExtensionInfo> { new("ext1", "Extension One", "1.0", true) };
+
+        var prefSettings = new BrowserSettings(theme, search, sidebar, verticalTabs, prefExtensions);
+        var secSettings = new BrowserSettings(theme, search, sidebar, verticalTabs, secExtensions);
+
+        preferencesParser.ParseAsync(Arg.Any<string>()).Returns(prefSettings);
+        securePreferencesParser.ParseAsync(Arg.Any<string>()).Returns(secSettings);
+
+        var analyzer = new ProfileAnalyzer(preferencesParser, securePreferencesParser, registry, fileSystem, logger);
+
+        var result = await analyzer.AnalyzeAsync(profile);
+
+        result.InstalledExtensions.Should().ContainSingle().Which.Id.Should().Be("ext1");
+        result.ExtensionCount.Should().Be(1);
+    }
 }

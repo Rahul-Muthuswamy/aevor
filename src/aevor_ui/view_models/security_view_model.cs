@@ -19,6 +19,7 @@ public class SecurityViewModel : BaseViewModel
     private readonly ISecurityScanner _securityScanner;
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly IPdfReportService _pdfReportService;
+    private readonly IToastService _toastService;
     private List<SecurityScanResult> _scanResults = new();
     private List<BraveProfile> _profiles = new();
 
@@ -169,11 +170,16 @@ public class SecurityViewModel : BaseViewModel
     public ICommand ExportReportCommand     { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
-    public SecurityViewModel(ISecurityScanner securityScanner, IProfileDiscoveryService profileDiscoveryService, IPdfReportService pdfReportService)
+    public SecurityViewModel(
+        ISecurityScanner securityScanner,
+        IProfileDiscoveryService profileDiscoveryService,
+        IPdfReportService pdfReportService,
+        IToastService toastService)
     {
         _securityScanner = securityScanner;
         _profileDiscoveryService = profileDiscoveryService;
         _pdfReportService = pdfReportService;
+        _toastService = toastService;
 
         RunScanCommand          = new RelayCommand(OnRunScan);
         FilterBySeverityCommand = new RelayCommand<string>(OnFilterBySeverity);
@@ -302,8 +308,8 @@ public class SecurityViewModel : BaseViewModel
                 CriticalCount = 0;
                 WarningCount = 0;
                 ExcludedCount = 0;
-                StatusMessage = "Scan failed: " + ex.Message;
             });
+            _toastService.Show("Scan failed: " + ex.Message, ToastType.Error);
         }
         finally
         {
@@ -368,13 +374,10 @@ public class SecurityViewModel : BaseViewModel
             ProfileSummaries.Clear();
             Findings.Clear();
             FilteredFindings.Clear();
-            StatusMessage = "Scanning all profiles...";
         });
+        _toastService.Show("Scanning all profiles...", ToastType.Info);
         await Task.Run(async () => await LoadSecurityDataAsync());
-        await RunOnUIAsync(() =>
-        {
-            StatusMessage = $"Scan complete — {TotalFindings} findings across {_profiles.Count} profiles";
-        });
+        _toastService.Show($"Scan complete — {TotalFindings} findings across {_profiles.Count} profiles", ToastType.Success);
     }
 
     private void OnFilterBySeverity(string? severity)
@@ -433,16 +436,13 @@ public class SecurityViewModel : BaseViewModel
                 {
                     var pdfBytes = _pdfReportService.GenerateReport("Aevor Security Report", lines);
                     System.IO.File.WriteAllBytes(dialog.FileName, pdfBytes);
-                    StatusMessage = "Report exported to " + dialog.FileName;
+                    _toastService.Show("Report exported to " + dialog.FileName, ToastType.Success);
                 }
             });
         }
         catch (Exception ex)
         {
-            await RunOnUIAsync(() =>
-            {
-                StatusMessage = "Export failed: " + ex.Message;
-            });
+            _toastService.Show("Export failed: " + ex.Message, ToastType.Error);
         }
     }
 }

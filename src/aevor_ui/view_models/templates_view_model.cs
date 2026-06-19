@@ -24,6 +24,7 @@ public class TemplatesViewModel : BaseViewModel
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly INavigationService _navigationService;
     private readonly SettingsViewModel _settingsViewModel;
+    private readonly IToastService _toastService;
 
     // ── Template Storage ───────────────────────────────────────────────
     private readonly string _templatesDirectory;
@@ -78,6 +79,7 @@ public class TemplatesViewModel : BaseViewModel
     public ICommand ImportTemplateCommand { get; }
     public ICommand RefreshCommand        { get; }
     public ICommand CreateTemplateCommand { get; }
+    public ICommand GoToProfilesCommand   { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
     public TemplatesViewModel(
@@ -85,13 +87,15 @@ public class TemplatesViewModel : BaseViewModel
         ITemplateApplier templateApplier,
         IProfileDiscoveryService profileDiscoveryService,
         INavigationService navigationService,
-        SettingsViewModel settingsViewModel)
+        SettingsViewModel settingsViewModel,
+        IToastService toastService)
     {
         _templateSerializer = templateSerializer ?? throw new ArgumentNullException(nameof(templateSerializer));
         _templateApplier = templateApplier ?? throw new ArgumentNullException(nameof(templateApplier));
         _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _settingsViewModel = settingsViewModel ?? throw new ArgumentNullException(nameof(settingsViewModel));
+        _toastService = toastService ?? throw new ArgumentNullException(nameof(toastService));
 
         // Set up templates directory
         _templatesDirectory = Path.Combine(
@@ -105,6 +109,7 @@ public class TemplatesViewModel : BaseViewModel
         ImportTemplateCommand = new RelayCommand(OnImport);
         RefreshCommand        = new RelayCommand(() => Task.Run(async () => await LoadTemplatesAsync()));
         CreateTemplateCommand = new RelayCommand(OnCreateTemplate);
+        GoToProfilesCommand   = new RelayCommand(OnGoToProfiles);
 
         // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadTemplatesAsync());
@@ -265,13 +270,9 @@ public class TemplatesViewModel : BaseViewModel
     }
 
     // ── Status Message Helper ─────────────────────────────────────────
-    private void SetStatusMessage(string message)
+    private void SetStatusMessage(string message, ToastType type = ToastType.Info)
     {
-        StatusMessage = message;
-        // Auto-clear after 4 seconds
-        Task.Delay(4000).ContinueWith(_ =>
-            System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                StatusMessage = string.Empty));
+        _toastService.Show(message, type);
     }
 
     // ── Command Handlers ───────────────────────────────────────────────
@@ -294,7 +295,7 @@ public class TemplatesViewModel : BaseViewModel
                 if (profiles == null || profiles.Count == 0)
                 {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                        SetStatusMessage("No profiles found. Please create a Brave profile first."));
+                        SetStatusMessage("No profiles found. Please create a Brave profile first.", ToastType.Error));
                     return;
                 }
 
@@ -313,7 +314,7 @@ public class TemplatesViewModel : BaseViewModel
                         : "Template is not compatible with target profile.";
 
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                        SetStatusMessage($"Validation failed: {errorDetail}"));
+                        SetStatusMessage($"Validation failed: {errorDetail}", ToastType.Error));
                     return;
                 }
 
@@ -325,18 +326,18 @@ public class TemplatesViewModel : BaseViewModel
                 {
                     if (result.IsSuccess)
                     {
-                        SetStatusMessage($"Template applied successfully to \"{targetProfile.DisplayName}\"");
+                        SetStatusMessage($"Template applied successfully to \"{targetProfile.DisplayName}\"", ToastType.Success);
                     }
                     else
                     {
-                        SetStatusMessage($"Apply failed: {result.ErrorMessage ?? "Unknown error"}");
+                        SetStatusMessage($"Apply failed: {result.ErrorMessage ?? "Unknown error"}", ToastType.Error);
                     }
                 });
             }
             catch (Exception ex)
             {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                    SetStatusMessage($"Apply failed: {ex.Message}"));
+                    SetStatusMessage($"Apply failed: {ex.Message}", ToastType.Error));
             }
             finally
             {
@@ -372,12 +373,12 @@ public class TemplatesViewModel : BaseViewModel
                 {
                     await _templateSerializer.SaveToFileAsync(selectedPath, t.SourceTemplate);
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                        SetStatusMessage($"Template exported to {Path.GetFileName(selectedPath)}"));
+                        SetStatusMessage($"Template exported to {Path.GetFileName(selectedPath)}", ToastType.Success));
                 }
                 catch (Exception ex)
                 {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                        SetStatusMessage($"Export failed: {ex.Message}"));
+                        SetStatusMessage($"Export failed: {ex.Message}", ToastType.Error));
                 }
             });
         }
@@ -403,11 +404,11 @@ public class TemplatesViewModel : BaseViewModel
             FilteredTemplates.Remove(t);
             OnPropertyChanged(nameof(HasTemplates));
 
-            SetStatusMessage($"\"{t.TemplateName}\" deleted");
+            SetStatusMessage($"\"{t.TemplateName}\" deleted", ToastType.Success);
         }
         catch (Exception ex)
         {
-            SetStatusMessage($"Delete failed: {ex.Message}");
+            SetStatusMessage($"Delete failed: {ex.Message}", ToastType.Error);
         }
     }
 
@@ -462,13 +463,13 @@ public class TemplatesViewModel : BaseViewModel
                     {
                         Templates.Add(card);
                         ApplyFilter();
-                        SetStatusMessage("Template imported successfully");
+                        SetStatusMessage("Template imported successfully", ToastType.Success);
                     });
                 }
                 catch (Exception ex)
                 {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                        SetStatusMessage($"Import failed: {ex.Message}"));
+                        SetStatusMessage($"Import failed: {ex.Message}", ToastType.Error));
                 }
                 finally
                 {
@@ -479,6 +480,11 @@ public class TemplatesViewModel : BaseViewModel
     }
 
     private void OnCreateTemplate()
+    {
+        _navigationService.NavigateTo<ProfilesViewModel>();
+    }
+
+    private void OnGoToProfiles()
     {
         _navigationService.NavigateTo<ProfilesViewModel>();
     }

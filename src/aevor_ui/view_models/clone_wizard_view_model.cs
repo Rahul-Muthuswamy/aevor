@@ -25,6 +25,7 @@ public class CloneWizardViewModel : BaseViewModel
     private readonly INavigationService       _navigationService;
     private readonly IBraveInstallationService _braveInstallationService;
     private readonly SettingsViewModel         _settingsViewModel;
+    private readonly IToastService             _toastService;
 
     // ════════════════════════════════════════════════════════════════════
     // Internal State
@@ -86,6 +87,7 @@ public class CloneWizardViewModel : BaseViewModel
                 OnPropertyChanged(nameof(CanGoBack));
                 OnPropertyChanged(nameof(CanGoNext));
                 OnPropertyChanged(nameof(IsLastStep));
+                OnPropertyChanged(nameof(ShowNextButton));
             }
         }
     }
@@ -113,8 +115,9 @@ public class CloneWizardViewModel : BaseViewModel
     };
 
     public bool CanGoBack  => CurrentStepIndex > 0 && CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading && !IsCloning;
-    public bool CanGoNext  => CurrentStepIndex < 5 && !IsBackingUp && !IsScanning && !IsLoading && !IsCloning;
+    public bool CanGoNext  => CurrentStepIndex < 4 && !IsBackingUp && !IsScanning && !IsLoading && !IsCloning;
     public bool IsLastStep => CurrentStepIndex == 5;
+    public bool ShowNextButton => CurrentStepIndex < 4;
 
     // ════════════════════════════════════════════════════════════════════
     // Step 1 — Source Profile
@@ -318,7 +321,8 @@ public class CloneWizardViewModel : BaseViewModel
         IBackupService           backupService,
         INavigationService       navigationService,
         IBraveInstallationService braveInstallationService,
-        SettingsViewModel         settingsViewModel)
+        SettingsViewModel         settingsViewModel,
+        IToastService             toastService)
     {
         _cloneEngine             = cloneEngine;
         _profileDiscoveryService = profileDiscoveryService;
@@ -327,6 +331,7 @@ public class CloneWizardViewModel : BaseViewModel
         _navigationService       = navigationService;
         _braveInstallationService = braveInstallationService;
         _settingsViewModel       = settingsViewModel;
+        _toastService             = toastService;
 
         NextStepCommand            = new RelayCommand(OnNextStep,     () => CanGoNext && !IsLastStep);
         PreviousStepCommand        = new RelayCommand(OnPreviousStep, () => CanGoBack);

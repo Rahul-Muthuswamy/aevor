@@ -170,12 +170,24 @@ public class SecurityScannerTests
         var sessionPath = @"C:\Brave\Default\Sessions";
         fileSystem.DirectoryExists(sessionPath).Returns(true);
 
-        var scanner = CreateScanner(fileSystem);
+        var options = new SecurityScannerOptions
+        {
+            PasswordWeight = 5,
+            CookieWeight = 4,
+            WalletWeight = 6,
+            AutofillWeight = 3,
+            SessionWeight = 2,
+            ExtensionStorageWeight = 1,
+            HistoryWeight = 2,
+            CacheWeight = 1,
+            BrowserRunningWeight = 36 // To make max weight 60 (24 + 36 = 60)
+        };
+        var scanner = CreateScanner(fileSystem, options);
 
         var result = await scanner.ScanAsync(profile);
 
         // Autofill (3) + Sessions (2) = 5
-        // Max weight is 60 (with BrowserRunningWeight = 30)
+        // Max weight is 60 (with BrowserRunningWeight = 36)
         // 5 / 60 * 100 = 8.33% -> rounds to 8
         result.RiskScore.Should().Be(8);
         result.RiskLevel.Should().Be(RiskLevel.Low);
@@ -192,7 +204,19 @@ public class SecurityScannerTests
         var profile = new BraveProfile("Default", "Personal", true, true, @"C:\Brave\Default");
         fileSystem.DirectoryExists(profile.ProfilePath).Returns(true);
 
-        var scanner = CreateScanner(fileSystem, installationService: installationService);
+        var options = new SecurityScannerOptions
+        {
+            PasswordWeight = 11, // Adjust to make other weights sum to 30 (11 + 4 + 6 + 3 + 2 + 1 + 2 + 1 = 30)
+            CookieWeight = 4,
+            WalletWeight = 6,
+            AutofillWeight = 3,
+            SessionWeight = 2,
+            ExtensionStorageWeight = 1,
+            HistoryWeight = 2,
+            CacheWeight = 1,
+            BrowserRunningWeight = 30
+        };
+        var scanner = CreateScanner(fileSystem, options, installationService: installationService);
 
         var result = await scanner.ScanAsync(profile);
 

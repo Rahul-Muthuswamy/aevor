@@ -99,8 +99,8 @@ public class PreferencesParser : IPreferencesParser
 
                 var name = settingsNode["manifest"]?["name"]?.GetValue<string>() ?? string.Empty;
                 var version = settingsNode["manifest"]?["version"]?.GetValue<string>() ?? string.Empty;
-                var stateVal = settingsNode["state"]?.GetValue<int>() ?? 0;
-                var isEnabled = stateVal == 1;
+                var stateNode = settingsNode["state"];
+                var isEnabled = stateNode == null || stateNode.GetValue<int>() == 1;
 
                 if (!string.IsNullOrEmpty(name))
                 {

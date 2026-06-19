@@ -210,7 +210,8 @@
                              SelectedItem="{Binding SelectedSourceProfile}"
                              BorderThickness="0"
                              Background="Transparent"
-                             Margin="0,24,0,0">
+                             Margin="0,24,0,0"
+                             PreviewMouseWheel="ListBox_PreviewMouseWheel">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Background" Value="Transparent" />
@@ -734,21 +735,12 @@
                             Margin="0,0,8,0"
                             Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVis}}" />
 
-                    <!-- Next (hidden on last step) -->
+                    <!-- Next (hidden on execute and complete steps) -->
                     <Button Content="Next →"
+                            Style="{StaticResource PrimaryButton}"
                             Command="{Binding NextStepCommand}"
-                            Width="100">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsLastStep}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                            Width="100"
+                            Visibility="{Binding ShowNextButton, Converter={StaticResource BoolToVis}}" />
 
                     <!-- Finish (only on last step) -->
                     <Button Content="Finish"

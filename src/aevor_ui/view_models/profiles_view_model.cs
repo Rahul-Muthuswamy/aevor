@@ -22,6 +22,7 @@ public class ProfilesViewModel : BaseViewModel
     private readonly INavigationService _navigationService;
     private readonly ITemplateBuilder _templateBuilder;
     private readonly ITemplateSerializer _templateSerializer;
+    private readonly IToastService _toastService;
 
     // ── Raw data for command use ───────────────────────────────────────
     private List<BraveProfile> _rawProfiles = new();
@@ -49,6 +50,21 @@ public class ProfilesViewModel : BaseViewModel
         set => SetProperty(ref _selectedProfile, value);
     }
 
+    // ── Detail Panel ────────────────────────────────────────────────────
+    private ProfileCardItem? _selectedProfileDetail;
+    public ProfileCardItem? SelectedProfileDetail
+    {
+        get => _selectedProfileDetail;
+        set => SetProperty(ref _selectedProfileDetail, value);
+    }
+
+    private bool _isDetailPanelOpen;
+    public bool IsDetailPanelOpen
+    {
+        get => _isDetailPanelOpen;
+        set => SetProperty(ref _isDetailPanelOpen, value);
+    }
+
     private bool _isLoading;
     public bool IsLoading
     {
@@ -74,6 +90,8 @@ public class ProfilesViewModel : BaseViewModel
     public ICommand CreateTemplateCommand { get; }
     public ICommand RefreshCommand        { get; }
     public ICommand SearchCommand          { get; }
+    public ICommand OpenDetailCommand     { get; }
+    public ICommand CloseDetailCommand    { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
     public ProfilesViewModel(
@@ -82,7 +100,8 @@ public class ProfilesViewModel : BaseViewModel
         IProfileAnalyzer profileAnalyzer,
         INavigationService navigationService,
         ITemplateBuilder templateBuilder,
-        ITemplateSerializer templateSerializer)
+        ITemplateSerializer templateSerializer,
+        IToastService toastService)
     {
         _profileDiscoveryService = profileDiscoveryService ?? throw new ArgumentNullException(nameof(profileDiscoveryService));
         _securityScanner = securityScanner ?? throw new ArgumentNullException(nameof(securityScanner));
@@ -90,11 +109,14 @@ public class ProfilesViewModel : BaseViewModel
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _templateBuilder = templateBuilder ?? throw new ArgumentNullException(nameof(templateBuilder));
         _templateSerializer = templateSerializer ?? throw new ArgumentNullException(nameof(templateSerializer));
+        _toastService = toastService ?? throw new ArgumentNullException(nameof(toastService));
 
         CloneCommand          = new RelayCommand<ProfileCardItem>(OnClone);
         CreateTemplateCommand = new RelayCommand<ProfileCardItem>(OnCreateTemplate);
         RefreshCommand        = new RelayCommand(() => Task.Run(async () => await LoadProfilesAsync()));
         SearchCommand          = new RelayCommand(ApplyFilter);
+        OpenDetailCommand     = new RelayCommand<ProfileCardItem>(OnOpenDetail);
+        CloseDetailCommand    = new RelayCommand(OnCloseDetail);
 
         // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadProfilesAsync());
@@ -151,8 +173,10 @@ public class ProfilesViewModel : BaseViewModel
                     card.RiskLabel = "Low";
                 }
 
-                // ── Step D — Get extension count ──────────────────────
-                card.ExtensionCount = await GetExtensionCountAsync(profile);
+                // ── Step D — Get extensions ──────────────────────────
+                var (extCount, extList) = await GetExtensionsAsync(profile);
+                card.ExtensionCount = extCount;
+                card.Extensions = extList;
 
                 cardItems.Add(card);
             }
@@ -213,6 +237,25 @@ public class ProfilesViewModel : BaseViewModel
             {
                 IsLoading = false;
             }
+        }
+    }
+
+    // ── Extensions Parsing ─────────────────────────────────────────────
+    private async Task<(int Count, List<string> EnabledExtensions)> GetExtensionsAsync(BraveProfile profile)
+    {
+        try
+        {
+            var analysisResult = await _profileAnalyzer.AnalyzeAsync(profile);
+            var enabledList = analysisResult.InstalledExtensions?
+                .Where(e => e.IsEnabled)
+                .Select(e => e.Name)
+                .ToList() ?? new List<string>();
+            return (analysisResult.ExtensionCount, enabledList);
+        }
+        catch
+        {
+            int diskCount = CountExtensionsFromDisk(profile.ProfilePath);
+            return (diskCount, new List<string>());
         }
     }
 
@@ -286,6 +329,23 @@ public class ProfilesViewModel : BaseViewModel
         {
             card.RiskLabel = "Low";
         }
+
+        card.SecurityFindings.Clear();
+        foreach (var finding in result.Findings)
+        {
+            card.SecurityFindings.Add(new SecurityFindingItem
+            {
+                Title = finding.Name,
+                Detail = finding.Description,
+                Severity = finding.Severity switch
+                {
+                    SecuritySeverity.Critical => "warning",
+                    SecuritySeverity.High     => "warning",
+                    SecuritySeverity.Medium   => "warning",
+                    _ => "info"
+                }
+            });
+        }
     }
 
     // ── Last Used Helper ──────────────────────────────────────────────
@@ -344,6 +404,20 @@ public class ProfilesViewModel : BaseViewModel
         }
 
         OnPropertyChanged(nameof(HasProfiles));
+    }
+
+    // ── Detail Panel Handlers ─────────────────────────────────────────
+    private void OnOpenDetail(ProfileCardItem? p)
+    {
+        if (p == null) return;
+        SelectedProfileDetail = p;
+        IsDetailPanelOpen = true;
+    }
+
+    private void OnCloseDetail()
+    {
+        IsDetailPanelOpen = false;
+        SelectedProfileDetail = null;
     }
 
     /// <summary>
@@ -410,6 +484,7 @@ public class ProfilesViewModel : BaseViewModel
                 var outputPath = Path.Combine(outputDir, $"{safeFileName}_template.json");
 
                 await _templateSerializer.SaveToFileAsync(outputPath, template);
+                _toastService.Show("Template created successfully.", ToastType.Success);
 
                 // Update UI and Navigate to Templates page (the proper page) on the UI thread
                 if (dispatcher != null)
@@ -428,17 +503,7 @@ public class ProfilesViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
-                if (dispatcher != null)
-                {
-                    await dispatcher.InvokeAsync(() =>
-                    {
-                        ErrorMessage = $"Create Template failed: {ex.Message}";
-                    });
-                }
-                else
-                {
-                    ErrorMessage = $"Create Template failed: {ex.Message}";
-                }
+                _toastService.Show($"Create Template failed: {ex.Message}", ToastType.Error);
             }
             finally
             {

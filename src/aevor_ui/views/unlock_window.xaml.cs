@@ -92,7 +92,16 @@ public partial class UnlockWindow : Window
 
         if (success)
         {
-            ((App)System.Windows.Application.Current).LaunchMainApplication();
+            // First launch → show onboarding before main app
+            if (!OnboardingWindow.HasCompletedOnboarding())
+            {
+                var onboarding = new OnboardingWindow();
+                onboarding.Show();
+            }
+            else
+            {
+                ((App)System.Windows.Application.Current).LaunchMainApplication();
+            }
             Close();
             return;
         }

@@ -113,193 +113,557 @@
         </Border>
 
         <!-- ══════════════════════════════════════════════════════════════
-             Row 2 — Content
+             Row 2 — Content + Detail Panel
              ══════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <!-- Loading State -->
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="⏳"
-                           FontSize="40"
-                           HorizontalAlignment="Center"
-                           Foreground="{DynamicResource MutedBrush}" />
-                <TextBlock Text="Discovering profiles..."
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{DynamicResource MutedBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,12,0,0" />
-            </StackPanel>
+            <!-- ── Left: main content ── -->
+            <Grid Grid.Column="0">
 
-            <!-- Empty State (not loading, no profiles) -->
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Setter Property="Visibility" Value="Collapsed" />
+                <!-- Loading State -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="⏳"
+                               FontSize="40"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource MutedBrush}" />
+                    <TextBlock Text="Discovering profiles..."
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{DynamicResource MutedBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,12,0,0" />
+                </StackPanel>
+
+                <!-- Empty State (not loading, no profiles) -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsLoading}" Value="False" />
+                                        <Condition Binding="{Binding HasProfiles}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" Opacity="0.15"
+                           RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" />
+                    <TextBlock Text="No profiles found"
+                               Style="{StaticResource H3TextBlockStyle}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0" />
+                    <TextBlock Text="Make sure Brave Browser is installed and has profiles"
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{DynamicResource MutedBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,8,0,0" />
+                    <Button Content="Refresh"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding RefreshCommand}"
+                            HorizontalAlignment="Center"
+                            Margin="0,16,0,0" />
+                </StackPanel>
+
+                <!-- Profile Grid (ScrollViewer) -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Visibility="{Binding HasProfiles, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding FilteredProfiles}"
+                                  Margin="32,24,32,32">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+
+                                <!-- ─── Profile Card ─── -->
+                                <Border Style="{StaticResource CardStyle}"
+                                        Width="280"
+                                        Margin="0,0,16,16"
+                                        Padding="24"
+                                        Cursor="Hand">
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.OpenDetailCommand,
+                                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}" />
+                                    </Border.InputBindings>
+                                    <StackPanel>
+
+                                        <!-- Top Row: Avatar + Risk Badge -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"    />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Avatar circle -->
+                                            <Border Grid.Column="0"
+                                                    Width="44" Height="44"
+                                                    CornerRadius="22"
+                                                    Background="#F7E5FC"
+                                                    HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding Initial}"
+                                                           Style="{StaticResource H3TextBlockStyle}"
+                                                           Foreground="{DynamicResource PrimaryBrush}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <!-- Risk Badge -->
+                                            <Border Grid.Column="1"
+                                                    Background="{Binding RiskBadgeBackgroundBrush}"
+                                                    CornerRadius="12"
+                                                    Padding="10,5"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding RiskLabel}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{Binding RiskBadgeTextBrush}"
+                                                           FontWeight="Bold" />
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Profile Name -->
+                                        <TextBlock Text="{Binding ProfileName}"
+                                                   Style="{StaticResource H3TextBlockStyle}"
+                                                   Margin="0,16,0,0" />
+
+                                        <!-- Browser -->
+                                        <TextBlock Text="{Binding Browser}"
+                                                   Style="{StaticResource BodyTextBlockStyle}"
+                                                   Foreground="{DynamicResource MutedBrush}"
+                                                   Margin="0,3,0,0" />
+
+                                        <!-- Divider -->
+                                        <Border Height="1"
+                                                Background="{DynamicResource BorderBrush}"
+                                                Margin="0,16" />
+
+                                        <!-- Stats Row -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Extensions -->
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding ExtensionCount}"
+                                                           Style="{StaticResource H3TextBlockStyle}"
+                                                           Foreground="{DynamicResource TextBrush}" />
+                                                <TextBlock Text="Extensions"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{DynamicResource MutedBrush}"
+                                                           Margin="0,3,0,0" />
+                                            </StackPanel>
+
+                                            <!-- Last Used -->
+                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding LastUsed}"
+                                                           Style="{StaticResource BodyTextBlockStyle}"
+                                                           Foreground="{DynamicResource TextBrush}"
+                                                           HorizontalAlignment="Right" />
+                                                <TextBlock Text="Last Used"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{DynamicResource MutedBrush}"
+                                                           HorizontalAlignment="Right"
+                                                           Margin="0,3,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Action Buttons Row -->
+                                        <Grid Margin="0,16,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="12" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0"
+                                                    Content="Clone"
+                                                    Style="{StaticResource CardActionButton}"
+                                                    Command="{Binding DataContext.CloneCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+
+                                            <Button Grid.Column="2"
+                                                    Content="Create Template"
+                                                    Style="{StaticResource CardGhostButton}"
+                                                    Command="{Binding DataContext.CreateTemplateCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+
+                                    </StackPanel>
+                                </Border>
+
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Transparent click-outside overlay -->
+                <Button Background="Transparent"
+                        BorderThickness="0"
+                        Command="{Binding CloseDetailCommand}"
+                        Focusable="False"
+                        Cursor="Arrow"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" />
+                        </ControlTemplate>
+                    </Button.Template>
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDetailPanelOpen}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+            </Grid>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 Right: Profile Detail Slide-out Panel
+                 ══════════════════════════════════════════════════════════════ -->
+            <Border Grid.Column="1"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1,0,0,0"
+                    RenderTransformOrigin="0.5,0.5">
+                <Border.RenderTransform>
+                    <TranslateTransform X="320" />
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Width" Value="0" />
+                        <Setter Property="IsHitTestVisible" Value="False" />
                         <Style.Triggers>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsLoading}" Value="False" />
-                                    <Condition Binding="{Binding HasProfiles}" Value="False" />
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Visibility" Value="Visible" />
-                            </MultiDataTrigger>
+                            <DataTrigger Binding="{Binding IsDetailPanelOpen}" Value="True">
+                                <Setter Property="IsHitTestVisible" Value="True" />
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                             To="320" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                             To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             To="320" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </StackPanel.Style>
-                <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" Opacity="0.15"
-                       RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" />
-                <TextBlock Text="No profiles found"
-                           Style="{StaticResource H3TextBlockStyle}"
-                           HorizontalAlignment="Center"
-                           Margin="0,16,0,0" />
-                <TextBlock Text="Make sure Brave Browser is installed and has profiles"
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{DynamicResource MutedBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,8,0,0" />
-                <Button Content="Refresh"
-                        Style="{StaticResource PrimaryButton}"
-                        Command="{Binding RefreshCommand}"
-                        HorizontalAlignment="Center"
-                        Margin="0,16,0,0" />
-            </StackPanel>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*"    />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <!-- Profile Grid (ScrollViewer) -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Visibility="{Binding HasProfiles, Converter={StaticResource BoolToVis}}">
-                <ItemsControl ItemsSource="{Binding FilteredProfiles}"
-                              Margin="32,24,32,32">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                    <!-- Panel Header -->
+                    <Border Grid.Row="0" Padding="24,20"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                            <!-- ─── Profile Card ─── -->
-                            <Border Style="{StaticResource CardStyle}"
-                                    Width="280"
-                                    Margin="0,0,16,16"
-                                    Padding="24">
-                                <StackPanel>
+                            <TextBlock Grid.Column="0"
+                                       Text="Profile Details"
+                                       Style="{StaticResource H3TextBlockStyle}"
+                                       VerticalAlignment="Center" />
 
-                                    <!-- Top Row: Avatar + Risk Badge -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"    />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
+                            <Button Grid.Column="1"
+                                    Width="28" Height="28"
+                                    Style="{StaticResource GhostButton}"
+                                    Command="{Binding CloseDetailCommand}"
+                                    ToolTip="Close panel">
+                                <TextBlock Text="✕" FontSize="13"
+                                           Foreground="{DynamicResource MutedBrush}" />
+                            </Button>
+                        </Grid>
+                    </Border>
 
-                                        <!-- Avatar circle -->
-                                        <Border Grid.Column="0"
-                                                Width="44" Height="44"
-                                                CornerRadius="22"
-                                                Background="#F7E5FC"
-                                                HorizontalAlignment="Left">
-                                            <TextBlock Text="{Binding Initial}"
-                                                       Style="{StaticResource H3TextBlockStyle}"
-                                                       Foreground="{DynamicResource PrimaryBrush}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center" />
-                                        </Border>
+                    <!-- Panel Body -->
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="24,20">
+                        <StackPanel DataContext="{Binding SelectedProfileDetail}">
 
-                                        <!-- Risk Badge -->
-                                        <Border Grid.Column="1"
-                                                Background="{Binding RiskBadgeBackgroundBrush}"
-                                                CornerRadius="12"
-                                                Padding="10,5"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding RiskLabel}"
-                                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                                       Foreground="{Binding RiskBadgeTextBrush}"
-                                                       FontWeight="Bold" />
-                                        </Border>
-                                    </Grid>
-
-                                    <!-- Profile Name -->
-                                    <TextBlock Text="{Binding ProfileName}"
-                                               Style="{StaticResource H3TextBlockStyle}"
-                                               Margin="0,16,0,0" />
-
-                                    <!-- Browser -->
-                                    <TextBlock Text="{Binding Browser}"
-                                               Style="{StaticResource BodyTextBlockStyle}"
-                                               Foreground="{DynamicResource MutedBrush}"
-                                               Margin="0,3,0,0" />
-
-                                    <!-- Divider -->
-                                    <Border Height="1"
-                                            Background="{DynamicResource BorderBrush}"
-                                            Margin="0,16" />
-
-                                    <!-- Stats Row -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Extensions -->
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="{Binding ExtensionCount}"
-                                                       Style="{StaticResource H3TextBlockStyle}"
-                                                       Foreground="{DynamicResource TextBrush}" />
-                                            <TextBlock Text="Extensions"
-                                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                                       Foreground="{DynamicResource MutedBrush}"
-                                                       Margin="0,3,0,0" />
-                                        </StackPanel>
-
-                                        <!-- Last Used -->
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                            <TextBlock Text="{Binding LastUsed}"
-                                                       Style="{StaticResource BodyTextBlockStyle}"
-                                                       Foreground="{DynamicResource TextBrush}"
-                                                       HorizontalAlignment="Right" />
-                                            <TextBlock Text="Last Used"
-                                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                                       Foreground="{DynamicResource MutedBrush}"
-                                                       HorizontalAlignment="Right"
-                                                       Margin="0,3,0,0" />
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <!-- Action Buttons Row -->
-                                    <Grid Margin="0,16,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="12" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Button Grid.Column="0"
-                                                Content="Clone"
-                                                Style="{StaticResource CardActionButton}"
-                                                Command="{Binding DataContext.CloneCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" />
-
-                                        <Button Grid.Column="2"
-                                                Content="Create Template"
-                                                Style="{StaticResource CardGhostButton}"
-                                                Command="{Binding DataContext.CreateTemplateCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" />
-                                    </Grid>
-
-                                </StackPanel>
+                            <!-- Avatar + Name -->
+                            <Border Width="56" Height="56"
+                                    CornerRadius="28"
+                                    Background="#F7E5FC"
+                                    HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding Initial}"
+                                           Style="{StaticResource H2TextBlockStyle}"
+                                           Foreground="{DynamicResource PrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
                             </Border>
 
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                            <TextBlock Text="{Binding ProfileName}"
+                                       Style="{StaticResource H2TextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,14,0,0" />
 
+                            <TextBlock Text="{Binding Browser}"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,4,0,0" />
+
+                            <!-- Risk Badge -->
+                            <Border Background="{Binding RiskBadgeBackgroundBrush}"
+                                    CornerRadius="12"
+                                    Padding="14,6"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,16,0,0">
+                                <TextBlock Foreground="{Binding RiskBadgeTextBrush}"
+                                           FontWeight="Bold"
+                                           Style="{StaticResource CaptionTextBlockStyle}">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} Risk">
+                                            <Binding Path="RiskLabel" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Divider -->
+                            <Border Height="1"
+                                    Background="{DynamicResource BorderBrush}"
+                                    Margin="0,20" />
+
+                            <!-- Detail stats -->
+                            <Border Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Extensions row -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0"
+                                               Text="Extensions"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               Foreground="{DynamicResource MutedBrush}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding ExtensionCount}"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               FontWeight="SemiBold" />
+
+                                    <!-- Divider -->
+                                    <Border Grid.Row="1" Grid.ColumnSpan="2"
+                                            Height="1"
+                                            Background="{DynamicResource BorderBrush}"
+                                            Margin="0,10" />
+
+                                    <!-- Last used row -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0"
+                                               Text="Last Used"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               Foreground="{DynamicResource MutedBrush}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1"
+                                               Text="{Binding LastUsed}"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               FontWeight="SemiBold" />
+
+                                    <!-- Divider 2 -->
+                                    <Border Grid.Row="3" Grid.ColumnSpan="2"
+                                            Height="1"
+                                            Background="{DynamicResource BorderBrush}"
+                                            Margin="0,10" />
+
+                                    <!-- Path row -->
+                                    <TextBlock Grid.Row="4" Grid.Column="0"
+                                               Text="Path"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               Foreground="{DynamicResource MutedBrush}" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1"
+                                               Text="{Binding SourceProfile.ProfilePath}"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="160"
+                                               HorizontalAlignment="Right"
+                                               ToolTip="{Binding SourceProfile.ProfilePath}" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Installed Extensions Section -->
+                            <TextBlock Text="Installed Extensions"
+                                       Style="{StaticResource H3TextBlockStyle}"
+                                       Margin="0,16,0,8" />
+                            <ItemsControl ItemsSource="{Binding Extensions}">
+                                <ItemsControl.Style>
+                                    <Style TargetType="ItemsControl">
+                                        <Style.Triggers>
+                                            <Trigger Property="HasItems" Value="False">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate>
+                                                            <TextBlock Text="No active extensions found."
+                                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                                       Foreground="{DynamicResource MutedBrush}"
+                                                                       FontStyle="Italic" />
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ItemsControl.Style>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="4" 
+                                                Background="{DynamicResource SurfaceBrush}"
+                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1"
+                                                Padding="10,8"
+                                                Margin="0,0,0,6">
+                                            <TextBlock Text="{Binding}"
+                                                       Style="{StaticResource BodyTextBlockStyle}"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Security Risk Section -->
+                            <TextBlock Text="Security Risk"
+                                       Style="{StaticResource H1TextBlockStyle}"
+                                       Margin="0,20,0,8" />
+                            <ItemsControl ItemsSource="{Binding SecurityFindings}">
+                                <ItemsControl.Style>
+                                    <Style TargetType="ItemsControl">
+                                        <Style.Triggers>
+                                            <Trigger Property="HasItems" Value="False">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate>
+                                                            <TextBlock Text="No security issues detected."
+                                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                                       Foreground="{DynamicResource MutedBrush}"
+                                                                       FontStyle="Italic" />
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ItemsControl.Style>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Colored Dot -->
+                                            <Ellipse Grid.Column="0"
+                                                     Width="8"
+                                                     Height="8"
+                                                     Fill="{Binding SeverityColor}"
+                                                     VerticalAlignment="Top"
+                                                     Margin="0,5,10,0" />
+
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Title}"
+                                                           Style="{StaticResource BodyTextBlockStyle}"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Detail}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{DynamicResource MutedBrush}"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Panel Footer: Action buttons -->
+                    <Border Grid.Row="2" Padding="24,16"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel>
+                            <Button Content="Clone This Profile"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Height="36"
+                                    Command="{Binding CloneCommand}"
+                                    CommandParameter="{Binding SelectedProfileDetail}"
+                                    HorizontalAlignment="Stretch" />
+                            <Button Content="Create Template"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Height="36"
+                                    Command="{Binding CreateTemplateCommand}"
+                                    CommandParameter="{Binding SelectedProfileDetail}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

@@ -33,6 +33,21 @@ public class PhysicalFileSystem : IFileSystem
         }
     }
 
+    public string ReadAllText(string path)
+    {
+        try
+        {
+            return File.ReadAllText(path);
+        }
+        catch (IOException)
+        {
+            // Fallback to stream-based read with FileShare.ReadWrite to copy files open by Brave
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+    }
+
     public Task WriteAllTextAsync(string path, string contents)
     {
         return File.WriteAllTextAsync(path, contents);

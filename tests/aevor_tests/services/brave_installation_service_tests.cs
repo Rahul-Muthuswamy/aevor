@@ -47,4 +47,24 @@ public class BraveInstallationServiceTests
         path.Should().Contain(@"BraveSoftware\Brave-Browser\User Data");
         path.Should().StartWith(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
     }
+
+    [Fact]
+    public void GetUserDataPath_ShouldReturnCustomPath_WhenSettingsFileExists()
+    {
+        var fileSystem = Substitute.For<IFileSystem>();
+        var service = new BraveInstallationService(fileSystem);
+        var settingsPath = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Aevor",
+            "settings.json"
+        );
+
+        fileSystem.FileExists(settingsPath).Returns(true);
+        fileSystem.ReadAllText(settingsPath).Returns("{\"BraveUserDataPath\": \"C:\\\\Custom\\\\Path\"}");
+        fileSystem.DirectoryExists("C:\\Custom\\Path").Returns(true);
+
+        var path = service.GetUserDataPath();
+
+        path.Should().Be("C:\\Custom\\Path");
+    }
 }

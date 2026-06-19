@@ -16,6 +16,7 @@ public class BackupsViewModel : BaseViewModel
     private readonly IBackupService _backupService;
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly IBraveInstallationService _braveInstallationService;
+    private readonly IToastService _toastService;
     private List<BackupMetadata> _rawBackups = new();
     private bool _isUpdatingSelection;
     private bool? _isAllSelected = false;
@@ -91,27 +92,10 @@ public class BackupsViewModel : BaseViewModel
     public bool HasBackups => !IsLoading && FilteredBackups.Count > 0;
 
     private string _statusMessage = string.Empty;
-    private int _statusMessageResetCounter;
     public string StatusMessage
     {
         get => _statusMessage;
-        set
-        {
-            if (SetProperty(ref _statusMessage, value))
-            {
-                if (!string.IsNullOrEmpty(value))
-                {
-                    var currentCounter = System.Threading.Interlocked.Increment(ref _statusMessageResetCounter);
-                    Task.Delay(4000).ContinueWith(t =>
-                    {
-                        if (currentCounter == _statusMessageResetCounter)
-                        {
-                            _ = RunOnUIAsync(() => StatusMessage = string.Empty);
-                        }
-                    });
-                }
-            }
-        }
+        set => SetProperty(ref _statusMessage, value);
     }
 
     // ── Commands ───────────────────────────────────────────────────────
@@ -122,11 +106,16 @@ public class BackupsViewModel : BaseViewModel
     public ICommand RefreshCommand      { get; }
 
     // ── Constructor ────────────────────────────────────────────────────
-    public BackupsViewModel(IBackupService backupService, IProfileDiscoveryService profileDiscoveryService, IBraveInstallationService braveInstallationService)
+    public BackupsViewModel(
+        IBackupService backupService,
+        IProfileDiscoveryService profileDiscoveryService,
+        IBraveInstallationService braveInstallationService,
+        IToastService toastService)
     {
         _backupService = backupService;
         _profileDiscoveryService = profileDiscoveryService;
         _braveInstallationService = braveInstallationService;
+        _toastService = toastService;
 
         RestoreCommand      = new RelayCommand<BackupItem>(OnRestore);
         DeleteCommand       = new RelayCommand<BackupItem>(OnDelete);
@@ -321,10 +310,7 @@ public class BackupsViewModel : BaseViewModel
         // Safety check: Is Brave running?
         if (_braveInstallationService.IsBraveRunning())
         {
-            await RunOnUIAsync(() =>
-            {
-                StatusMessage = "Brave Browser is running. Please close all Brave windows before restoring.";
-            });
+            _toastService.Show("Brave Browser is running. Please close all Brave windows before restoring.", ToastType.Warning);
             return;
         }
 
@@ -342,28 +328,22 @@ public class BackupsViewModel : BaseViewModel
 
         if (!confirmed) return;
 
-        StatusMessage = "Restoring backup...";
+        _toastService.Show("Restoring backup...", ToastType.Info);
         try
         {
             var result = await _backupService.RestoreBackupAsync(item.BackupId);
-            await RunOnUIAsync(() =>
+            if (result.IsSuccess)
             {
-                if (result.IsSuccess)
-                {
-                    StatusMessage = "Restored " + item.ProfileName + " — " + result.FilesRestored + " files restored";
-                }
-                else
-                {
-                    StatusMessage = "Restore failed: " + (result.ErrorMessage ?? "Unknown error");
-                }
-            });
+                _toastService.Show("Restored " + item.ProfileName + " — " + result.FilesRestored + " files restored", ToastType.Success);
+            }
+            else
+            {
+                _toastService.Show("Restore failed: " + (result.ErrorMessage ?? "Unknown error"), ToastType.Error);
+            }
         }
         catch (Exception ex)
         {
-            await RunOnUIAsync(() =>
-            {
-                StatusMessage = "Restore failed: " + ex.Message;
-            });
+            _toastService.Show("Restore failed: " + ex.Message, ToastType.Error);
         }
     }
 
@@ -406,16 +386,13 @@ public class BackupsViewModel : BaseViewModel
                 FilteredBackups.Remove(item);
                 TotalBackups = totalCount;
                 TotalSize = formattedTotalSize;
-                StatusMessage = "Backup deleted";
                 ApplyFilter();
             });
+            _toastService.Show("Backup deleted", ToastType.Success);
         }
         catch (Exception ex)
         {
-            await RunOnUIAsync(() =>
-            {
-                StatusMessage = "Delete failed: " + ex.Message;
-            });
+            _toastService.Show("Delete failed: " + ex.Message, ToastType.Error);
         }
     }
 
@@ -483,16 +460,17 @@ public class BackupsViewModel : BaseViewModel
         {
             TotalBackups = totalCount;
             TotalSize = formattedTotalSize;
-            if (failedCount == 0)
-            {
-                StatusMessage = $"{deletedCount} backup(s) deleted";
-            }
-            else
-            {
-                StatusMessage = $"{deletedCount} deleted, {failedCount} failed";
-            }
             ApplyFilter();
         });
+
+        if (failedCount == 0)
+        {
+            _toastService.Show($"{deletedCount} backup(s) deleted", ToastType.Success);
+        }
+        else
+        {
+            _toastService.Show($"{deletedCount} deleted, {failedCount} failed", ToastType.Warning);
+        }
     }
 
     private async void OnCreateBackup()
@@ -502,10 +480,7 @@ public class BackupsViewModel : BaseViewModel
             var profiles = await _profileDiscoveryService.GetProfilesAsync();
             if (profiles == null || profiles.Count == 0)
             {
-                await RunOnUIAsync(() =>
-                {
-                    StatusMessage = "No profiles found";
-                });
+                _toastService.Show("No profiles found", ToastType.Error);
                 return;
             }
 
@@ -549,17 +524,14 @@ public class BackupsViewModel : BaseViewModel
                             Backups.Insert(0, newItem);
                             TotalBackups = totalCount;
                             TotalSize = formattedTotalSize;
-                            StatusMessage = "Backup created — " + FormatBytes(result.Metadata.BackupSize);
                             ApplyFilter();
                         });
+                        _toastService.Show("Backup created — " + FormatBytes(result.Metadata.BackupSize), ToastType.Success);
                         return true;
                     }
                     else
                     {
-                        await RunOnUIAsync(() =>
-                        {
-                            StatusMessage = "Backup failed: " + (result.ErrorMessage ?? "Unknown error");
-                        });
+                        _toastService.Show("Backup failed: " + (result.ErrorMessage ?? "Unknown error"), ToastType.Error);
                         return false;
                     }
                 })
@@ -571,10 +543,7 @@ public class BackupsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            await RunOnUIAsync(() =>
-            {
-                StatusMessage = "Backup failed: " + ex.Message;
-            });
+            _toastService.Show("Backup failed: " + ex.Message, ToastType.Error);
         }
     }
 

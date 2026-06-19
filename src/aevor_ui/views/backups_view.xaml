@@ -265,6 +265,12 @@
 
                                     <!-- Col 5: Actions -->
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="Restore" 
+                                                Style="{StaticResource SecondaryButton}" 
+                                                Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                Height="32" Padding="12,0" FontSize="12"
+                                                Margin="0,0,8,0" />
                                         <Button Content="Delete" 
                                                 Style="{StaticResource DangerButton}" 
                                                 Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 

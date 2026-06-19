@@ -143,9 +143,10 @@
                            Margin="0,12,0,0" />
             </StackPanel>
 
-            <!-- ── Empty State ── -->
+            <!-- ── Empty State with 3-step guide ── -->
             <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Center"
+                        MaxWidth="460">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Collapsed" />
@@ -161,22 +162,78 @@
                     </Style>
                 </StackPanel.Style>
 
-                <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" Opacity="0.15"
+                <Image Source="{StaticResource AevorIcon}" Width="64" Height="64" Opacity="0.3"
                        RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" />
+                
                 <TextBlock Text="No templates yet"
                            Style="{StaticResource H3TextBlockStyle}"
                            HorizontalAlignment="Center"
                            Margin="0,16,0,0" />
-                <TextBlock Text="Create a template from an existing profile to get started"
+                
+                <TextBlock Text="Templates are created from your existing Brave profiles."
                            Style="{StaticResource BodyTextBlockStyle}"
                            Foreground="{DynamicResource MutedBrush}"
                            HorizontalAlignment="Center"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
                            Margin="0,8,0,0" />
-                <Button Content="Create First Template"
+
+                <!-- 3-step guide -->
+                <Border Style="{StaticResource CardStyle}" Padding="24" Margin="0,24,0,0" MaxWidth="400" HorizontalAlignment="Center">
+                    <StackPanel>
+                        <!-- Step 1 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                            <Border Width="24" Height="24" CornerRadius="12"
+                                    Background="{DynamicResource PrimaryBrush}">
+                                <TextBlock Text="1" FontSize="11" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Go to Profiles page"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0" />
+                        </StackPanel>
+
+                        <!-- Step 2 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                            <Border Width="24" Height="24" CornerRadius="12"
+                                    Background="{DynamicResource PrimaryBrush}">
+                                <TextBlock Text="2" FontSize="11" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Click 'Create Template' on any profile"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0" />
+                        </StackPanel>
+
+                        <!-- Step 3 -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="24" Height="24" CornerRadius="12"
+                                    Background="{DynamicResource PrimaryBrush}">
+                                <TextBlock Text="3" FontSize="11" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Your template appears here"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Button Content="Go to Profiles"
                         Style="{StaticResource PrimaryButton}"
-                        Command="{Binding CreateTemplateCommand}"
+                        Command="{Binding GoToProfilesCommand}"
                         HorizontalAlignment="Center"
-                        Margin="0,16,0,0" />
+                        Width="180"
+                        Margin="0,24,0,0" />
             </StackPanel>
 
             <!-- ── Template Grid ── -->

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
@@ -46,6 +47,9 @@ public class ProfileCardItem : INotifyPropertyChanged
 
     public string LastUsed { get; set; } = string.Empty;
     public bool   IsSelected { get; set; }
+
+    public List<string> Extensions { get; set; } = new();
+    public List<SecurityFindingItem> SecurityFindings { get; set; } = new();
 
     /// <summary>
     /// Reference to the raw BraveProfile for backend service calls.

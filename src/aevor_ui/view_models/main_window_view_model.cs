@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Aevor.Application.Interfaces;
 using Aevor.UI.Commands;
 using Aevor.UI.Services;
 
@@ -107,9 +108,12 @@ public class MainWindowViewModel : BaseViewModel
         set => SetProperty(ref _isSettingsActive, value);
     }
 
-    public MainWindowViewModel(INavigationService navigationService)
+    private readonly IToastService _toastService;
+
+    public MainWindowViewModel(INavigationService navigationService, IToastService toastService)
     {
         _navigationService = navigationService;
+        _toastService = toastService;
         _navigationService.NavigationChanged += OnNavigationChanged;
 
         OpenReleasesPageCommand = new RelayCommand(() =>

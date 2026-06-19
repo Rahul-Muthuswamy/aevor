@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Aevor.Application.Interfaces;
@@ -62,6 +64,13 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _alwaysExcludePasswords, value);
     }
 
+    private bool _hasCompletedOnboarding;
+    public bool HasCompletedOnboarding
+    {
+        get => _hasCompletedOnboarding;
+        set => SetProperty(ref _hasCompletedOnboarding, value);
+    }
+
     // ── Status Message ─────────────────────────────────────────────────
     private string _statusMessage = string.Empty;
     public string StatusMessage
@@ -80,6 +89,25 @@ public class SettingsViewModel : BaseViewModel
     // ── Commands ───────────────────────────────────────────────────────
     public ICommand SaveSettingsCommand  { get; }
     public ICommand ResetSettingsCommand { get; }
+    public ICommand OpenRepoCommand      { get; }
+    public ICommand OpenReleasesCommand  { get; }
+    public ICommand OpenIssuesCommand    { get; }
+
+    // ── About ─────────────────────────────────────────────────────────
+    private const string GitHubOwner = "Rahul-Muthuswamy";
+    private const string GitHubRepo  = "aevor";
+
+    public string AppVersion
+    {
+        get
+        {
+            var v = Assembly.GetExecutingAssembly().GetName().Version;
+            if (v is null) return "v0.0.0";
+            return $"v{v.Major}.{v.Minor}.{v.Build}";
+        }
+    }
+
+    public string CurrentVersion => AppVersion;
 
     // ── Constructor ────────────────────────────────────────────────────
     public SettingsViewModel(IBraveInstallationService braveInstallation)
@@ -88,6 +116,9 @@ public class SettingsViewModel : BaseViewModel
 
         SaveSettingsCommand  = new RelayCommand(async () => await SaveSettingsAsync());
         ResetSettingsCommand = new RelayCommand(ResetSettings);
+        OpenRepoCommand      = new RelayCommand(() => OpenUrl($"https://github.com/{GitHubOwner}/{GitHubRepo}"));
+        OpenReleasesCommand  = new RelayCommand(() => OpenUrl($"https://github.com/{GitHubOwner}/{GitHubRepo}/releases"));
+        OpenIssuesCommand    = new RelayCommand(() => OpenUrl($"https://github.com/{GitHubOwner}/{GitHubRepo}/issues"));
 
         LoadSettings();
     }
@@ -122,6 +153,7 @@ public class SettingsViewModel : BaseViewModel
                     BlockActiveCookiesOnClone = data.BlockActiveCookiesOnClone;
                     AlwaysExcludeHistory = data.AlwaysExcludeHistory;
                     AlwaysExcludePasswords = data.AlwaysExcludePasswords;
+                    HasCompletedOnboarding = data.hasCompletedOnboarding;
                 }
             }
         }
@@ -154,6 +186,7 @@ public class SettingsViewModel : BaseViewModel
         BlockActiveCookiesOnClone = true;
         AlwaysExcludeHistory      = true;
         AlwaysExcludePasswords    = true;
+        HasCompletedOnboarding    = false;
     }
 
     private async Task SaveSettingsAsync()
@@ -171,7 +204,8 @@ public class SettingsViewModel : BaseViewModel
                 SafeBackupBeforeTemplate = SafeBackupBeforeTemplate,
                 BlockActiveCookiesOnClone = BlockActiveCookiesOnClone,
                 AlwaysExcludeHistory = AlwaysExcludeHistory,
-                AlwaysExcludePasswords = AlwaysExcludePasswords
+                AlwaysExcludePasswords = AlwaysExcludePasswords,
+                hasCompletedOnboarding = HasCompletedOnboarding
             };
 
             var json = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
@@ -211,6 +245,18 @@ public class SettingsViewModel : BaseViewModel
         StatusMessage = "Settings reset to defaults.";
         IsMessageSuccess = true;
     }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch
+        {
+            // Silently ignore if browser is not available
+        }
+    }
 }
 
 public class SettingsData
@@ -222,4 +268,5 @@ public class SettingsData
     public bool BlockActiveCookiesOnClone { get; set; } = true;
     public bool AlwaysExcludeHistory { get; set; } = true;
     public bool AlwaysExcludePasswords { get; set; } = true;
+    public bool hasCompletedOnboarding { get; set; } = false;
 }

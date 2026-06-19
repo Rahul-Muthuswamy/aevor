@@ -106,6 +106,10 @@ public class ProfileAnalyzer : IProfileAnalyzer
 
         _logger.LogInformation("Profile analysis completed successfully for {ProfileName}.", profile.DisplayName);
 
+        var finalExtensions = prefSettings.Extensions.Count > 0
+            ? prefSettings.Extensions
+            : secPrefSettings.Extensions;
+
         return new ProfileAnalysisResult(
             ProfileName: profile.DisplayName,
             ProfilePath: profile.ProfilePath,
@@ -113,8 +117,8 @@ public class ProfileAnalyzer : IProfileAnalyzer
             SearchEngine: prefSettings.SearchEngine,
             Sidebar: prefSettings.Sidebar,
             VerticalTabs: prefSettings.VerticalTabs,
-            InstalledExtensions: prefSettings.Extensions,
-            ExtensionCount: prefSettings.Extensions.Count,
+            InstalledExtensions: finalExtensions,
+            ExtensionCount: finalExtensions.Count,
             AnalysisTimestamp: DateTime.UtcNow,
             Warnings: warnings,
             Errors: errors

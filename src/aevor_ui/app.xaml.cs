@@ -13,9 +13,27 @@ namespace Aevor.UI;
 public partial class App : System.Windows.Application
 {
     private ServiceProvider? _serviceProvider;
+    public IServiceProvider Services => _serviceProvider ?? throw new InvalidOperationException("Service provider not initialised.");
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        AppDomain.CurrentDomain.UnhandledException += (s, ev) =>
+        {
+            try
+            {
+                System.IO.File.WriteAllText("M:\\project\\aevor\\crash.txt", ev.ExceptionObject.ToString());
+            }
+            catch {}
+        };
+        DispatcherUnhandledException += (s, ev) =>
+        {
+            try
+            {
+                System.IO.File.WriteAllText("M:\\project\\aevor\\crash.txt", ev.Exception.ToString());
+            }
+            catch {}
+        };
+
         base.OnStartup(e);
 
         // ── CRITICAL: prevent WPF from shutting down when the auth window
@@ -93,19 +111,32 @@ public partial class App : System.Windows.Application
         var logger = _serviceProvider.GetRequiredService<ILogger<App>>();
         logger.LogInformation("Launching main application after successful authentication.");
 
-        // ── Show MainWindow FIRST — before any await so the window is
-        // visible before the auth window closes. ──────────────────────────
-        var navigationService = _serviceProvider.GetRequiredService<INavigationService>();
-        navigationService.NavigateTo<DashboardViewModel>();
+        try
+        {
+            // ── Show MainWindow FIRST — before any await so the window is
+            // visible before the auth window closes. ──────────────────────────
+            var navigationService = _serviceProvider.GetRequiredService<INavigationService>();
+            navigationService.NavigateTo<DashboardViewModel>();
 
-        var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-        mainWindow.DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
+            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            mainWindow.DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
 
-        // Register as the application's main window and restore normal
-        // shutdown behaviour: app exits when MainWindow is closed.
-        this.MainWindow = mainWindow;
-        mainWindow.Show();
-        ShutdownMode = ShutdownMode.OnMainWindowClose;
+            // Register as the application's main window and ensure clean exit when closed.
+            this.MainWindow = mainWindow;
+            mainWindow.Closed += (s, e) => System.Windows.Application.Current.Shutdown();
+            mainWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "FATAL ERROR during LaunchMainApplication UI creation.");
+            try
+            {
+                System.IO.File.WriteAllText("M:\\project\\aevor\\crash.txt", ex.ToString());
+            }
+            catch {}
+            MessageBox.Show(ex.ToString(), "Fatal Launch Error");
+            throw;
+        }
 
         // ── Background startup health-checks (non-fatal) ─────────────────
         // These run after the window is already visible so the user

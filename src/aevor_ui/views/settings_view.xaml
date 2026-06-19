@@ -295,9 +295,62 @@
                                 Width="140" />
                     </StackPanel>
 
+                    <!-- ═══════════════════════════════════════ -->
+                    <!-- Section: About Aevor                   -->
+                    <!-- ═══════════════════════════════════════ -->
+                    <TextBlock Text="About Aevor"
+                               Style="{StaticResource H2TextBlockStyle}"
+                               Margin="0,0,0,12" />
+
+                    <Border Style="{StaticResource CardStyle}" Padding="24" Margin="0,0,0,32">
+                        <StackPanel>
+                            <!-- Row 1: Wordmark, Description, Version -->
+                            <TextBlock Text="Aevor"
+                                       Style="{StaticResource H2TextBlockStyle}"
+                                       Foreground="{DynamicResource PrimaryBrush}" />
+                            <TextBlock Text="Open-source Brave Browser profile manager for Windows"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,4,0,0" />
+                            <TextBlock Style="{StaticResource BodySmallTextBlockStyle}"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,4,0,0">
+                                <Run Text="Version " /><Run Text="{Binding CurrentVersion, Mode=OneWay, FallbackValue=v1.0.0}" />
+                            </TextBlock>
+
+                            <!-- Divider 1 -->
+                            <Border Height="1"
+                                    Background="{DynamicResource BorderBrush}"
+                                    Margin="0,16" />
+
+                            <!-- Row 2: Navigation Links -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="View on GitHub"
+                                        Style="{StaticResource GhostButton}"
+                                        Command="{Binding OpenRepoCommand}"
+                                        Margin="0,0,16,0" />
+                                <Button Content="Report an Issue"
+                                        Style="{StaticResource GhostButton}"
+                                        Command="{Binding OpenIssuesCommand}"
+                                        Margin="0,0,16,0" />
+                                <Button Content="Releases"
+                                        Style="{StaticResource GhostButton}"
+                                        Command="{Binding OpenReleasesCommand}" />
+                            </StackPanel>
+
+                            <!-- Divider 2 -->
+                            <Border Height="1"
+                                    Background="{DynamicResource BorderBrush}"
+                                    Margin="0,16" />
+
+                            <!-- Row 3: MIT & Built credit -->
+                            <TextBlock Text="Released under the MIT License. Built with ♥ using C# and WPF."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{DynamicResource MutedBrush}" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Grid>
     </Grid>
 </UserControl>
-
