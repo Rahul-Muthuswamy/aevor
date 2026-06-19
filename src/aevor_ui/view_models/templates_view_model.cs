@@ -287,7 +287,6 @@ public class TemplatesViewModel : BaseViewModel
 
         Task.Run(async () =>
         {
-            IsLoading = true;
             try
             {
                 // Step 1: Get available profiles
@@ -299,49 +298,62 @@ public class TemplatesViewModel : BaseViewModel
                     return;
                 }
 
-                // Step 2: Select target profile
-                // TODO: show profile picker dialog
-                var targetProfile = profiles[0];
-
-                // Step 3: Validate before applying
-                var validation = await _templateApplier.ValidateApplicationAsync(
-                    t.SourceTemplate, targetProfile);
-
-                if (!validation.IsValid)
-                {
-                    var errorDetail = validation.Errors.Count > 0
-                        ? string.Join("; ", validation.Errors.Take(3))
-                        : "Template is not compatible with target profile.";
-
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                        SetStatusMessage($"Validation failed: {errorDetail}", ToastType.Error));
-                    return;
-                }
-
-                // Step 4: Apply the template
-                var result = await _templateApplier.ApplyTemplateAsync(
-                    t.SourceTemplate, targetProfile, skipBackup: !_settingsViewModel.SafeBackupBeforeTemplate);
-
+                // Show simple profile picker dialog on UI thread
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    if (result.IsSuccess)
+                    var dialog = new Aevor.UI.Views.ApplyTemplateWindow(
+                        t.TemplateName,
+                        profiles,
+                        _settingsViewModel.SafeBackupBeforeTemplate,
+                        async (targetProfile, doBackup) =>
+                        {
+                            return await Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    // Validate before applying
+                                    var validation = await _templateApplier.ValidateApplicationAsync(
+                                        t.SourceTemplate, targetProfile);
+
+                                    if (!validation.IsValid)
+                                    {
+                                        var errorDetail = validation.Errors.Count > 0
+                                            ? string.Join("; ", validation.Errors.Take(3))
+                                            : "Template is not compatible with target profile.";
+                                        return $"Validation failed: {errorDetail}";
+                                    }
+
+                                    // Apply the template
+                                    var result = await _templateApplier.ApplyTemplateAsync(
+                                        t.SourceTemplate, targetProfile, skipBackup: !doBackup);
+
+                                    if (result.IsSuccess)
+                                    {
+                                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                            SetStatusMessage($"Template applied successfully to \"{targetProfile.DisplayName}\"", ToastType.Success));
+                                        return null; // success
+                                    }
+                                    else
+                                    {
+                                        return $"Apply failed: {result.ErrorMessage ?? "Unknown error"}";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    return $"Apply failed: {ex.Message}";
+                                }
+                            });
+                        })
                     {
-                        SetStatusMessage($"Template applied successfully to \"{targetProfile.DisplayName}\"", ToastType.Success);
-                    }
-                    else
-                    {
-                        SetStatusMessage($"Apply failed: {result.ErrorMessage ?? "Unknown error"}", ToastType.Error);
-                    }
+                        Owner = System.Windows.Application.Current.MainWindow
+                    };
+                    dialog.ShowDialog();
                 });
             }
             catch (Exception ex)
             {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     SetStatusMessage($"Apply failed: {ex.Message}", ToastType.Error));
-            }
-            finally
-            {
-                IsLoading = false;
             }
         });
     }
