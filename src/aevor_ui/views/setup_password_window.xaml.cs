@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
@@ -10,32 +10,26 @@ public partial class SetupPasswordWindow : Window
 {
     private readonly IMasterPasswordService _masterPasswordService;
 
-    // Brushes cached once
-    private static readonly SolidColorBrush BrushDanger  = new(Color.FromRgb(239,  68,  68)); // #EF4444
-    private static readonly SolidColorBrush BrushWarning = new(Color.FromRgb(245, 158,  11)); // #F59E0B
-    private static readonly SolidColorBrush BrushSuccess = new(Color.FromRgb( 16, 185, 129)); // #10B981
-    private static readonly SolidColorBrush BrushBorder  = new(Color.FromRgb(229, 231, 235)); // #E5E7EB
-    private static readonly SolidColorBrush BrushFocus   = new(Color.FromRgb(203, 108, 230)); // #CB6CE6
+    private static readonly SolidColorBrush BrushDanger  = new(Color.FromRgb(239,  68,  68));
+    private static readonly SolidColorBrush BrushWarning = new(Color.FromRgb(245, 158,  11));
+    private static readonly SolidColorBrush BrushSuccess = new(Color.FromRgb( 16, 185, 129));
+    private static readonly SolidColorBrush BrushBorder  = new(Color.FromRgb(229, 231, 235));
+    private static readonly SolidColorBrush BrushFocus   = new(Color.FromRgb(203, 108, 230));
 
     public SetupPasswordWindow(IMasterPasswordService masterPasswordService)
     {
         _masterPasswordService = masterPasswordService;
         InitializeComponent();
 
-        // Allow window dragging via the root border
         MouseLeftButtonDown += (_, e) => { if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed) DragMove(); };
     }
-
-    // ── Password strength ────────────────────────────────────────────────
 
     private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         var pw = PasswordBox.Password;
 
-        // Toggle placeholder
         PwPlaceholder.Visibility = pw.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // Strength calculation
         var (value, label, brush) = EvaluateStrength(pw);
 
         StrengthBar.Value      = value;
@@ -43,7 +37,6 @@ public partial class SetupPasswordWindow : Window
         StrengthLabel.Text     = label;
         StrengthLabel.Foreground = brush;
 
-        // Clear stale validation
         HideValidation();
     }
 
@@ -64,8 +57,6 @@ public partial class SetupPasswordWindow : Window
         return (50, "Fair", BrushWarning);
     }
 
-    // ── Confirm password ──────────────────────────────────────────────────
-
     private void ConfirmBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         ConfirmPlaceholder.Visibility =
@@ -73,21 +64,16 @@ public partial class SetupPasswordWindow : Window
         HideValidation();
     }
 
-    // ── Focus: change border colour ───────────────────────────────────────
-
     private void PwBox_GotFocus(object sender, RoutedEventArgs e)    => PwBorder.BorderBrush      = BrushFocus;
     private void PwBox_LostFocus(object sender, RoutedEventArgs e)   => PwBorder.BorderBrush      = BrushBorder;
     private void ConfirmBox_GotFocus(object sender, RoutedEventArgs e) => ConfirmBorder.BorderBrush = BrushFocus;
     private void ConfirmBox_LostFocus(object sender, RoutedEventArgs e) => ConfirmBorder.BorderBrush = BrushBorder;
-
-    // ── Submit ────────────────────────────────────────────────────────────
 
     private async void SetupBtn_Click(object sender, RoutedEventArgs e)
     {
         var password = PasswordBox.Password;
         var confirm  = ConfirmBox.Password;
 
-        // ── Validate ──
         if (string.IsNullOrWhiteSpace(password))
         {
             ShowValidation("Please enter a master password.");
@@ -104,7 +90,6 @@ public partial class SetupPasswordWindow : Window
             return;
         }
 
-        // ── Disable UI while working ──
         SetupBtn.IsEnabled = false;
         SetupBtn.Content   = "Creating…";
 
@@ -112,11 +97,9 @@ public partial class SetupPasswordWindow : Window
         {
             await _masterPasswordService.SetupPasswordAsync(password);
 
-            // Zero WPF's internal copy as best-effort
             PasswordBox.Clear();
             ConfirmBox.Clear();
 
-            // First launch → show onboarding before main app
             if (!OnboardingWindow.HasCompletedOnboarding())
             {
                 var onboarding = new OnboardingWindow();
@@ -135,8 +118,6 @@ public partial class SetupPasswordWindow : Window
             SetupBtn.Content   = "Create Master Password";
         }
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
 
     private void ShowValidation(string message)
     {

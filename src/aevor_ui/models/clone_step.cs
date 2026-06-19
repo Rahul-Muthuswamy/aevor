@@ -1,4 +1,4 @@
-namespace Aevor.UI.Models;
+﻿namespace Aevor.UI.Models;
 
 public class CloneStep
 {

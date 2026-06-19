@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
@@ -36,7 +36,7 @@ public partial class SecurityView : UserControl
         {
             if (sender is SecurityViewModel vm)
             {
-                // When scan transitions from loading → done, fade in the content panel
+
                 if (_wasLoading && !vm.IsLoading)
                 {
                     Dispatcher.InvokeAsync(() =>

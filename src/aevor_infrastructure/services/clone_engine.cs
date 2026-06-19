@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -48,12 +48,12 @@ public class CloneEngine : ICloneEngine
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        _logger.LogInformation("Clone operation started. Source: {Source}, Dest Name: {DestName}", 
+        _logger.LogInformation("Clone operation started. Source: {Source}, Dest Name: {DestName}",
             request.SourceProfileFolderName, request.DestinationProfileName);
 
         try
         {
-            // 1. Find and validate source profile
+
             var profiles = await _profileDiscoveryService.GetProfilesAsync();
             var sourceProfile = profiles.FirstOrDefault(p => p.FolderName.Equals(request.SourceProfileFolderName, StringComparison.OrdinalIgnoreCase));
             if (sourceProfile == null)
@@ -62,20 +62,17 @@ public class CloneEngine : ICloneEngine
                 return new CloneResult(false, $"Source profile '{request.SourceProfileFolderName}' not found.");
             }
 
-            // 2. Run Profile Analyzer on source profile
             _logger.LogInformation("Running Profile Analyzer on source: {FolderName}", sourceProfile.FolderName);
             var analysisResult = await _profileAnalyzer.AnalyzeAsync(sourceProfile);
 
-            // 3. Run Security Scanner on source profile
             _logger.LogInformation("Running Security Scanner on source: {FolderName}", sourceProfile.FolderName);
             var scanResult = await _securityScanner.ScanAsync(sourceProfile);
 
-            // 4. Generate temporary template
             _logger.LogInformation("Generating temporary template for cloning.");
             var tempTemplate = _templateBuilder.Build(
-                analysisResult, 
-                scanResult, 
-                request.DestinationProfileName, 
+                analysisResult,
+                scanResult,
+                request.DestinationProfileName,
                 $"Clone template from {sourceProfile.DisplayName}"
             );
 
@@ -116,9 +113,6 @@ public class CloneEngine : ICloneEngine
                 tempTemplate = tempTemplate with { Settings = tempTemplate.Settings with { Sidebar = new SidebarConfiguration(false, "right"), VerticalTabs = new VerticalTabsConfiguration(false) } };
             }
 
-            // TODO: Bookmarks are not implemented in TemplateBuilder or TemplateSettings yet, so bookmarks cannot be filtered here.
-
-            // 5. Create backup of source profile if requested
             if (request.CreateBackup)
             {
                 _logger.LogInformation("Creating backup of source profile before cloning.");
@@ -130,7 +124,6 @@ public class CloneEngine : ICloneEngine
                 }
             }
 
-            // 6. Create destination profile
             _logger.LogInformation("Creating destination profile: {DestName}", request.DestinationProfileName);
             var creationReq = new ProfileCreationRequest(
                 ProfileName: request.DestinationProfileName,
@@ -145,11 +138,9 @@ public class CloneEngine : ICloneEngine
             }
             var destProfile = creationResult.Profile;
 
-            // Copy non-sensitive source profile files to destination profile folder
             _logger.LogInformation("Copying profile files from source {Source} to dest {Dest}", sourceProfile.ProfilePath, destProfile.ProfilePath);
             CopyProfileDirectory(sourceProfile.ProfilePath, destProfile.ProfilePath, request);
 
-            // Update the profile name in the destination's Preferences file so Brave displays the cloned profile name correctly
             try
             {
                 var destPrefPath = Path.Combine(destProfile.ProfilePath, "Preferences");
@@ -253,7 +244,6 @@ public class CloneEngine : ICloneEngine
                 _logger.LogWarning(ex, "Failed to update profile name or cleanup preferences in cloned profile.");
             }
 
-            // Copy Extensions folder recursively if requested
             if (request.IncludeExtensions)
             {
                 var sourceExtPath = Path.Combine(sourceProfile.ProfilePath, "Extensions");
@@ -288,22 +278,19 @@ public class CloneEngine : ICloneEngine
                 }
             }
 
-            // 7. Apply template to destination profile (skip backup since it is a brand new cloned profile)
             _logger.LogInformation("Applying template settings to destination profile: {FolderName}", destProfile.FolderName);
             var applyResult = await _templateApplier.ApplyTemplateAsync(tempTemplate, destProfile, skipBackup: true);
             if (!applyResult.IsSuccess)
             {
                 _logger.LogError("Clone failed. Failed to apply template: {Error}", applyResult.ErrorMessage);
-                // Clean up destination
+
                 await _profileCreator.DeleteProfileAsync(destProfile.FolderName);
                 return new CloneResult(false, $"Failed to apply settings to clone: {applyResult.ErrorMessage}");
             }
 
-            // 8. Validate cloned profile
             _logger.LogInformation("Validating cloned profile: {FolderName}", destProfile.FolderName);
             var validationResult = await _profileCreator.ValidateProfileAsync(destProfile.FolderName);
 
-            // 9. Generate clone report
             var settingsCopied = new List<string>();
             if (tempTemplate.Settings?.Theme != null) settingsCopied.Add("Theme");
             if (tempTemplate.Settings?.SearchEngine != null) settingsCopied.Add("Search Engine");
@@ -338,7 +325,6 @@ public class CloneEngine : ICloneEngine
         var errors = new List<string>();
         var warnings = new List<string>();
 
-        // 1. Verify source and destination profiles exist
         var profiles = await _profileDiscoveryService.GetProfilesAsync();
         var sourceProfile = profiles.FirstOrDefault(p => p.FolderName.Equals(sourceFolderName, StringComparison.OrdinalIgnoreCase));
         var destProfile = profiles.FirstOrDefault(p => p.FolderName.Equals(destFolderName, StringComparison.OrdinalIgnoreCase));
@@ -357,11 +343,10 @@ public class CloneEngine : ICloneEngine
 
         try
         {
-            // 2. Run Profile Analyzer on both
+
             var sourceAnalysis = await _profileAnalyzer.AnalyzeAsync(sourceProfile);
             var destAnalysis = await _profileAnalyzer.AnalyzeAsync(destProfile);
 
-            // 3. Verify settings copied correctly
             if (sourceAnalysis.Sidebar.ShowSidebar != destAnalysis.Sidebar.ShowSidebar ||
                 sourceAnalysis.Sidebar.Position != destAnalysis.Sidebar.Position)
             {
@@ -373,7 +358,6 @@ public class CloneEngine : ICloneEngine
                 errors.Add("Vertical tabs configuration mismatch between source and clone.");
             }
 
-            // 4. Verify extensions copied correctly
             foreach (var srcExt in sourceAnalysis.InstalledExtensions)
             {
                 var destExt = destAnalysis.InstalledExtensions.FirstOrDefault(e => e.Id == srcExt.Id);
@@ -387,7 +371,6 @@ public class CloneEngine : ICloneEngine
                 }
             }
 
-            // 5. Verify security exclusions respected
             bool excludePasswords = true;
             bool blockActiveCookies = true;
 
@@ -410,7 +393,7 @@ public class CloneEngine : ICloneEngine
                         {
                             excludePasswords = alwaysExcludePasswordsNode.GetValue<bool>();
                         }
-                        
+
                         var blockActiveCookiesOnCloneNode = root["BlockActiveCookiesOnClone"];
                         if (blockActiveCookiesOnCloneNode != null)
                         {
@@ -465,7 +448,7 @@ public class CloneEngine : ICloneEngine
         try
         {
             var analysis = await _profileAnalyzer.AnalyzeAsync(sourceProfile);
-            
+
             if (request.CopyThemes && request.IncludeThemes)
             {
                 settingsToCopy.Add("Theme Information");
@@ -543,7 +526,6 @@ public class CloneEngine : ICloneEngine
         var fileName = Path.GetFileName(filePath);
         if (string.IsNullOrEmpty(fileName)) return true;
 
-        // Exclude lock and socket files
         if (fileName.Equals("lockfile", StringComparison.OrdinalIgnoreCase) ||
             fileName.Equals("parent.lock", StringComparison.OrdinalIgnoreCase) ||
             fileName.Equals("SingletonLock", StringComparison.OrdinalIgnoreCase) ||
@@ -555,7 +537,6 @@ public class CloneEngine : ICloneEngine
             return true;
         }
 
-        // Exclude extensions if CopyExtensions or IncludeExtensions is false
         if (!request.CopyExtensions || !request.IncludeExtensions)
         {
             var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -568,7 +549,6 @@ public class CloneEngine : ICloneEngine
             }
         }
 
-        // Exclude bookmarks if CopyBookmarks or IncludeBookmarks is false
         if (!request.CopyBookmarks || !request.IncludeBookmarks)
         {
             if (fileName.Equals("Bookmarks", StringComparison.OrdinalIgnoreCase) ||
@@ -578,7 +558,6 @@ public class CloneEngine : ICloneEngine
             }
         }
 
-        // Exclude wallpapers/backgrounds if CopyThemes or IncludeThemes is false
         if (!request.CopyThemes || !request.IncludeThemes)
         {
             var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -589,7 +568,6 @@ public class CloneEngine : ICloneEngine
             }
         }
 
-        // Exclude preferences files if CopySettings/IncludeSettings, CopyThemes/IncludeThemes, and CopySearchEngines/IncludeSearchEngines are all false
         bool copySettings = request.CopySettings && request.IncludeSettings;
         bool copyThemes = request.CopyThemes && request.IncludeThemes;
         bool copySearchEngines = request.CopySearchEngines && request.IncludeSearchEngines;
@@ -602,9 +580,8 @@ public class CloneEngine : ICloneEngine
             }
         }
 
-        // Exclude directories/files that contain sensitive data
         var pathParts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (pathParts.Any(p => 
+        if (pathParts.Any(p =>
             p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||
             p.Equals("GPUCache", StringComparison.OrdinalIgnoreCase) ||
@@ -618,7 +595,6 @@ public class CloneEngine : ICloneEngine
             return true;
         }
 
-        // Exclude specific sensitive files
         if ((request.ExcludePasswords && (fileName.Equals("Login Data", StringComparison.OrdinalIgnoreCase) || fileName.Equals("Login Data For Account", StringComparison.OrdinalIgnoreCase))) ||
             (request.BlockActiveCookies && (fileName.Equals("Cookies", StringComparison.OrdinalIgnoreCase) || fileName.Equals("Cookies-journal", StringComparison.OrdinalIgnoreCase))) ||
             (request.ExcludeHistory && (fileName.Equals("History", StringComparison.OrdinalIgnoreCase) || fileName.Equals("History-journal", StringComparison.OrdinalIgnoreCase))) ||

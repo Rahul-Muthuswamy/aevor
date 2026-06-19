@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Aevor.UI.ViewModels;
 
 namespace Aevor.UI.Services;

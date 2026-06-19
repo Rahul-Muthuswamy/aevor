@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -36,19 +36,13 @@ public partial class App : System.Windows.Application
 
         base.OnStartup(e);
 
-        // ── CRITICAL: prevent WPF from shutting down when the auth window
-        // closes (before MainWindow has been shown yet).
-        // LaunchMainApplication() will flip this back once MainWindow is shown.
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        // ── Step 1: Build the service container ──────────────────────────
         var services = new ServiceCollection();
         services.AddInfrastructureServices();
 
-        // Navigation
         services.AddSingleton<INavigationService, NavigationService>();
 
-        // Views
         services.AddSingleton<MainWindow>();
         services.AddTransient<DashboardView>();
         services.AddTransient<ProfilesView>();
@@ -58,11 +52,9 @@ public partial class App : System.Windows.Application
         services.AddTransient<SecurityView>();
         services.AddTransient<SettingsView>();
 
-        // Auth windows
         services.AddTransient<SetupPasswordWindow>();
         services.AddTransient<UnlockWindow>();
 
-        // ViewModels
         services.AddSingleton<MainWindowViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ProfilesViewModel>();
@@ -74,7 +66,6 @@ public partial class App : System.Windows.Application
 
         _serviceProvider = services.BuildServiceProvider();
 
-        // ── Step 2: Gate entry behind master password ─────────────────────
         var masterPasswordService = _serviceProvider.GetRequiredService<IMasterPasswordService>();
 
         if (!masterPasswordService.IsPasswordConfigured())
@@ -88,21 +79,8 @@ public partial class App : System.Windows.Application
             unlockWindow.Show();
         }
 
-        // MainWindow is shown by LaunchMainApplication(), called by the auth
-        // windows on successful password entry.
     }
 
-    /// <summary>
-    /// Called by <see cref="SetupPasswordWindow"/> and <see cref="UnlockWindow"/>
-    /// immediately after successful authentication.
-    ///
-    /// ORDERING GUARANTEE:
-    ///   MainWindow is shown synchronously BEFORE this method returns, so
-    ///   the auth window's subsequent Close() call will not trigger shutdown
-    ///   (there will always be at least one open window at that point).
-    ///
-    ///   Background startup health-checks run after the window is visible.
-    /// </summary>
     public async void LaunchMainApplication()
     {
         if (_serviceProvider is null)
@@ -113,15 +91,13 @@ public partial class App : System.Windows.Application
 
         try
         {
-            // ── Show MainWindow FIRST — before any await so the window is
-            // visible before the auth window closes. ──────────────────────────
+
             var navigationService = _serviceProvider.GetRequiredService<INavigationService>();
             navigationService.NavigateTo<DashboardViewModel>();
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
 
-            // Register as the application's main window and ensure clean exit when closed.
             this.MainWindow = mainWindow;
             mainWindow.Closed += (s, e) => System.Windows.Application.Current.Shutdown();
             mainWindow.Show();
@@ -138,9 +114,6 @@ public partial class App : System.Windows.Application
             throw;
         }
 
-        // ── Background startup health-checks (non-fatal) ─────────────────
-        // These run after the window is already visible so the user
-        // is not blocked waiting for them.
         try
         {
             var discoveryService = _serviceProvider.GetRequiredService<IProfileDiscoveryService>();

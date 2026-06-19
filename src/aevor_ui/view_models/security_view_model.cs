@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -11,7 +11,6 @@ using Aevor.UI.Commands;
 using Aevor.UI.Models;
 using SecurityFinding = Aevor.UI.Models.SecurityFinding;
 
-
 namespace Aevor.UI.ViewModels;
 
 public class SecurityViewModel : BaseViewModel
@@ -23,12 +22,10 @@ public class SecurityViewModel : BaseViewModel
     private List<SecurityScanResult> _scanResults = new();
     private List<BraveProfile> _profiles = new();
 
-    // ── Collections ────────────────────────────────────────────────────
     public ObservableCollection<SecurityProfileSummary> ProfileSummaries { get; } = new();
     public ObservableCollection<SecurityFinding>        Findings         { get; } = new();
     public ObservableCollection<SecurityFinding>        FilteredFindings { get; } = new();
 
-    // ── Properties ─────────────────────────────────────────────────────
     private bool _isLoading;
     public bool IsLoading
     {
@@ -56,7 +53,7 @@ public class SecurityViewModel : BaseViewModel
     {
         get
         {
-            // Thresholds mirror the scanner's RiskLevel bands
+
             if (OverallRiskScore <= 40) return "Secure";
             if (OverallRiskScore <= 65) return "Low Risk";
             if (OverallRiskScore <= 85) return "High Risk";
@@ -68,10 +65,10 @@ public class SecurityViewModel : BaseViewModel
     {
         get
         {
-            if (OverallRiskScore <= 40) return new SolidColorBrush(Color.FromRgb( 16, 185, 129)); // #10B981 green
-            if (OverallRiskScore <= 65) return new SolidColorBrush(Color.FromRgb(245, 158,  11)); // #F59E0B amber
-            if (OverallRiskScore <= 85) return new SolidColorBrush(Color.FromRgb(239,  68,  68)); // #EF4444 red
-            return new SolidColorBrush(Color.FromRgb(153, 27, 27));                               // #991B1B deep-red
+            if (OverallRiskScore <= 40) return new SolidColorBrush(Color.FromRgb( 16, 185, 129));
+            if (OverallRiskScore <= 65) return new SolidColorBrush(Color.FromRgb(245, 158,  11));
+            if (OverallRiskScore <= 85) return new SolidColorBrush(Color.FromRgb(239,  68,  68));
+            return new SolidColorBrush(Color.FromRgb(153, 27, 27));
         }
     }
 
@@ -79,10 +76,10 @@ public class SecurityViewModel : BaseViewModel
     {
         get
         {
-            if (OverallRiskScore <= 40) return new SolidColorBrush(Color.FromRgb(240, 253, 244)); // #F0FDF4
-            if (OverallRiskScore <= 65) return new SolidColorBrush(Color.FromRgb(255, 251, 235)); // #FFFBEB
-            if (OverallRiskScore <= 85) return new SolidColorBrush(Color.FromRgb(255, 241, 242)); // #FFF1F2
-            return new SolidColorBrush(Color.FromRgb(254, 226, 226));                             // #FEE2E2
+            if (OverallRiskScore <= 40) return new SolidColorBrush(Color.FromRgb(240, 253, 244));
+            if (OverallRiskScore <= 65) return new SolidColorBrush(Color.FromRgb(255, 251, 235));
+            if (OverallRiskScore <= 85) return new SolidColorBrush(Color.FromRgb(255, 241, 242));
+            return new SolidColorBrush(Color.FromRgb(254, 226, 226));
         }
     }
 
@@ -125,7 +122,7 @@ public class SecurityViewModel : BaseViewModel
             if (SetProperty(ref _selectedSeverityFilter, value))
             {
                 ApplyFindingsFilter();
-                // trigger PropertyChanged for active state of filter pills
+
                 OnPropertyChanged(nameof(IsFilterAllActive));
                 OnPropertyChanged(nameof(IsFilterCriticalActive));
                 OnPropertyChanged(nameof(IsFilterWarningActive));
@@ -134,7 +131,6 @@ public class SecurityViewModel : BaseViewModel
         }
     }
 
-    // Helper bool properties for pill active states
     public bool IsFilterAllActive      => SelectedSeverityFilter == "All";
     public bool IsFilterCriticalActive => SelectedSeverityFilter == "Critical";
     public bool IsFilterWarningActive  => SelectedSeverityFilter == "Warning";
@@ -164,12 +160,10 @@ public class SecurityViewModel : BaseViewModel
         }
     }
 
-    // ── Commands ───────────────────────────────────────────────────────
     public ICommand RunScanCommand          { get; }
     public ICommand FilterBySeverityCommand { get; }
     public ICommand ExportReportCommand     { get; }
 
-    // ── Constructor ────────────────────────────────────────────────────
     public SecurityViewModel(
         ISecurityScanner securityScanner,
         IProfileDiscoveryService profileDiscoveryService,
@@ -188,7 +182,6 @@ public class SecurityViewModel : BaseViewModel
         Task.Run(async () => await LoadSecurityDataAsync());
     }
 
-    // ── Load Security Data ─────────────────────────────────────────────
     private async Task LoadSecurityDataAsync()
     {
         await RunOnUIAsync(() => IsLoading = true);
@@ -231,7 +224,7 @@ public class SecurityViewModel : BaseViewModel
                 }
                 catch
                 {
-                    // Skip single profile scan fail gracefully
+
                 }
             }
 
@@ -317,7 +310,6 @@ public class SecurityViewModel : BaseViewModel
         }
     }
 
-    // ── Filtering ──────────────────────────────────────────────────────
     private void ApplyFindingsFilter()
     {
         FilteredFindings.Clear();
@@ -330,7 +322,6 @@ public class SecurityViewModel : BaseViewModel
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────
     private string GetRelativeTimeString(DateTime scanTime)
     {
         var elapsed = DateTime.UtcNow - scanTime.ToUniversalTime();
@@ -366,7 +357,6 @@ public class SecurityViewModel : BaseViewModel
         }
     }
 
-    // ── Command Handlers ───────────────────────────────────────────────
     private async void OnRunScan()
     {
         await RunOnUIAsync(() =>

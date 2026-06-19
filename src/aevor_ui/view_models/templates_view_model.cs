@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -18,7 +18,7 @@ namespace Aevor.UI.ViewModels;
 
 public class TemplatesViewModel : BaseViewModel
 {
-    // ── Injected Services ──────────────────────────────────────────────
+
     private readonly ITemplateSerializer _templateSerializer;
     private readonly ITemplateApplier _templateApplier;
     private readonly IProfileDiscoveryService _profileDiscoveryService;
@@ -26,14 +26,11 @@ public class TemplatesViewModel : BaseViewModel
     private readonly SettingsViewModel _settingsViewModel;
     private readonly IToastService _toastService;
 
-    // ── Template Storage ───────────────────────────────────────────────
     private readonly string _templatesDirectory;
 
-    // ── Collections ────────────────────────────────────────────────────
     public ObservableCollection<TemplateCardItem> Templates         { get; } = new();
     public ObservableCollection<TemplateCardItem> FilteredTemplates { get; } = new();
 
-    // ── Properties ─────────────────────────────────────────────────────
     private string _searchQuery = string.Empty;
     public string SearchQuery
     {
@@ -72,7 +69,6 @@ public class TemplatesViewModel : BaseViewModel
 
     public bool HasTemplates => !IsLoading && FilteredTemplates.Count > 0;
 
-    // ── Commands ───────────────────────────────────────────────────────
     public ICommand ApplyCommand          { get; }
     public ICommand ExportCommand         { get; }
     public ICommand DeleteCommand         { get; }
@@ -81,7 +77,6 @@ public class TemplatesViewModel : BaseViewModel
     public ICommand CreateTemplateCommand { get; }
     public ICommand GoToProfilesCommand   { get; }
 
-    // ── Constructor ────────────────────────────────────────────────────
     public TemplatesViewModel(
         ITemplateSerializer templateSerializer,
         ITemplateApplier templateApplier,
@@ -97,7 +92,6 @@ public class TemplatesViewModel : BaseViewModel
         _settingsViewModel = settingsViewModel ?? throw new ArgumentNullException(nameof(settingsViewModel));
         _toastService = toastService ?? throw new ArgumentNullException(nameof(toastService));
 
-        // Set up templates directory
         _templatesDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             "Aevor", "Templates");
@@ -111,18 +105,16 @@ public class TemplatesViewModel : BaseViewModel
         CreateTemplateCommand = new RelayCommand(OnCreateTemplate);
         GoToProfilesCommand   = new RelayCommand(OnGoToProfiles);
 
-        // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadTemplatesAsync());
     }
 
-    // ── Data Loading ──────────────────────────────────────────────────
     private async Task LoadTemplatesAsync()
     {
         IsLoading = true;
 
         try
         {
-            // ── Step A — Scan templates directory ─────────────────────
+
             Directory.CreateDirectory(_templatesDirectory);
             var jsonFiles = Directory.GetFiles(_templatesDirectory, "*.json");
 
@@ -137,7 +129,6 @@ public class TemplatesViewModel : BaseViewModel
                 return;
             }
 
-            // ── Step B — Load each template file ──────────────────────
             var cardItems = new List<TemplateCardItem>();
 
             foreach (var filePath in jsonFiles)
@@ -150,12 +141,11 @@ public class TemplatesViewModel : BaseViewModel
                 }
                 catch (Exception ex)
                 {
-                    // Skip corrupted/invalid files silently
+
                     Debug.WriteLine($"[TemplatesVM] Failed to load template '{filePath}': {ex.Message}");
                 }
             }
 
-            // ── Populate collections on UI thread ─────────────────────
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 Templates.Clear();
@@ -182,7 +172,6 @@ public class TemplatesViewModel : BaseViewModel
         }
     }
 
-    // ── Template → Card Mapping ───────────────────────────────────────
     private static TemplateCardItem MapTemplateToCard(AevorTemplate template, string filePath)
     {
         var name = template.Metadata?.Name ?? Path.GetFileNameWithoutExtension(filePath);
@@ -222,7 +211,6 @@ public class TemplatesViewModel : BaseViewModel
         }
     }
 
-    // ── Step C — Tag Derivation ───────────────────────────────────────
     private static (string Tag, string BgHex, string FgHex) DeriveTag(string name)
     {
         var lower = name.ToLowerInvariant();
@@ -251,7 +239,6 @@ public class TemplatesViewModel : BaseViewModel
         return ("Custom", "#F3F4F6", "#374151");
     }
 
-    // ── Filter ─────────────────────────────────────────────────────────
     private void ApplyFilter()
     {
         FilteredTemplates.Clear();
@@ -269,17 +256,11 @@ public class TemplatesViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasTemplates));
     }
 
-    // ── Status Message Helper ─────────────────────────────────────────
     private void SetStatusMessage(string message, ToastType type = ToastType.Info)
     {
         _toastService.Show(message, type);
     }
 
-    // ── Command Handlers ───────────────────────────────────────────────
-
-    /// <summary>
-    /// Apply: validates and applies a template to the first available profile.
-    /// </summary>
     private void OnApply(TemplateCardItem? t)
     {
         if (t?.SourceTemplate == null) return;
@@ -289,7 +270,7 @@ public class TemplatesViewModel : BaseViewModel
         {
             try
             {
-                // Step 1: Get available profiles
+
                 var profiles = await _profileDiscoveryService.GetProfilesAsync();
                 if (profiles == null || profiles.Count == 0)
                 {
@@ -298,7 +279,6 @@ public class TemplatesViewModel : BaseViewModel
                     return;
                 }
 
-                // Show simple profile picker dialog on UI thread
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var dialog = new Aevor.UI.Views.ApplyTemplateWindow(
@@ -311,7 +291,7 @@ public class TemplatesViewModel : BaseViewModel
                             {
                                 try
                                 {
-                                    // Validate before applying
+
                                     var validation = await _templateApplier.ValidateApplicationAsync(
                                         t.SourceTemplate, targetProfile);
 
@@ -323,7 +303,6 @@ public class TemplatesViewModel : BaseViewModel
                                         return $"Validation failed: {errorDetail}";
                                     }
 
-                                    // Apply the template
                                     var result = await _templateApplier.ApplyTemplateAsync(
                                         t.SourceTemplate, targetProfile, skipBackup: !doBackup);
 
@@ -331,7 +310,7 @@ public class TemplatesViewModel : BaseViewModel
                                     {
                                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                                             SetStatusMessage($"Template applied successfully to \"{targetProfile.DisplayName}\"", ToastType.Success));
-                                        return null; // success
+                                        return null;
                                     }
                                     else
                                     {
@@ -358,15 +337,11 @@ public class TemplatesViewModel : BaseViewModel
         });
     }
 
-    /// <summary>
-    /// Export: saves the template to a user-chosen location via SaveFileDialog.
-    /// </summary>
     private void OnExport(TemplateCardItem? t)
     {
         if (t?.SourceTemplate == null) return;
         SelectedTemplate = t;
 
-        // SaveFileDialog must run on the UI thread
         var safeFileName = string.Join("_", t.TemplateName.Split(Path.GetInvalidFileNameChars()));
         var dialog = new SaveFileDialog
         {
@@ -396,22 +371,18 @@ public class TemplatesViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Delete: removes the template file from disk and the card from collections.
-    /// </summary>
     private void OnDelete(TemplateCardItem? t)
     {
         if (t == null) return;
 
         try
         {
-            // Delete the file from disk if we know its path
+
             if (!string.IsNullOrEmpty(t.FilePath) && File.Exists(t.FilePath))
             {
                 File.Delete(t.FilePath);
             }
 
-            // Remove from collections
             Templates.Remove(t);
             FilteredTemplates.Remove(t);
             OnPropertyChanged(nameof(HasTemplates));
@@ -424,10 +395,6 @@ public class TemplatesViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Import: opens an OpenFileDialog, loads the template, copies it to
-    /// the templates directory, and adds it to the collections.
-    /// </summary>
     private void OnImport()
     {
         var dialog = new OpenFileDialog
@@ -446,14 +413,12 @@ public class TemplatesViewModel : BaseViewModel
                 IsLoading = true;
                 try
                 {
-                    // Load and validate the template
+
                     var template = await _templateSerializer.LoadFromFileAsync(selectedPath);
 
-                    // Copy file to templates directory
                     var destFileName = Path.GetFileName(selectedPath);
                     var destPath = Path.Combine(_templatesDirectory, destFileName);
 
-                    // Avoid overwriting — append number if file exists
                     if (File.Exists(destPath))
                     {
                         var nameWithoutExt = Path.GetFileNameWithoutExtension(destFileName);
@@ -468,7 +433,6 @@ public class TemplatesViewModel : BaseViewModel
 
                     File.Copy(selectedPath, destPath);
 
-                    // Map to card and add to collections
                     var card = MapTemplateToCard(template, destPath);
 
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>

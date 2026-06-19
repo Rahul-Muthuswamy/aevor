@@ -1,4 +1,4 @@
-<Window x:Class="Aevor.UI.Views.UnlockWindow"
+﻿<Window x:Class="Aevor.UI.Views.UnlockWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Aevor — Unlock"
@@ -19,11 +19,10 @@
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />  <!-- close button -->
-                <RowDefinition Height="*"    />  <!-- content -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*"    />
             </Grid.RowDefinitions>
 
-            <!-- Close / quit button -->
             <Button Grid.Row="0"
                     Width="28" Height="28"
                     HorizontalAlignment="Right"
@@ -35,15 +34,10 @@
                 <TextBlock Text="✕" FontSize="13" Foreground="{DynamicResource MutedBrush}" />
             </Button>
 
-            <!-- Main content -->
             <StackPanel Grid.Row="1" Margin="40,8,40,40">
 
-                <!-- ═══════════════════════════════════════
-                     Hero section
-                     ═══════════════════════════════════════ -->
                 <StackPanel HorizontalAlignment="Center" Margin="0,24,0,0">
 
-                    <!-- Lock icon circle -->
                     <Border Width="64" Height="64"
                             CornerRadius="32"
                             Background="#EDE9FE"
@@ -67,18 +61,13 @@
                                Margin="0,8,0,0" />
                 </StackPanel>
 
-                <!-- ═══════════════════════════════════════
-                     Form section
-                     ═══════════════════════════════════════ -->
                 <StackPanel Margin="0,36,0,0">
 
-                    <!-- Password label -->
                     <TextBlock Text="Master Password"
                                Style="{StaticResource CaptionTextBlockStyle}"
                                Foreground="{DynamicResource MutedBrush}"
                                Margin="0,0,0,6" />
 
-                    <!-- Password field -->
                     <Border x:Name="PwBorder"
                             BorderBrush="#E5E7EB"
                             BorderThickness="1"
@@ -106,7 +95,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Validation message -->
                     <TextBlock x:Name="ValidationText"
                                Text=""
                                Style="{StaticResource CaptionTextBlockStyle}"
@@ -115,7 +103,6 @@
                                Visibility="Collapsed"
                                Margin="0,10,0,0" />
 
-                    <!-- Lockout message -->
                     <TextBlock x:Name="LockoutText"
                                Text=""
                                Style="{StaticResource CaptionTextBlockStyle}"
@@ -125,7 +112,6 @@
                                TextAlignment="Center"
                                Margin="0,10,0,0" />
 
-                    <!-- Unlock button -->
                     <Button x:Name="UnlockBtn"
                             Content="Unlock Aevor"
                             Style="{StaticResource PrimaryButton}"

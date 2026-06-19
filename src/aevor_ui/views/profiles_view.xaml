@@ -1,4 +1,4 @@
-<UserControl x:Class="Aevor.UI.Views.ProfilesView"
+﻿<UserControl x:Class="Aevor.UI.Views.ProfilesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -9,10 +9,6 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- Inverse bool-to-visibility (for empty state: not loading AND not has-profiles) -->
-        <!-- We handle this inline via separate bindings -->
-
-        <!-- Profile card action button: identical width, 1/3 each -->
         <Style x:Key="CardActionButton" TargetType="{x:Type Button}" BasedOn="{StaticResource SecondaryButton}">
             <Setter Property="Height" Value="32" />
             <Setter Property="FontSize" Value="12" />
@@ -26,16 +22,12 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- ─── Root: two rows ─── -->
     <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"    />
         </Grid.RowDefinitions>
 
-        <!-- ══════════════════════════════════════════════════════════════
-             Row 1 — Page Header
-             ══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
                 Padding="32,32,32,20"
                 BorderBrush="{DynamicResource BorderBrush}"
@@ -47,7 +39,6 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Title + Subtitle -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
@@ -60,10 +51,8 @@
                                Margin="0,6,0,0" />
                 </StackPanel>
 
-                <!-- Right: Search + Refresh -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
 
-                    <!-- Search TextBox -->
                     <Border Width="240"
                             BorderBrush="{DynamicResource ControlBorderBrush}"
                             BorderThickness="1"
@@ -79,7 +68,7 @@
                                      Foreground="{DynamicResource TextBrush}"
                                      VerticalContentAlignment="Center"
                                      x:Name="SearchBox" />
-                            <!-- Placeholder -->
+
                             <TextBlock Text="Search profiles..."
                                        Foreground="{DynamicResource MutedBrush}"
                                        FontSize="13"
@@ -103,7 +92,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Refresh Button -->
                     <Button Content="Refresh"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding RefreshCommand}"
@@ -112,19 +100,14 @@
             </Grid>
         </Border>
 
-        <!-- ══════════════════════════════════════════════════════════════
-             Row 2 — Content + Detail Panel
-             ══════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- ── Left: main content ── -->
             <Grid Grid.Column="0">
 
-                <!-- Loading State -->
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
@@ -139,7 +122,6 @@
                                Margin="0,12,0,0" />
                 </StackPanel>
 
-                <!-- Empty State (not loading, no profiles) -->
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center">
                     <StackPanel.Style>
@@ -174,7 +156,6 @@
                             Margin="0,16,0,0" />
                 </StackPanel>
 
-                <!-- Profile Grid (ScrollViewer) -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Visibility="{Binding HasProfiles, Converter={StaticResource BoolToVis}}">
@@ -188,7 +169,6 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
 
-                                <!-- ─── Profile Card ─── -->
                                 <Border Style="{StaticResource CardStyle}"
                                         Width="280"
                                         Margin="0,0,16,16"
@@ -202,14 +182,12 @@
                                     </Border.InputBindings>
                                     <StackPanel>
 
-                                        <!-- Top Row: Avatar + Risk Badge -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"    />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Avatar circle -->
                                             <Border Grid.Column="0"
                                                     Width="44" Height="44"
                                                     CornerRadius="22"
@@ -222,7 +200,6 @@
                                                            VerticalAlignment="Center" />
                                             </Border>
 
-                                            <!-- Risk Badge -->
                                             <Border Grid.Column="1"
                                                     Background="{Binding RiskBadgeBackgroundBrush}"
                                                     CornerRadius="12"
@@ -235,30 +212,25 @@
                                             </Border>
                                         </Grid>
 
-                                        <!-- Profile Name -->
                                         <TextBlock Text="{Binding ProfileName}"
                                                    Style="{StaticResource H3TextBlockStyle}"
                                                    Margin="0,16,0,0" />
 
-                                        <!-- Browser -->
                                         <TextBlock Text="{Binding Browser}"
                                                    Style="{StaticResource BodyTextBlockStyle}"
                                                    Foreground="{DynamicResource MutedBrush}"
                                                    Margin="0,3,0,0" />
 
-                                        <!-- Divider -->
                                         <Border Height="1"
                                                 Background="{DynamicResource BorderBrush}"
                                                 Margin="0,16" />
 
-                                        <!-- Stats Row -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Extensions -->
                                             <StackPanel Grid.Column="0">
                                                 <TextBlock Text="{Binding ExtensionCount}"
                                                            Style="{StaticResource H3TextBlockStyle}"
@@ -269,7 +241,6 @@
                                                            Margin="0,3,0,0" />
                                             </StackPanel>
 
-                                            <!-- Last Used -->
                                             <StackPanel Grid.Column="1" HorizontalAlignment="Right">
                                                 <TextBlock Text="{Binding LastUsed}"
                                                            Style="{StaticResource BodyTextBlockStyle}"
@@ -283,7 +254,6 @@
                                             </StackPanel>
                                         </Grid>
 
-                                        <!-- Action Buttons Row -->
                                         <Grid Margin="0,16,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -314,7 +284,6 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Transparent click-outside overlay -->
                 <Button Background="Transparent"
                         BorderThickness="0"
                         Command="{Binding CloseDetailCommand}"
@@ -341,9 +310,6 @@
 
             </Grid>
 
-            <!-- ══════════════════════════════════════════════════════════════
-                 Right: Profile Detail Slide-out Panel
-                 ══════════════════════════════════════════════════════════════ -->
             <Border Grid.Column="1"
                     Background="{DynamicResource SurfaceBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
@@ -406,7 +372,6 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Panel Header -->
                     <Border Grid.Row="0" Padding="24,20"
                             BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,0,0,1">
@@ -432,14 +397,12 @@
                         </Grid>
                     </Border>
 
-                    <!-- Panel Body -->
                     <ScrollViewer Grid.Row="1"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   Padding="24,20">
                         <StackPanel DataContext="{Binding SelectedProfileDetail}">
 
-                            <!-- Avatar + Name -->
                             <Border Width="56" Height="56"
                                     CornerRadius="28"
                                     Background="#F7E5FC"
@@ -462,7 +425,6 @@
                                        HorizontalAlignment="Center"
                                        Margin="0,4,0,0" />
 
-                            <!-- Risk Badge -->
                             <Border Background="{Binding RiskBadgeBackgroundBrush}"
                                     CornerRadius="12"
                                     Padding="14,6"
@@ -479,12 +441,10 @@
                                 </TextBlock>
                             </Border>
 
-                            <!-- Divider -->
                             <Border Height="1"
                                     Background="{DynamicResource BorderBrush}"
                                     Margin="0,20" />
 
-                            <!-- Detail stats -->
                             <Border Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,12">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -499,7 +459,6 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Extensions row -->
                                     <TextBlock Grid.Row="0" Grid.Column="0"
                                                Text="Extensions"
                                                Style="{StaticResource BodyTextBlockStyle}"
@@ -509,13 +468,11 @@
                                                Style="{StaticResource BodyTextBlockStyle}"
                                                FontWeight="SemiBold" />
 
-                                    <!-- Divider -->
                                     <Border Grid.Row="1" Grid.ColumnSpan="2"
                                             Height="1"
                                             Background="{DynamicResource BorderBrush}"
                                             Margin="0,10" />
 
-                                    <!-- Last used row -->
                                     <TextBlock Grid.Row="2" Grid.Column="0"
                                                Text="Last Used"
                                                Style="{StaticResource BodyTextBlockStyle}"
@@ -525,13 +482,11 @@
                                                Style="{StaticResource BodyTextBlockStyle}"
                                                FontWeight="SemiBold" />
 
-                                    <!-- Divider 2 -->
                                     <Border Grid.Row="3" Grid.ColumnSpan="2"
                                             Height="1"
                                             Background="{DynamicResource BorderBrush}"
                                             Margin="0,10" />
 
-                                    <!-- Path row -->
                                     <TextBlock Grid.Row="4" Grid.Column="0"
                                                Text="Path"
                                                Style="{StaticResource BodyTextBlockStyle}"
@@ -546,7 +501,6 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Installed Extensions Section -->
                             <TextBlock Text="Installed Extensions"
                                        Style="{StaticResource H3TextBlockStyle}"
                                        Margin="0,16,0,8" />
@@ -571,7 +525,7 @@
                                 </ItemsControl.Style>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="4" 
+                                        <Border CornerRadius="4"
                                                 Background="{DynamicResource SurfaceBrush}"
                                                 BorderBrush="{DynamicResource BorderBrush}"
                                                 BorderThickness="1"
@@ -585,7 +539,6 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <!-- Security Risk Section -->
                             <TextBlock Text="Security Risk"
                                        Style="{StaticResource H1TextBlockStyle}"
                                        Margin="0,20,0,8" />
@@ -616,7 +569,6 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Colored Dot -->
                                             <Ellipse Grid.Column="0"
                                                      Width="8"
                                                      Height="8"
@@ -642,7 +594,6 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- Panel Footer: Action buttons -->
                     <Border Grid.Row="2" Padding="24,16"
                             BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,1,0,0">
@@ -667,4 +618,3 @@
         </Grid>
     </Grid>
 </UserControl>
-

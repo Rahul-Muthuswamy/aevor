@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -17,7 +17,6 @@ public class MainWindowViewModel : BaseViewModel
     private readonly INavigationService _navigationService;
     private string _currentPageTitle = "Dashboard";
 
-    // ── Version / update ──────────────────────────────────────────────────
     private string _latestVersion  = string.Empty;
     private bool   _updateAvailable;
 
@@ -28,7 +27,6 @@ public class MainWindowViewModel : BaseViewModel
     private const string ApiUrl =
         $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases/latest";
 
-    // ── Nav active-state fields ───────────────────────────────────────────
     private bool _isDashboardActive;
     private bool _isProfilesActive;
     private bool _isTemplatesActive;
@@ -37,9 +35,6 @@ public class MainWindowViewModel : BaseViewModel
     private bool _isSecurityActive;
     private bool _isSettingsActive;
 
-    // ── Version properties ────────────────────────────────────────────────
-
-    /// <summary>Assembly version formatted as "v1.0.0".</summary>
     public string CurrentVersion
     {
         get
@@ -63,8 +58,6 @@ public class MainWindowViewModel : BaseViewModel
     }
 
     public ICommand OpenReleasesPageCommand { get; }
-
-    // ── Nav active-state properties ───────────────────────────────────────
 
     public bool IsDashboardActive
     {
@@ -122,46 +115,46 @@ public class MainWindowViewModel : BaseViewModel
             {
                 Process.Start(new ProcessStartInfo(ReleasesUrl) { UseShellExecute = true });
             }
-            catch { /* ignore — browser may not be available */ }
+            catch {  }
         });
 
-        NavigateDashboardCommand = new RelayCommand(() => 
+        NavigateDashboardCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsDashboardActive = true;
             _navigationService.NavigateTo<DashboardViewModel>();
         });
-        NavigateProfilesCommand = new RelayCommand(() => 
+        NavigateProfilesCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsProfilesActive = true;
             _navigationService.NavigateTo<ProfilesViewModel>();
         });
-        NavigateTemplatesCommand = new RelayCommand(() => 
+        NavigateTemplatesCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsTemplatesActive = true;
             _navigationService.NavigateTo<TemplatesViewModel>();
         });
-        NavigateCloneCommand = new RelayCommand(() => 
+        NavigateCloneCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsCloneActive = true;
             _navigationService.NavigateTo<CloneWizardViewModel>();
         });
-        NavigateBackupsCommand = new RelayCommand(() => 
+        NavigateBackupsCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsBackupsActive = true;
             _navigationService.NavigateTo<BackupsViewModel>();
         });
-        NavigateSecurityCommand = new RelayCommand(() => 
+        NavigateSecurityCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsSecurityActive = true;
             _navigationService.NavigateTo<SecurityViewModel>();
         });
-        NavigateSettingsCommand = new RelayCommand(() => 
+        NavigateSettingsCommand = new RelayCommand(() =>
         {
             SetAllActiveFalse();
             IsSettingsActive = true;
@@ -170,7 +163,6 @@ public class MainWindowViewModel : BaseViewModel
 
         OnNavigationChanged();
 
-        // Kick off silent background update check
         Task.Run(CheckForUpdatesAsync);
     }
 
@@ -189,8 +181,6 @@ public class MainWindowViewModel : BaseViewModel
     public ICommand NavigateBackupsCommand   { get; }
     public ICommand NavigateSecurityCommand  { get; }
     public ICommand NavigateSettingsCommand  { get; }
-
-    // ── Update check ──────────────────────────────────────────────────────
 
     private async Task CheckForUpdatesAsync()
     {
@@ -211,13 +201,12 @@ public class MainWindowViewModel : BaseViewModel
             if (string.IsNullOrWhiteSpace(tag))
                 return;
 
-            // Normalise both to "vX.Y.Z" for comparison
             var remote  = tag.StartsWith('v') ? tag : $"v{tag}";
             var current = CurrentVersion;
 
             if (!string.Equals(remote, current, StringComparison.OrdinalIgnoreCase))
             {
-                // Marshal property updates back to the UI thread
+
                 System.Windows.Application.Current?.Dispatcher.Invoke(() =>
                 {
                     LatestVersion   = remote;
@@ -227,7 +216,7 @@ public class MainWindowViewModel : BaseViewModel
         }
         catch
         {
-            // Fail silently — no internet or API error must never crash the app
+
         }
     }
 
@@ -245,7 +234,7 @@ public class MainWindowViewModel : BaseViewModel
     private void OnNavigationChanged()
     {
         OnPropertyChanged(nameof(CurrentView));
-        
+
         IsDashboardActive = CurrentView is DashboardViewModel;
         IsProfilesActive = CurrentView is ProfilesViewModel;
         IsTemplatesActive = CurrentView is TemplatesViewModel;

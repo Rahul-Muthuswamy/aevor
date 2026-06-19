@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -50,7 +50,7 @@ public class TemplateSerializer : ITemplateSerializer
 
         try
         {
-            // 1. Version-aware check using JsonDocument for fast/partial parsing
+
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
@@ -76,7 +76,6 @@ public class TemplateSerializer : ITemplateSerializer
                 throw new TemplateVersionException($"Invalid template version format: {versionString}.", ex);
             }
 
-            // Version routing for backward compatibility preparation
             if (version.Major == 1 && version.Minor == 0)
             {
                 var template = JsonSerializer.Deserialize<AevorTemplate>(json, _jsonOptions);
@@ -86,9 +85,6 @@ public class TemplateSerializer : ITemplateSerializer
                 }
                 return template;
             }
-
-            // Design placeholder for potential migration/routing for future versions
-            // if (version.Major == 1 && version.Minor == 1) { return MigrateV1_1(json); }
 
             throw new TemplateVersionException($"Unsupported template version: '{versionString}'. Currently only version 1.0 is supported.");
         }

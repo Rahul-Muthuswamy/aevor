@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
@@ -7,9 +7,7 @@ using Aevor.Core.Models;
 
 namespace Aevor.UI.Views
 {
-    /// <summary>
-    /// Interaction logic for CreateBackupWindow.xaml
-    /// </summary>
+
     public partial class CreateBackupWindow : Window
     {
         private readonly Func<BraveProfile, Task<bool>> _createBackupFunc;
@@ -43,11 +41,10 @@ namespace Aevor.UI.Views
             SelectedProfile = ProfileComboBox.SelectedItem as BraveProfile;
             if (SelectedProfile == null) return;
 
-            // Switch to loading state
             SelectionPanel.Visibility = Visibility.Collapsed;
             FooterBorder.Visibility = Visibility.Collapsed;
             LoadingPanel.Visibility = Visibility.Visible;
-            HeaderGrid.IsEnabled = false; // Disable close/drag during backup
+            HeaderGrid.IsEnabled = false;
 
             try
             {
@@ -59,7 +56,7 @@ namespace Aevor.UI.Views
                 }
                 else
                 {
-                    // Restore Selection view
+
                     SelectionPanel.Visibility = Visibility.Visible;
                     FooterBorder.Visibility = Visibility.Visible;
                     LoadingPanel.Visibility = Visibility.Collapsed;

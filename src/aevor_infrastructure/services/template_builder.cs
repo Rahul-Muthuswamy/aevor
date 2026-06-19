@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Aevor.Application.Interfaces;
@@ -25,7 +25,6 @@ public class TemplateBuilder : ITemplateBuilder
             throw new ArgumentNullException(nameof(scanResult));
         }
 
-        // 1. Metadata
         var metadata = new TemplateMetadata(
             Name: templateName,
             Description: templateDescription,
@@ -37,7 +36,6 @@ public class TemplateBuilder : ITemplateBuilder
             GeneratorVersion: generatorVersion
         );
 
-        // 2. Settings (excluding sensitive findings and using values from analysisResult)
         var browserPreferences = new Dictionary<string, object>();
         var settings = new TemplateSettings(
             Theme: analysisResult.Theme,
@@ -47,17 +45,14 @@ public class TemplateBuilder : ITemplateBuilder
             BrowserPreferences: browserPreferences
         );
 
-        // 3. Extensions
         var extensions = analysisResult.InstalledExtensions ?? new List<ExtensionInfo>();
 
-        // 4. Assets placeholder
         var assets = new TemplateAssets(
             Wallpaper: null,
             Icon: null,
             FutureAssets: new Dictionary<string, string>()
         );
 
-        // 5. Exclusions and Warnings from scan results
         var excludedArtifacts = new List<ExcludedArtifact>();
         var warnings = new List<TemplateWarning>();
 
@@ -78,7 +73,6 @@ public class TemplateBuilder : ITemplateBuilder
             }
         }
 
-        // Add warnings from profile analysis
         if (analysisResult.Warnings != null)
         {
             foreach (var warn in analysisResult.Warnings)
@@ -90,7 +84,6 @@ public class TemplateBuilder : ITemplateBuilder
             }
         }
 
-        // Add errors from profile analysis
         if (analysisResult.Errors != null)
         {
             foreach (var err in analysisResult.Errors)
@@ -102,7 +95,6 @@ public class TemplateBuilder : ITemplateBuilder
             }
         }
 
-        // Check overall export safety
         if (!scanResult.ExportSafe)
         {
             warnings.Add(new TemplateWarning(

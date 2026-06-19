@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Media;
 using Aevor.Core.Models;
 
@@ -15,7 +15,6 @@ public class BackupCardItem
     public BackupStatus   Status           { get; set; }
     public bool           IsSelected       { get; set; }
 
-    // ── Computed ────────────────────────────────────────────────────────
     public string FormattedDate => CreatedTimestamp.ToLocalTime().ToString("MMM d, yyyy h:mm tt");
 
     public string FormattedSize
@@ -41,20 +40,20 @@ public class BackupCardItem
 
     public Brush StatusColor => Status switch
     {
-        BackupStatus.InProgress => new SolidColorBrush(Color.FromRgb(59,  130, 246)), // Blue: #3B82F6
-        BackupStatus.Completed  => new SolidColorBrush(Color.FromRgb(16,  185, 129)), // Green: #10B981
-        BackupStatus.Failed     => new SolidColorBrush(Color.FromRgb(239, 68,  68)),  // Red: #EF4444
-        BackupStatus.Corrupted  => new SolidColorBrush(Color.FromRgb(245, 158, 11)),  // Orange: #F59E0B
-        _                       => new SolidColorBrush(Color.FromRgb(107, 114, 128)) // Gray: #6B7280
+        BackupStatus.InProgress => new SolidColorBrush(Color.FromRgb(59,  130, 246)),
+        BackupStatus.Completed  => new SolidColorBrush(Color.FromRgb(16,  185, 129)),
+        BackupStatus.Failed     => new SolidColorBrush(Color.FromRgb(239, 68,  68)),
+        BackupStatus.Corrupted  => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+        _                       => new SolidColorBrush(Color.FromRgb(107, 114, 128))
     };
 
     public Brush StatusBackground => Status switch
     {
-        BackupStatus.InProgress => new SolidColorBrush(Color.FromRgb(219, 234, 254)), // #DBEAFE
-        BackupStatus.Completed  => new SolidColorBrush(Color.FromRgb(209, 250, 229)), // #D1FAE5
-        BackupStatus.Failed     => new SolidColorBrush(Color.FromRgb(254, 226, 226)), // #FEE2E2
-        BackupStatus.Corrupted  => new SolidColorBrush(Color.FromRgb(254, 243, 199)), // #FEF3C7
-        _                       => new SolidColorBrush(Color.FromRgb(243, 244, 246)) // #F3F4F6
+        BackupStatus.InProgress => new SolidColorBrush(Color.FromRgb(219, 234, 254)),
+        BackupStatus.Completed  => new SolidColorBrush(Color.FromRgb(209, 250, 229)),
+        BackupStatus.Failed     => new SolidColorBrush(Color.FromRgb(254, 226, 226)),
+        BackupStatus.Corrupted  => new SolidColorBrush(Color.FromRgb(254, 243, 199)),
+        _                       => new SolidColorBrush(Color.FromRgb(243, 244, 246))
     };
 
     public string Initial => string.IsNullOrWhiteSpace(ProfileName) ? "?" : ProfileName[0].ToString().ToUpper();

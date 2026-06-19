@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -13,7 +13,6 @@ public class SettingsViewModel : BaseViewModel
 {
     private readonly IBraveInstallationService _braveInstallation;
 
-    // ── Settings Properties ────────────────────────────────────────────
     private string _braveUserDataPath = string.Empty;
     public string BraveUserDataPath
     {
@@ -27,7 +26,6 @@ public class SettingsViewModel : BaseViewModel
         get => _backupsPath;
         set => SetProperty(ref _backupsPath, value);
     }
-
 
     private bool _autoScanOnStartup = true;
     public bool AutoScanOnStartup
@@ -71,7 +69,6 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _hasCompletedOnboarding, value);
     }
 
-    // ── Status Message ─────────────────────────────────────────────────
     private string _statusMessage = string.Empty;
     public string StatusMessage
     {
@@ -86,14 +83,12 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _isMessageSuccess, value);
     }
 
-    // ── Commands ───────────────────────────────────────────────────────
     public ICommand SaveSettingsCommand  { get; }
     public ICommand ResetSettingsCommand { get; }
     public ICommand OpenRepoCommand      { get; }
     public ICommand OpenReleasesCommand  { get; }
     public ICommand OpenIssuesCommand    { get; }
 
-    // ── About ─────────────────────────────────────────────────────────
     private const string GitHubOwner = "Rahul-Muthuswamy";
     private const string GitHubRepo  = "aevor";
 
@@ -109,7 +104,6 @@ public class SettingsViewModel : BaseViewModel
 
     public string CurrentVersion => AppVersion;
 
-    // ── Constructor ────────────────────────────────────────────────────
     public SettingsViewModel(IBraveInstallationService braveInstallation)
     {
         _braveInstallation = braveInstallation ?? throw new ArgumentNullException(nameof(braveInstallation));
@@ -123,7 +117,6 @@ public class SettingsViewModel : BaseViewModel
         LoadSettings();
     }
 
-    // ── Methods ────────────────────────────────────────────────────────
     private string GetSettingsFilePath()
     {
         return Path.Combine(
@@ -159,7 +152,7 @@ public class SettingsViewModel : BaseViewModel
         }
         catch
         {
-            // fallback to defaults
+
         }
     }
 
@@ -240,7 +233,7 @@ public class SettingsViewModel : BaseViewModel
         }
         catch
         {
-            // ignore
+
         }
         StatusMessage = "Settings reset to defaults.";
         IsMessageSuccess = true;
@@ -254,7 +247,7 @@ public class SettingsViewModel : BaseViewModel
         }
         catch
         {
-            // Silently ignore if browser is not available
+
         }
     }
 }

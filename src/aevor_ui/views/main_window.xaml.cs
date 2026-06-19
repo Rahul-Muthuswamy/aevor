@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,7 +17,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Resolve toast service from DI and subscribe
         _toastService = ((App)System.Windows.Application.Current).Services
             .GetService(typeof(IToastService)) as IToastService;
 
@@ -27,31 +26,25 @@ public partial class MainWindow : Window
         }
     }
 
-    // ── Profile flyout ────────────────────────────────────────────────────
-
     private void ProfileBtn_Click(object sender, RoutedEventArgs e)
     {
         ProfilePopup.IsOpen = !ProfilePopup.IsOpen;
     }
 
-    // Called by the Settings and Security buttons inside the flyout so the
-    // popup closes immediately when the user selects a nav item.
     private void ProfilePopup_CloseOnNav(object sender, RoutedEventArgs e)
     {
         ProfilePopup.IsOpen = false;
     }
 
-    // ── Toast Notifications ───────────────────────────────────────────────
-
     private void OnToastRequested(ToastNotification toast)
     {
-        // Marshal to UI thread
+
         Dispatcher.InvokeAsync(() => ShowToast(toast));
     }
 
     private void ShowToast(ToastNotification toast)
     {
-        // Determine colors based on toast type
+
         var (barColorHex, circleBgHex, icon) = toast.Type switch
         {
             ToastType.Success => ("#10B981", "#D1FAE5", "✓"),
@@ -62,10 +55,9 @@ public partial class MainWindow : Window
 
         var barBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(barColorHex));
         var circleBgBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(circleBgHex));
-        var textBrush = System.Windows.Application.Current.TryFindResource("TextBrush") as Brush 
+        var textBrush = System.Windows.Application.Current.TryFindResource("TextBrush") as Brush
             ?? new SolidColorBrush(Color.FromRgb(31, 41, 55));
 
-        // Build outer toast container
         var border = new Border
         {
             Background = Brushes.White,
@@ -90,7 +82,6 @@ public partial class MainWindow : Window
         outerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
         outerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        // Column 0: left colored bar 4px wide
         var leftBar = new Border
         {
             Background = barBrush,
@@ -100,7 +91,6 @@ public partial class MainWindow : Window
         Grid.SetColumn(leftBar, 0);
         outerGrid.Children.Add(leftBar);
 
-        // Column 1: Inner grid with Thickness(20, 16, 20, 16) padding
         var innerBorder = new Border
         {
             Padding = new Thickness(20, 16, 20, 16)
@@ -112,7 +102,6 @@ public partial class MainWindow : Window
         innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        // Circular icon border
         var iconBorder = new Border
         {
             Width = 24,
@@ -136,7 +125,6 @@ public partial class MainWindow : Window
         Grid.SetColumn(iconBorder, 0);
         innerGrid.Children.Add(iconBorder);
 
-        // Message text
         var msgText = new TextBlock
         {
             Text = toast.Message,
@@ -159,14 +147,12 @@ public partial class MainWindow : Window
         innerBorder.Child = innerGrid;
         border.Child = outerGrid;
 
-        // Fade-in animation
         border.Opacity = 0;
         ToastContainer.Items.Insert(0, border);
 
         var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
         border.BeginAnimation(OpacityProperty, fadeIn);
 
-        // Auto-dismiss
         var duration = Math.Max(toast.DurationMs, 1000);
         Task.Delay(duration).ContinueWith(_ =>
         {

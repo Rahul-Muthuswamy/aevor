@@ -1,12 +1,10 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Input;
 
 namespace Aevor.UI.Views
 {
-    /// <summary>
-    /// Interaction logic for ConfirmRestoreWindow.xaml
-    /// </summary>
+
     public partial class ConfirmRestoreWindow : Window
     {
         public ConfirmRestoreWindow(string message)

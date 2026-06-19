@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -9,13 +9,13 @@ namespace Aevor.UI.Views;
 
 public partial class OnboardingWindow : Window
 {
-    private int _currentSlide; // 0-based
+    private int _currentSlide;
     private const int TotalSlides = 3;
 
     private static readonly SolidColorBrush ActiveDot =
-        new(Color.FromRgb(203, 108, 230));   // PrimaryBrush #CB6CE6
+        new(Color.FromRgb(203, 108, 230));
     private static readonly SolidColorBrush InactiveDot =
-        new(Color.FromRgb(229, 231, 235));   // BorderBrush #E5E7EB
+        new(Color.FromRgb(229, 231, 235));
 
     static OnboardingWindow()
     {
@@ -34,8 +34,6 @@ public partial class OnboardingWindow : Window
         UpdateSlide();
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────
-
     private void NextBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_currentSlide < TotalSlides - 1)
@@ -45,7 +43,7 @@ public partial class OnboardingWindow : Window
         }
         else
         {
-            // Last slide → persist flag and launch main app
+
             PersistOnboardingFlag();
             ((App)System.Windows.Application.Current).LaunchMainApplication();
             Close();
@@ -64,8 +62,6 @@ public partial class OnboardingWindow : Window
 
         NextBtn.Content = _currentSlide == TotalSlides - 1 ? "Get Started" : "Next";
     }
-
-    // ── Persistence ───────────────────────────────────────────────────────
 
     private static readonly string SettingsFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -86,7 +82,7 @@ public partial class OnboardingWindow : Window
         }
         catch
         {
-            // Corrupt or missing — treat as not completed
+
         }
         return false;
     }
@@ -99,7 +95,6 @@ public partial class OnboardingWindow : Window
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            // Merge with existing settings if present
             Dictionary<string, JsonElement>? existing = null;
             if (File.Exists(SettingsFilePath))
             {
@@ -110,7 +105,7 @@ public partial class OnboardingWindow : Window
                 }
                 catch
                 {
-                    // Overwrite if corrupt
+
                 }
             }
 
@@ -123,13 +118,13 @@ public partial class OnboardingWindow : Window
         }
         catch
         {
-            // Non-fatal — worst case, user sees onboarding again
+
         }
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        // Skip = complete onboarding and launch
+
         PersistOnboardingFlag();
         ((App)System.Windows.Application.Current).LaunchMainApplication();
         Close();

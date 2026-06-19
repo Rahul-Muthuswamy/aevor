@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -23,13 +23,11 @@ public class BackupRestorer
 
     public async Task<RestoreResult> RestoreBackupAsync(Guid backupId)
     {
-        // 1. Verify Backup
+
         var validationResult = await _validator.ValidateBackupAsync(backupId);
-        
-        // Critical structural errors block the restore, but integrity checks like
-        // hash mismatch or file count mismatch do not block the user from restoring their data.
-        var criticalErrors = validationResult.Errors.Where(err => 
-            !err.Contains("Profile hash mismatch", StringComparison.OrdinalIgnoreCase) && 
+
+        var criticalErrors = validationResult.Errors.Where(err =>
+            !err.Contains("Profile hash mismatch", StringComparison.OrdinalIgnoreCase) &&
             !err.Contains("File count mismatch", StringComparison.OrdinalIgnoreCase)
         ).ToList();
 
@@ -41,7 +39,7 @@ public class BackupRestorer
 
         var backupDir = Path.Combine(_backupsRoot, backupId.ToString());
         var manifestPath = Path.Combine(backupDir, "manifest.json");
-        
+
         BackupManifest manifest;
         try
         {
@@ -63,7 +61,7 @@ public class BackupRestorer
 
         try
         {
-            // 2. Clear target profile if it exists to ensure a clean restoration
+
             if (_fileSystem.DirectoryExists(targetProfilePath))
             {
                 try
@@ -78,7 +76,6 @@ public class BackupRestorer
 
             _fileSystem.CreateDirectory(targetProfilePath);
 
-            // 3. Restore files
             var files = _fileSystem.EnumerateFiles(backupProfilePath, "*", SearchOption.AllDirectories).ToList();
             int filesRestoredCount = 0;
             long totalBytesRestored = 0;

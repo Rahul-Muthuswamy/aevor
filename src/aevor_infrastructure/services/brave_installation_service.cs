@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Aevor.Application.Interfaces;
@@ -53,7 +53,7 @@ public class BraveInstallationService : IBraveInstallationService
         }
         catch
         {
-            // Fallback to default on any settings loading/parsing error
+
         }
 
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);

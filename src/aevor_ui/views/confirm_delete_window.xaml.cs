@@ -1,12 +1,10 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Input;
 
 namespace Aevor.UI.Views
 {
-    /// <summary>
-    /// Interaction logic for ConfirmDeleteWindow.xaml
-    /// </summary>
+
     public partial class ConfirmDeleteWindow : Window
     {
         private readonly Func<Task<bool>> _deleteAction;
@@ -34,11 +32,11 @@ namespace Aevor.UI.Views
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
-            // Switch to loading state
+
             MessagePanel.Visibility = Visibility.Collapsed;
             FooterBorder.Visibility = Visibility.Collapsed;
             LoadingPanel.Visibility = Visibility.Visible;
-            HeaderGrid.IsEnabled = false; // Disable close/drag during deletion
+            HeaderGrid.IsEnabled = false;
 
             try
             {
@@ -50,7 +48,7 @@ namespace Aevor.UI.Views
                 }
                 else
                 {
-                    // Restore original view
+
                     MessagePanel.Visibility = Visibility.Visible;
                     FooterBorder.Visibility = Visibility.Visible;
                     LoadingPanel.Visibility = Visibility.Collapsed;

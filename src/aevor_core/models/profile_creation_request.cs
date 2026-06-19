@@ -1,4 +1,4 @@
-namespace Aevor.Core.Models;
+﻿namespace Aevor.Core.Models;
 
 public record ProfileCreationRequest(
     string ProfileName,

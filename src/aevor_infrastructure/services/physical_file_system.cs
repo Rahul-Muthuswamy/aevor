@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -26,7 +26,7 @@ public class PhysicalFileSystem : IFileSystem
         }
         catch (IOException)
         {
-            // Fallback to stream-based read with FileShare.ReadWrite to copy files open by Brave
+
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true);
             using var reader = new StreamReader(stream);
             return await reader.ReadToEndAsync();
@@ -41,7 +41,7 @@ public class PhysicalFileSystem : IFileSystem
         }
         catch (IOException)
         {
-            // Fallback to stream-based read with FileShare.ReadWrite to copy files open by Brave
+
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
@@ -78,7 +78,7 @@ public class PhysicalFileSystem : IFileSystem
         }
         catch (IOException)
         {
-            // Fallback to stream-based copy with FileShare.ReadWrite to copy files open by Brave
+
             using var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var destStream = new FileStream(destPath, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write);
             sourceStream.CopyTo(destStream);
@@ -100,7 +100,6 @@ public class PhysicalFileSystem : IFileSystem
 
         if (!Directory.Exists(path)) return;
 
-        // Recursively remove read-only attribute from files
         try
         {
             foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
@@ -115,11 +114,10 @@ public class PhysicalFileSystem : IFileSystem
                 }
                 catch
                 {
-                    // Ignore transient file access errors during attribute clearing
+
                 }
             }
 
-            // Recursively remove read-only attribute from subdirectories
             foreach (var dir in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
             {
                 try
@@ -132,16 +130,15 @@ public class PhysicalFileSystem : IFileSystem
                 }
                 catch
                 {
-                    // Ignore transient directory access errors during attribute clearing
+
                 }
             }
         }
         catch
         {
-            // Ignore search enumeration errors, try deleting anyway
+
         }
 
-        // Try to delete with retries
         int retries = 5;
         for (int i = 0; i < retries; i++)
         {

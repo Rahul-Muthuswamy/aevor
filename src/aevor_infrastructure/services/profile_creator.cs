@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -71,7 +71,6 @@ public class ProfileCreator : IProfileCreator
                 return new ProfileCreationResult(false, null, "Local State is missing profile.info_cache structure.");
             }
 
-            // Verify unique profile name (both display name and folder name)
             foreach (var property in infoCacheNode)
             {
                 var name = property.Value?["name"]?.GetValue<string>();
@@ -82,7 +81,6 @@ public class ProfileCreator : IProfileCreator
                 }
             }
 
-            // Determine folder name
             string? folderName = request.FolderName;
             if (string.IsNullOrWhiteSpace(folderName))
             {
@@ -105,14 +103,11 @@ public class ProfileCreator : IProfileCreator
                 return new ProfileCreationResult(false, null, $"Directory '{profilePath}' already exists on disk.");
             }
 
-            // 1. Create profile directory
             _fileSystem.CreateDirectory(profilePath);
 
-            // Create required profile files (Preferences and Secure Preferences)
             await _fileSystem.WriteAllTextAsync(Path.Combine(profilePath, "Preferences"), "{}");
             await _fileSystem.WriteAllTextAsync(Path.Combine(profilePath, "Secure Preferences"), "{}");
 
-            // 2. Register profile inside Local State
             var newProfileMeta = new JsonObject
             {
                 ["name"] = request.ProfileName,
@@ -120,7 +115,6 @@ public class ProfileCreator : IProfileCreator
             };
             infoCacheNode.Add(folderName, newProfileMeta);
 
-            // Write back to Local State
             var updatedLocalStateText = rootNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
             await _fileSystem.WriteAllTextAsync(localStatePath, updatedLocalStateText);
 
@@ -141,7 +135,6 @@ public class ProfileCreator : IProfileCreator
                 ProfilePath: profilePath
             );
 
-            // 3. Validate registration
             var validation = await ValidateProfileAsync(folderName);
             if (!validation.IsValid)
             {
@@ -173,7 +166,7 @@ public class ProfileCreator : IProfileCreator
 
         try
         {
-            // Remove from Local State
+
             if (_fileSystem.FileExists(localStatePath))
             {
                 var localStateText = await _fileSystem.ReadAllTextAsync(localStatePath);
@@ -187,7 +180,6 @@ public class ProfileCreator : IProfileCreator
                 }
             }
 
-            // Delete directory
             var profilePath = Path.Combine(userDataPath, folderName);
             if (_fileSystem.DirectoryExists(profilePath))
             {
@@ -218,20 +210,17 @@ public class ProfileCreator : IProfileCreator
         var userDataPath = _installationService.GetUserDataPath();
         var profilePath = Path.Combine(userDataPath, folderName);
 
-        // Verify directory exists
         if (!_fileSystem.DirectoryExists(profilePath))
         {
             errors.Add($"Profile directory does not exist on disk: {profilePath}");
         }
 
-        // Verify required files present
         var preferencesPath = Path.Combine(profilePath, "Preferences");
         if (!_fileSystem.FileExists(preferencesPath))
         {
             errors.Add($"Required file 'Preferences' is missing at: {preferencesPath}");
         }
 
-        // Verify registered in Local State
         var localStatePath = Path.Combine(userDataPath, "Local State");
         if (!_fileSystem.FileExists(localStatePath))
         {

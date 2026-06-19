@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
@@ -51,39 +51,32 @@ public class ProfileCardItem : INotifyPropertyChanged
     public List<string> Extensions { get; set; } = new();
     public List<SecurityFindingItem> SecurityFindings { get; set; } = new();
 
-    /// <summary>
-    /// Reference to the raw BraveProfile for backend service calls.
-    /// </summary>
     public BraveProfile? SourceProfile { get; set; }
 
-    // ── Computed ────────────────────────────────────────────────────────
     public Brush RiskColor => RiskLabel switch
     {
-        "High"   => new SolidColorBrush(Color.FromRgb(239, 68,  68)),   // #EF4444
-        "Medium" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),   // #F59E0B
-        _        => new SolidColorBrush(Color.FromRgb(16,  185, 129)),  // #10B981
+        "High"   => new SolidColorBrush(Color.FromRgb(239, 68,  68)),
+        "Medium" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+        _        => new SolidColorBrush(Color.FromRgb(16,  185, 129)),
     };
 
     public Brush RiskBadgeBackgroundBrush => RiskLabel switch
     {
-        "High"   => new SolidColorBrush(Color.FromRgb(254, 226, 226)),  // #FEE2E2
-        "Medium" => new SolidColorBrush(Color.FromRgb(254, 243, 199)),  // #FEF3C7
-        _        => new SolidColorBrush(Color.FromRgb(209, 250, 229)),  // #D1FAE5
+        "High"   => new SolidColorBrush(Color.FromRgb(254, 226, 226)),
+        "Medium" => new SolidColorBrush(Color.FromRgb(254, 243, 199)),
+        _        => new SolidColorBrush(Color.FromRgb(209, 250, 229)),
     };
 
     public Brush RiskBadgeTextBrush => RiskLabel switch
     {
-        "High"   => new SolidColorBrush(Color.FromRgb(153, 27,  27)),   // #991B1B
-        "Medium" => new SolidColorBrush(Color.FromRgb(146, 64,  14)),   // #92400E
-        _        => new SolidColorBrush(Color.FromRgb(6,   95,  70)),   // #065F46
+        "High"   => new SolidColorBrush(Color.FromRgb(153, 27,  27)),
+        "Medium" => new SolidColorBrush(Color.FromRgb(146, 64,  14)),
+        _        => new SolidColorBrush(Color.FromRgb(6,   95,  70)),
     };
 
-    // Avatar: first letter of the profile name
     public string Initial => string.IsNullOrWhiteSpace(ProfileName) ? "?" : ProfileName[0].ToString().ToUpper();
 
-    // ── INotifyPropertyChanged ─────────────────────────────────────────
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
-

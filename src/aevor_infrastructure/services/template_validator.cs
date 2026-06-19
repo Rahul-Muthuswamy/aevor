@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Aevor.Application.Interfaces;
 using Aevor.Core.Models;
@@ -18,7 +18,6 @@ public class TemplateValidator : ITemplateValidator
             return new TemplateValidationResult(false, errors, warnings);
         }
 
-        // 1. Validate Metadata
         if (template.Metadata == null)
         {
             errors.Add(new TemplateError("Template metadata is missing.", "ERR_MISSING_METADATA"));
@@ -64,7 +63,6 @@ public class TemplateValidator : ITemplateValidator
             }
         }
 
-        // 2. Validate Settings Section
         if (template.Settings == null)
         {
             errors.Add(new TemplateError("Settings section is missing.", "ERR_MISSING_SETTINGS"));
@@ -93,7 +91,6 @@ public class TemplateValidator : ITemplateValidator
             }
         }
 
-        // 3. Validate Extensions Section
         if (template.Extensions == null)
         {
             errors.Add(new TemplateError("Extensions section is missing.", "ERR_MISSING_EXTENSIONS"));
@@ -124,13 +121,11 @@ public class TemplateValidator : ITemplateValidator
             }
         }
 
-        // 4. Validate Assets Section
         if (template.Assets == null)
         {
             errors.Add(new TemplateError("Assets section is missing.", "ERR_MISSING_ASSETS"));
         }
 
-        // 5. Validate Warnings and ExcludedArtifacts Sections
         if (template.Warnings == null)
         {
             errors.Add(new TemplateError("Warnings section is missing.", "ERR_MISSING_WARNINGS_SECTION"));

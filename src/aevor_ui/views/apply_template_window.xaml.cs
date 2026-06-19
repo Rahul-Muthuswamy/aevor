@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
@@ -7,9 +7,7 @@ using Aevor.Core.Models;
 
 namespace Aevor.UI.Views
 {
-    /// <summary>
-    /// Interaction logic for ApplyTemplateWindow.xaml
-    /// </summary>
+
     public partial class ApplyTemplateWindow : Window
     {
         private readonly Func<BraveProfile, bool, Task<string?>> _applyFunc;
@@ -51,11 +49,10 @@ namespace Aevor.UI.Views
 
             bool doBackup = BackupCheckBox.IsChecked == true;
 
-            // Switch to loading state
             SelectionPanel.Visibility = Visibility.Collapsed;
             FooterBorder.Visibility = Visibility.Collapsed;
             LoadingPanel.Visibility = Visibility.Visible;
-            HeaderGrid.IsEnabled = false; // Disable close/drag during apply
+            HeaderGrid.IsEnabled = false;
 
             try
             {
@@ -67,7 +64,7 @@ namespace Aevor.UI.Views
                 }
                 else
                 {
-                    // Restore Selection view
+
                     SelectionPanel.Visibility = Visibility.Visible;
                     FooterBorder.Visibility = Visibility.Visible;
                     LoadingPanel.Visibility = Visibility.Collapsed;

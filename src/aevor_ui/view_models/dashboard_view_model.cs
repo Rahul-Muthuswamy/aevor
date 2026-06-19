@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,9 +13,6 @@ using Aevor.UI.Services;
 
 namespace Aevor.UI.ViewModels;
 
-// -------------------------
-// Model: ActivityItem
-// -------------------------
 public class ActivityItem
 {
     public string Icon { get; set; } = string.Empty;
@@ -23,25 +20,19 @@ public class ActivityItem
     public string Description { get; set; } = string.Empty;
     public string TimeAgo { get; set; } = string.Empty;
 
-    /// <summary>
-    /// "success" | "warning" | "info"
-    /// </summary>
     public string ActivityType { get; set; } = "info";
 
     public Brush DotColor => ActivityType switch
     {
-        "success" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),   // #10B981
-        "warning" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),   // #F59E0B
-        _         => new SolidColorBrush(Color.FromRgb(99, 102, 241)),   // indigo
+        "success" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),
+        "warning" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+        _         => new SolidColorBrush(Color.FromRgb(99, 102, 241)),
     };
 }
 
-// -------------------------
-// ViewModel: DashboardViewModel
-// -------------------------
 public class DashboardViewModel : BaseViewModel
 {
-    // ── Injected Services ─────────────────────────────────────────────
+
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly IBackupService _backupService;
     private readonly ISecurityScanner _securityScanner;
@@ -49,7 +40,6 @@ public class DashboardViewModel : BaseViewModel
     private readonly SettingsViewModel _settingsViewModel;
     private readonly IToastService _toastService;
 
-    // ── Stats ──────────────────────────────────────────────────────────
     private int _totalProfiles;
     public int TotalProfiles
     {
@@ -86,13 +76,12 @@ public class DashboardViewModel : BaseViewModel
 
     public Brush SecurityStatusColor => SecurityStatus switch
     {
-        "Warning"  => new SolidColorBrush(Color.FromRgb(245, 158, 11)),  // #F59E0B
-        "At Risk"  => new SolidColorBrush(Color.FromRgb(239, 68, 68)),   // #EF4444
-        "Unknown"  => new SolidColorBrush(Color.FromRgb(107, 114, 128)), // #6B7280 (MutedBrush)
-        _          => new SolidColorBrush(Color.FromRgb(16, 185, 129)),  // #10B981
+        "Warning"  => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+        "At Risk"  => new SolidColorBrush(Color.FromRgb(239, 68, 68)),
+        "Unknown"  => new SolidColorBrush(Color.FromRgb(107, 114, 128)),
+        _          => new SolidColorBrush(Color.FromRgb(16, 185, 129)),
     };
 
-    // ── Loading / Error State ─────────────────────────────────────────
     private bool _isLoading;
     public bool IsLoading
     {
@@ -107,17 +96,14 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _errorMessage, value);
     }
 
-    // ── Recent Activity ────────────────────────────────────────────────
     public ObservableCollection<ActivityItem> RecentActivities { get; } = new();
 
-    // ── Commands ───────────────────────────────────────────────────────
     public ICommand AnalyzeProfilesCommand { get; }
     public ICommand CreateTemplateCommand  { get; }
     public ICommand CreateBackupCommand    { get; }
     public ICommand ViewSecurityCommand    { get; }
     public ICommand RefreshCommand         { get; }
 
-    // ── Constructor ────────────────────────────────────────────────────
     public DashboardViewModel(
         IProfileDiscoveryService profileDiscoveryService,
         IBackupService backupService,
@@ -139,11 +125,9 @@ public class DashboardViewModel : BaseViewModel
         ViewSecurityCommand    = new RelayCommand(OnViewSecurity);
         RefreshCommand         = new RelayCommand(() => Task.Run(async () => await LoadDashboardDataAsync()));
 
-        // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadDashboardDataAsync());
     }
 
-    // ── Data Loading ──────────────────────────────────────────────────
     private async Task LoadDashboardDataAsync()
     {
         IsLoading = true;
@@ -151,15 +135,13 @@ public class DashboardViewModel : BaseViewModel
 
         try
         {
-            // ── Step A — Load Profiles ────────────────────────────────
+
             var profiles = await _profileDiscoveryService.GetProfilesAsync();
             TotalProfiles = profiles?.Count ?? 0;
 
-            // ── Step B — Load Backups ─────────────────────────────────
             var backups = await _backupService.GetBackupsAsync();
             TotalBackups = backups?.Count ?? 0;
 
-            // ── Step C — Security Scan ────────────────────────────────
             SecurityScanResult? scanResult = null;
             BraveProfile? scannedProfile = null;
 
@@ -198,14 +180,10 @@ public class DashboardViewModel : BaseViewModel
                 SecurityStatus = "Secure";
             }
 
-            // ── Step D — Templates ────────────────────────────────────
-            // TODO: wire up ITemplateService when available
             TotalTemplates = 0;
 
-            // ── Step E — Recent Activities ────────────────────────────
             var activities = new List<ActivityItem>();
 
-            // One entry per discovered profile
             if (profiles != null)
             {
                 foreach (var profile in profiles)
@@ -221,7 +199,6 @@ public class DashboardViewModel : BaseViewModel
                 }
             }
 
-            // One entry per backup (max 3)
             if (backups != null)
             {
                 foreach (var backup in backups.Take(3))
@@ -237,7 +214,6 @@ public class DashboardViewModel : BaseViewModel
                 }
             }
 
-            // If security scan found warnings or critical findings
             if (scanResult != null && scanResult.Findings.Count > 0 && scannedProfile != null)
             {
                 activities.Add(new ActivityItem
@@ -250,7 +226,6 @@ public class DashboardViewModel : BaseViewModel
                 });
             }
 
-            // Dispatch collection updates to the UI thread
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 RecentActivities.Clear();
@@ -262,11 +237,10 @@ public class DashboardViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Graceful error handling — never crash the application
+
             SecurityStatus = "Unknown";
             ErrorMessage = ex.Message;
 
-            // Ensure the UI still has a reasonable state
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 if (RecentActivities.Count == 0)
@@ -288,7 +262,6 @@ public class DashboardViewModel : BaseViewModel
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────
     private static string FormatRelativeTime(DateTime timestamp)
     {
         var diff = DateTime.Now - timestamp;
@@ -307,7 +280,6 @@ public class DashboardViewModel : BaseViewModel
         return timestamp.ToString("MMM d, yyyy");
     }
 
-    // ── Command Handlers ───────────────────────────────────────────────
     private void OnAnalyzeProfiles() => _navigationService.NavigateTo<ProfilesViewModel>();
     private void OnCreateTemplate()  => _navigationService.NavigateTo<TemplatesViewModel>();
     private void OnCreateBackup()    => _navigationService.NavigateTo<BackupsViewModel>();

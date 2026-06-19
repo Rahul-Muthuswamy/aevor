@@ -1,9 +1,8 @@
-using System;
+﻿using System;
 using System.Windows.Input;
 
 namespace Aevor.UI.Commands;
 
-/// <summary>Parameterized relay command.</summary>
 public class RelayCommand<T> : ICommand
 {
     private readonly Action<T?> _execute;

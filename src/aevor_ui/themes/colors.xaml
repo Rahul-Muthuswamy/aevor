@@ -1,7 +1,6 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Color Declarations -->
     <Color x:Key="PrimaryColor">#CB6CE6</Color>
     <Color x:Key="SecondaryColor">#D78CF0</Color>
     <Color x:Key="AccentColor">#E6B5FA</Color>
@@ -14,21 +13,18 @@
     <Color x:Key="WarningColor">#F59E0B</Color>
     <Color x:Key="BorderColor">#E5E7EB</Color>
 
-    <!-- State Colors -->
     <Color x:Key="PrimaryHoverColor">#B24CD0</Color>
     <Color x:Key="PrimaryPressedColor">#9732B4</Color>
     <Color x:Key="DangerHoverColor">#DC2626</Color>
     <Color x:Key="DangerPressedColor">#B91C1C</Color>
     <Color x:Key="GhostHoverColor">#F1F5F9</Color>
-    
-    <!-- Control Border & Background Colors -->
+
     <Color x:Key="ControlBorderColor">#CBD5E1</Color>
     <Color x:Key="ControlBorderHoverColor">#94A3B8</Color>
     <Color x:Key="ControlBorderFocusedColor">#CB6CE6</Color>
     <Color x:Key="ControlBackgroundDisabledColor">#F1F5F9</Color>
     <Color x:Key="ControlTextDisabledColor">#94A3B8</Color>
 
-    <!-- Brush Declarations -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}" />
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
@@ -41,14 +37,12 @@
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
 
-    <!-- State Brushes -->
     <SolidColorBrush x:Key="PrimaryHoverBrush" Color="{StaticResource PrimaryHoverColor}" />
     <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource PrimaryPressedColor}" />
     <SolidColorBrush x:Key="DangerHoverBrush" Color="{StaticResource DangerHoverColor}" />
     <SolidColorBrush x:Key="DangerPressedBrush" Color="{StaticResource DangerPressedColor}" />
     <SolidColorBrush x:Key="GhostHoverBrush" Color="{StaticResource GhostHoverColor}" />
 
-    <!-- Control Brushes -->
     <SolidColorBrush x:Key="ControlBorderBrush" Color="{StaticResource ControlBorderColor}" />
     <SolidColorBrush x:Key="ControlBorderHoverBrush" Color="{StaticResource ControlBorderHoverColor}" />
     <SolidColorBrush x:Key="ControlBorderFocusedBrush" Color="{StaticResource ControlBorderFocusedColor}" />

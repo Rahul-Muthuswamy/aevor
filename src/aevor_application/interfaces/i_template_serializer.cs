@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Aevor.Core.Models;
 
 namespace Aevor.Application.Interfaces;

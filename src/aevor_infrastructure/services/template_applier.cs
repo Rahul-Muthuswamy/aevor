@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -38,7 +38,6 @@ public class TemplateApplier : ITemplateApplier
 
         _logger.LogInformation("Template application started for profile: {ProfileName}", profile.DisplayName);
 
-        // 1. Validate template
         var templateVal = _templateValidator.Validate(template);
         if (!templateVal.IsValid)
         {
@@ -47,7 +46,6 @@ public class TemplateApplier : ITemplateApplier
             return new TemplateApplicationResult(false, $"Invalid template: {errorsStr}");
         }
 
-        // 2. Validate profile
         if (!_fileSystem.DirectoryExists(profile.ProfilePath))
         {
             _logger.LogError("Template application failed. Target profile folder does not exist: {ProfilePath}", profile.ProfilePath);
@@ -66,7 +64,7 @@ public class TemplateApplier : ITemplateApplier
         Guid? backupId = null;
         if (!skipBackup)
         {
-            // 3. Automatically create backup before modification
+
             _logger.LogInformation("Creating pre-modification backup of profile: {ProfileName}", profile.DisplayName);
             var backupResult = await _backupService.CreateBackupAsync(profile);
             if (!backupResult.IsSuccess || backupResult.Metadata == null)
@@ -82,15 +80,13 @@ public class TemplateApplier : ITemplateApplier
 
         try
         {
-            // 4. Modify Preferences
+
             var prefText = await _fileSystem.ReadAllTextAsync(prefPath);
             var prefRoot = JsonNode.Parse(prefText) ?? new JsonObject();
 
-            // 5. Modify Secure Preferences
             var secPrefText = await _fileSystem.ReadAllTextAsync(secPrefPath);
             var secPrefRoot = JsonNode.Parse(secPrefText) ?? new JsonObject();
 
-            // Apply Settings
             if (template.Settings != null)
             {
                 if (template.Settings.Theme != null)
@@ -118,7 +114,6 @@ public class TemplateApplier : ITemplateApplier
                 }
             }
 
-            // Apply Extensions to both files
             if (template.Extensions != null && template.Extensions.Count > 0)
             {
                 ApplyExtensions(prefRoot, template.Extensions);
@@ -126,12 +121,11 @@ public class TemplateApplier : ITemplateApplier
                 appliedChanges.Add($"{template.Extensions.Count} Extensions configuration applied.");
             }
 
-            // Save back
             var serializeOptions = new JsonSerializerOptions { WriteIndented = true };
             await _fileSystem.WriteAllTextAsync(prefPath, prefRoot.ToJsonString(serializeOptions));
             await _fileSystem.WriteAllTextAsync(secPrefPath, secPrefRoot.ToJsonString(serializeOptions));
 
-            _logger.LogInformation("Template application completed successfully for profile: {ProfileName}. Backup ID: {BackupId}", 
+            _logger.LogInformation("Template application completed successfully for profile: {ProfileName}. Backup ID: {BackupId}",
                 profile.DisplayName, backupId);
 
             return new TemplateApplicationResult(true, null, backupId, appliedChanges);
@@ -141,8 +135,7 @@ public class TemplateApplier : ITemplateApplier
             if (backupId.HasValue)
             {
                 _logger.LogError(ex, "Template application encountered an error. Triggering automatic rollback to backup: {BackupId}", backupId.Value);
-                
-                // Execute Rollback
+
                 try
                 {
                     var restoreResult = await _backupService.RestoreBackupAsync(backupId.Value);
@@ -186,13 +179,11 @@ public class TemplateApplier : ITemplateApplier
             return new TemplateApplicationValidationResult(false, errors, warnings);
         }
 
-        // Validate template version
         if (template.Metadata?.TemplateVersion == null || template.Metadata.TemplateVersion.ToString() != "1.0")
         {
             errors.Add($"Unsupported or missing template version: '{template.Metadata?.TemplateVersion?.ToString() ?? "null"}'");
         }
 
-        // Validate profile existence
         if (!_fileSystem.DirectoryExists(profile.ProfilePath))
         {
             errors.Add($"Profile directory does not exist: {profile.ProfilePath}");
@@ -321,7 +312,7 @@ public class TemplateApplier : ITemplateApplier
     private void RemoveWallpaperSettings(JsonNode root)
     {
         root["ntp"]?.AsObject()?.Remove("custom_background");
-        
+
         var ntpNode = root["ntp"]?.AsObject();
         if (ntpNode != null && ntpNode.Count == 0)
         {

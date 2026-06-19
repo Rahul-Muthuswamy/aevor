@@ -1,4 +1,4 @@
-namespace Aevor.Infrastructure.Services;
+﻿namespace Aevor.Infrastructure.Services;
 
 public class ExportSafetyEvaluator
 {

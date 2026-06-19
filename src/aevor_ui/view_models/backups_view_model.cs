@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,7 +21,6 @@ public class BackupsViewModel : BaseViewModel
     private bool _isUpdatingSelection;
     private bool? _isAllSelected = false;
 
-    // ── Collections ────────────────────────────────────────────────────
     public ObservableCollection<BackupItem> Backups         { get; } = new();
     public ObservableCollection<BackupItem> FilteredBackups { get; } = new();
 
@@ -48,7 +47,6 @@ public class BackupsViewModel : BaseViewModel
 
     public bool HasSelectedBackups => FilteredBackups.Any(b => b.IsSelected);
 
-    // ── Properties ─────────────────────────────────────────────────────
     private string _searchQuery = string.Empty;
     public string SearchQuery
     {
@@ -98,14 +96,12 @@ public class BackupsViewModel : BaseViewModel
         set => SetProperty(ref _statusMessage, value);
     }
 
-    // ── Commands ───────────────────────────────────────────────────────
     public ICommand RestoreCommand      { get; }
     public ICommand DeleteCommand       { get; }
     public ICommand DeleteSelectedCommand { get; }
     public ICommand CreateBackupCommand { get; }
     public ICommand RefreshCommand      { get; }
 
-    // ── Constructor ────────────────────────────────────────────────────
     public BackupsViewModel(
         IBackupService backupService,
         IProfileDiscoveryService profileDiscoveryService,
@@ -126,7 +122,6 @@ public class BackupsViewModel : BaseViewModel
         Task.Run(async () => await LoadBackupsAsync());
     }
 
-    // ── Load Backups ───────────────────────────────────────────────────
     private async Task LoadBackupsAsync()
     {
         await RunOnUIAsync(() => IsLoading = true);
@@ -195,7 +190,6 @@ public class BackupsViewModel : BaseViewModel
         }
     }
 
-    // ── Filtering ──────────────────────────────────────────────────────
     private void ApplyFilter()
     {
         FilteredBackups.Clear();
@@ -268,7 +262,6 @@ public class BackupsViewModel : BaseViewModel
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────
     private string FormatBytes(long bytes)
     {
         if (bytes < 1024)
@@ -302,19 +295,16 @@ public class BackupsViewModel : BaseViewModel
         }
     }
 
-    // ── Command Handlers ───────────────────────────────────────────────
     private async void OnRestore(BackupItem? item)
     {
         if (item == null) return;
 
-        // Safety check: Is Brave running?
         if (_braveInstallationService.IsBraveRunning())
         {
             _toastService.Show("Brave Browser is running. Please close all Brave windows before restoring.", ToastType.Warning);
             return;
         }
 
-        // Confirm restore
         bool confirmed = false;
         await RunOnUIAsync(() =>
         {
@@ -484,7 +474,6 @@ public class BackupsViewModel : BaseViewModel
                 return;
             }
 
-            // Show simple profile picker dialog with async creation callback
             await RunOnUIAsync(() =>
             {
                 var dialog = new Aevor.UI.Views.CreateBackupWindow(profiles, async (profile) =>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Media;
 using Aevor.Core.Models;
 
@@ -12,7 +12,6 @@ public class SecurityFindingUIItem
     public string           Description { get; set; } = string.Empty;
     public string           Path        { get; set; } = string.Empty;
 
-    // ── Computed ────────────────────────────────────────────────────────
     public string SeverityLabel => Severity.ToString();
 
     public string SeverityIcon => Severity switch
@@ -25,20 +24,20 @@ public class SecurityFindingUIItem
 
     public Brush SeverityColor => Severity switch
     {
-        SecuritySeverity.Critical => new SolidColorBrush(Color.FromRgb(220, 38,  38)),  // Dark Red: #DC2626
-        SecuritySeverity.High     => new SolidColorBrush(Color.FromRgb(239, 68,  68)),  // Red: #EF4444
-        SecuritySeverity.Medium   => new SolidColorBrush(Color.FromRgb(245, 158, 11)),  // Amber: #F59E0B
-        SecuritySeverity.Low      => new SolidColorBrush(Color.FromRgb(59,  130, 246)), // Blue: #3B82F6
-        _                         => new SolidColorBrush(Color.FromRgb(107, 114, 128)) // Muted: #6B7280
+        SecuritySeverity.Critical => new SolidColorBrush(Color.FromRgb(220, 38,  38)),
+        SecuritySeverity.High     => new SolidColorBrush(Color.FromRgb(239, 68,  68)),
+        SecuritySeverity.Medium   => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+        SecuritySeverity.Low      => new SolidColorBrush(Color.FromRgb(59,  130, 246)),
+        _                         => new SolidColorBrush(Color.FromRgb(107, 114, 128))
     };
 
     public Brush SeverityBadgeBackground => Severity switch
     {
-        SecuritySeverity.Critical => new SolidColorBrush(Color.FromRgb(254, 226, 226)), // light red: #FEE2E2
-        SecuritySeverity.High     => new SolidColorBrush(Color.FromRgb(254, 226, 226)), // light red: #FEE2E2
-        SecuritySeverity.Medium   => new SolidColorBrush(Color.FromRgb(254, 243, 199)), // light amber: #FEF3C7
-        SecuritySeverity.Low      => new SolidColorBrush(Color.FromRgb(219, 234, 254)), // light blue: #DBEAFE
-        _                         => new SolidColorBrush(Color.FromRgb(243, 244, 246)) // light gray: #F3F4F6
+        SecuritySeverity.Critical => new SolidColorBrush(Color.FromRgb(254, 226, 226)),
+        SecuritySeverity.High     => new SolidColorBrush(Color.FromRgb(254, 226, 226)),
+        SecuritySeverity.Medium   => new SolidColorBrush(Color.FromRgb(254, 243, 199)),
+        SecuritySeverity.Low      => new SolidColorBrush(Color.FromRgb(219, 234, 254)),
+        _                         => new SolidColorBrush(Color.FromRgb(243, 244, 246))
     };
 
     public static SecurityFindingUIItem FromFinding(Aevor.Core.Models.SecurityFinding finding)

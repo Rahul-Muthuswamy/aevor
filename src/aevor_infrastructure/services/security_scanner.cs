@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Aevor.Application.Interfaces;
 using Aevor.Application.Models;
 using Aevor.Core.Exceptions;

@@ -1,4 +1,4 @@
-namespace Aevor.Core.Exceptions;
+﻿namespace Aevor.Core.Exceptions;
 
 public class SecurityScanException : AevorException
 {

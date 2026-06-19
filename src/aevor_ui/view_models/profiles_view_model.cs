@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -15,7 +15,7 @@ namespace Aevor.UI.ViewModels;
 
 public class ProfilesViewModel : BaseViewModel
 {
-    // ── Injected Services ──────────────────────────────────────────────
+
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly ISecurityScanner _securityScanner;
     private readonly IProfileAnalyzer _profileAnalyzer;
@@ -24,14 +24,11 @@ public class ProfilesViewModel : BaseViewModel
     private readonly ITemplateSerializer _templateSerializer;
     private readonly IToastService _toastService;
 
-    // ── Raw data for command use ───────────────────────────────────────
     private List<BraveProfile> _rawProfiles = new();
 
-    // ── Collections ────────────────────────────────────────────────────
     public ObservableCollection<ProfileCardItem> Profiles         { get; } = new();
     public ObservableCollection<ProfileCardItem> FilteredProfiles { get; } = new();
 
-    // ── Properties ─────────────────────────────────────────────────────
     private string _searchQuery = string.Empty;
     public string SearchQuery
     {
@@ -50,7 +47,6 @@ public class ProfilesViewModel : BaseViewModel
         set => SetProperty(ref _selectedProfile, value);
     }
 
-    // ── Detail Panel ────────────────────────────────────────────────────
     private ProfileCardItem? _selectedProfileDetail;
     public ProfileCardItem? SelectedProfileDetail
     {
@@ -85,7 +81,6 @@ public class ProfilesViewModel : BaseViewModel
 
     public bool HasProfiles => !IsLoading && FilteredProfiles.Count > 0;
 
-    // ── Commands ───────────────────────────────────────────────────────
     public ICommand CloneCommand          { get; }
     public ICommand CreateTemplateCommand { get; }
     public ICommand RefreshCommand        { get; }
@@ -93,7 +88,6 @@ public class ProfilesViewModel : BaseViewModel
     public ICommand OpenDetailCommand     { get; }
     public ICommand CloseDetailCommand    { get; }
 
-    // ── Constructor ────────────────────────────────────────────────────
     public ProfilesViewModel(
         IProfileDiscoveryService profileDiscoveryService,
         ISecurityScanner securityScanner,
@@ -118,11 +112,9 @@ public class ProfilesViewModel : BaseViewModel
         OpenDetailCommand     = new RelayCommand<ProfileCardItem>(OnOpenDetail);
         CloseDetailCommand    = new RelayCommand(OnCloseDetail);
 
-        // Fire-and-forget initial load on a background thread
         Task.Run(async () => await LoadProfilesAsync());
     }
 
-    // ── Data Loading ──────────────────────────────────────────────────
     private async Task LoadProfilesAsync()
     {
         var dispatcher = System.Windows.Application.Current?.Dispatcher;
@@ -143,7 +135,7 @@ public class ProfilesViewModel : BaseViewModel
 
         try
         {
-            // ── Step A — Discover profiles ────────────────────────────
+
             var profiles = await _profileDiscoveryService.GetProfilesAsync();
             var rawProfiles = profiles ?? new List<BraveProfile>();
 
@@ -151,7 +143,7 @@ public class ProfilesViewModel : BaseViewModel
 
             foreach (var profile in rawProfiles)
             {
-                // ── Step B — Build base ProfileCardItem ───────────────
+
                 var card = new ProfileCardItem
                 {
                     ProfileName    = profile.DisplayName,
@@ -160,7 +152,6 @@ public class ProfilesViewModel : BaseViewModel
                     SourceProfile  = profile
                 };
 
-                // ── Step C — Security scan (sequential) ───────────────
                 try
                 {
                     var scanResult = await _securityScanner.ScanAsync(profile);
@@ -168,12 +159,11 @@ public class ProfilesViewModel : BaseViewModel
                 }
                 catch
                 {
-                    // If a single profile scan fails, skip gracefully
+
                     card.RiskScore = 0;
                     card.RiskLabel = "Low";
                 }
 
-                // ── Step D — Get extensions ──────────────────────────
                 var (extCount, extList) = await GetExtensionsAsync(profile);
                 card.ExtensionCount = extCount;
                 card.Extensions = extList;
@@ -181,7 +171,6 @@ public class ProfilesViewModel : BaseViewModel
                 cardItems.Add(card);
             }
 
-            // ── Step E — Populate collections on UI thread ────────────
             if (dispatcher != null)
             {
                 await dispatcher.InvokeAsync(() =>
@@ -208,7 +197,7 @@ public class ProfilesViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Discovery failed — show empty state with error message
+
             if (dispatcher != null)
             {
                 await dispatcher.InvokeAsync(() =>
@@ -240,7 +229,6 @@ public class ProfilesViewModel : BaseViewModel
         }
     }
 
-    // ── Extensions Parsing ─────────────────────────────────────────────
     private async Task<(int Count, List<string> EnabledExtensions)> GetExtensionsAsync(BraveProfile profile)
     {
         try
@@ -259,14 +247,9 @@ public class ProfilesViewModel : BaseViewModel
         }
     }
 
-    // ── Extension Count ───────────────────────────────────────────────
-    /// <summary>
-    /// Gets the extension count by first trying the ProfileAnalyzer,
-    /// then falling back to counting subdirectories in the Extensions folder.
-    /// </summary>
     private async Task<int> GetExtensionCountAsync(BraveProfile profile)
     {
-        // Try the analyzer first
+
         try
         {
             var analysisResult = await _profileAnalyzer.AnalyzeAsync(profile);
@@ -275,17 +258,12 @@ public class ProfilesViewModel : BaseViewModel
         }
         catch
         {
-            // Analyzer failed — fall through to filesystem count
+
         }
 
-        // Fallback: count subdirectories in the Extensions folder
         return CountExtensionsFromDisk(profile.ProfilePath);
     }
 
-    /// <summary>
-    /// Counts installed extensions by reading the Extensions folder on disk.
-    /// Each subdirectory represents one extension (by extension ID).
-    /// </summary>
     private static int CountExtensionsFromDisk(string profilePath)
     {
         try
@@ -293,7 +271,7 @@ public class ProfilesViewModel : BaseViewModel
             var extensionsPath = Path.Combine(profilePath, "Extensions");
             if (Directory.Exists(extensionsPath))
             {
-                // Each subfolder is an extension ID; exclude Temp directory if present
+
                 var extensionDirs = Directory.GetDirectories(extensionsPath)
                     .Where(d => !Path.GetFileName(d).Equals("Temp", StringComparison.OrdinalIgnoreCase))
                     .ToArray();
@@ -302,12 +280,11 @@ public class ProfilesViewModel : BaseViewModel
         }
         catch
         {
-            // Ignore filesystem errors
+
         }
         return 0;
     }
 
-    // ── Security Result Mapping ───────────────────────────────────────
     private static void MapSecurityResult(ProfileCardItem card, SecurityScanResult result)
     {
         card.RiskScore = result.RiskScore;
@@ -348,7 +325,6 @@ public class ProfilesViewModel : BaseViewModel
         }
     }
 
-    // ── Last Used Helper ──────────────────────────────────────────────
     private static string GetLastUsedTime(string profilePath)
     {
         try
@@ -361,7 +337,7 @@ public class ProfilesViewModel : BaseViewModel
         }
         catch
         {
-            // Ignore file system errors
+
         }
         return "Unknown";
     }
@@ -388,7 +364,6 @@ public class ProfilesViewModel : BaseViewModel
         return timestamp.ToString("MMM d, yyyy");
     }
 
-    // ── Filter ─────────────────────────────────────────────────────────
     private void ApplyFilter()
     {
         FilteredProfiles.Clear();
@@ -406,7 +381,6 @@ public class ProfilesViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasProfiles));
     }
 
-    // ── Detail Panel Handlers ─────────────────────────────────────────
     private void OnOpenDetail(ProfileCardItem? p)
     {
         if (p == null) return;
@@ -420,25 +394,17 @@ public class ProfilesViewModel : BaseViewModel
         SelectedProfileDetail = null;
     }
 
-    /// <summary>
-    /// Clone: navigates to Clone Wizard with selected profile context.
-    /// </summary>
     private void OnClone(ProfileCardItem? p)
     {
         if (p == null) return;
         SelectedProfile = p;
 
-        // Navigate to Clone Wizard page
         _navigationService.NavigateTo<CloneWizardViewModel>(vm =>
         {
             vm.PreselectSourceProfileAndAdvance(p.ProfileName);
         });
     }
 
-    /// <summary>
-    /// Create Template: builds an AevorTemplate from the profile's analysis + scan,
-    /// then saves it as a JSON file in the user's Documents folder.
-    /// </summary>
     private void OnCreateTemplate(ProfileCardItem? p)
     {
         if (p?.SourceProfile == null) return;
@@ -463,18 +429,16 @@ public class ProfilesViewModel : BaseViewModel
 
             try
             {
-                // Run analysis and security scan
+
                 var analysisResult = await _profileAnalyzer.AnalyzeAsync(p.SourceProfile);
                 var scanResult = await _securityScanner.ScanAsync(p.SourceProfile);
 
-                // Build the template
                 var template = _templateBuilder.Build(
                     analysisResult,
                     scanResult,
                     templateName: $"{p.ProfileName} Template",
                     templateDescription: $"Exported from profile \"{p.ProfileName}\"");
 
-                // Save to Documents/Aevor/Templates
                 var outputDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "Aevor", "Templates");
@@ -486,7 +450,6 @@ public class ProfilesViewModel : BaseViewModel
                 await _templateSerializer.SaveToFileAsync(outputPath, template);
                 _toastService.Show("Template created successfully.", ToastType.Success);
 
-                // Update UI and Navigate to Templates page (the proper page) on the UI thread
                 if (dispatcher != null)
                 {
                     await dispatcher.InvokeAsync(() =>

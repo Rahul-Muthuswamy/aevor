@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -24,7 +24,6 @@ public class ProfileHasher
             throw new DirectoryNotFoundException($"Directory not found: {directoryPath}");
         }
 
-        // Order files to ensure deterministic hashing across runs
         var files = _fileSystem.EnumerateFiles(directoryPath, "*", SearchOption.AllDirectories)
             .Where(f => !ShouldExcludeFile(f))
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
@@ -44,10 +43,8 @@ public class ProfileHasher
             var relativePath = Path.GetRelativePath(directoryPath, file).Replace('\\', '/');
             var relativePathBytes = Encoding.UTF8.GetBytes(relativePath);
 
-            // Hash the relative path to distinguish directories and file locations
             sha256.TransformBlock(relativePathBytes, 0, relativePathBytes.Length, relativePathBytes, 0);
 
-            // Hash file contents/metadata
             if (_fileSystem.FileExists(file))
             {
                 var fileName = Path.GetFileName(file);
@@ -75,7 +72,6 @@ public class ProfileHasher
             }
         }
 
-        // Finalize calculation
         sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
         return Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
     }
@@ -85,7 +81,6 @@ public class ProfileHasher
         var fileName = Path.GetFileName(filePath);
         if (string.IsNullOrEmpty(fileName)) return true;
 
-        // Exclude lock and socket files
         if (fileName.Equals("lockfile", StringComparison.OrdinalIgnoreCase) ||
             fileName.Equals("parent.lock", StringComparison.OrdinalIgnoreCase) ||
             fileName.Equals("SingletonLock", StringComparison.OrdinalIgnoreCase) ||
@@ -97,7 +92,6 @@ public class ProfileHasher
             return true;
         }
 
-        // Exclude cache and service worker directories
         var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (parts.Any(p => p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
                            p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -15,9 +15,7 @@ namespace Aevor.UI.ViewModels;
 
 public class CloneWizardViewModel : BaseViewModel
 {
-    // ════════════════════════════════════════════════════════════════════
-    // Services
-    // ════════════════════════════════════════════════════════════════════
+
     private readonly ICloneEngine             _cloneEngine;
     private readonly IProfileDiscoveryService _profileDiscoveryService;
     private readonly ISecurityScanner         _securityScanner;
@@ -27,9 +25,6 @@ public class CloneWizardViewModel : BaseViewModel
     private readonly SettingsViewModel         _settingsViewModel;
     private readonly IToastService             _toastService;
 
-    // ════════════════════════════════════════════════════════════════════
-    // Internal State
-    // ════════════════════════════════════════════════════════════════════
     private List<BraveProfile>  _discoveredProfiles = new();
     private BraveProfile?       _selectedRawProfile;
     private SecurityScanResult? _lastScanResult;
@@ -37,9 +32,6 @@ public class CloneWizardViewModel : BaseViewModel
     private ClonePreview?       _lastClonePreview;
     private bool                _cloneHasRun;
 
-    // ════════════════════════════════════════════════════════════════════
-    // Loading / Error State
-    // ════════════════════════════════════════════════════════════════════
     private bool _isLoading;
     public bool IsLoading
     {
@@ -68,9 +60,6 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _wizardErrorMessage, value);
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step Indicator
-    // ════════════════════════════════════════════════════════════════════
     public ObservableCollection<CloneStep> Steps { get; } = new();
 
     private int _currentStepIndex;
@@ -119,9 +108,6 @@ public class CloneWizardViewModel : BaseViewModel
     public bool IsLastStep => CurrentStepIndex == 5;
     public bool ShowNextButton => CurrentStepIndex < 4;
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 1 — Source Profile
-    // ════════════════════════════════════════════════════════════════════
     public ObservableCollection<string> AvailableProfiles { get; } = new();
 
     private string _selectedSourceProfile = string.Empty;
@@ -135,9 +121,6 @@ public class CloneWizardViewModel : BaseViewModel
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 2 — Security Review
-    // ════════════════════════════════════════════════════════════════════
     public ObservableCollection<SecurityFindingItem> SecurityFindings { get; } = new();
 
     public bool HasWarnings => SecurityFindings.Any(f => f.Severity == "warning");
@@ -163,16 +146,12 @@ public class CloneWizardViewModel : BaseViewModel
         }
     }
 
-    // Pre-frozen brushes — safe to return from any thread
     private static readonly Brush _warningBannerBrush  = MakeFrozen(Color.FromRgb(255, 251, 235));
     private static readonly Brush _safeBannerBrush     = MakeFrozen(Color.FromRgb(240, 253, 244));
     private static Brush MakeFrozen(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
 
     public Brush SecurityBannerBackground => HasWarnings ? _warningBannerBrush : _safeBannerBrush;
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 3 — Backup
-    // ════════════════════════════════════════════════════════════════════
     private bool _createBackupBeforeClone = true;
     public bool CreateBackupBeforeClone
     {
@@ -187,7 +166,6 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _backupStatusMessage, value);
     }
 
-    // Bound in XAML Step 3 — informational display only
     private string _backupLocation = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aevor", "Backups");
     public string BackupLocation
@@ -217,9 +195,6 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _backupComplete, value);
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 4 — Clone Configuration
-    // ════════════════════════════════════════════════════════════════════
     private string _newProfileName = string.Empty;
     public string NewProfileName
     {
@@ -239,14 +214,10 @@ public class CloneWizardViewModel : BaseViewModel
     public bool CopyThemes        { get => _copyThemes;        set => SetProperty(ref _copyThemes,        value); }
     public bool CopySearchEngines { get => _copySearchEngines; set => SetProperty(ref _copySearchEngines, value); }
 
-    // Preview summary — populated from ClonePreview
     public ObservableCollection<string> PreviewSettingsToCopy   { get; } = new();
     public ObservableCollection<string> PreviewExtensionsToCopy { get; } = new();
     public ObservableCollection<string> PreviewWarnings         { get; } = new();
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 5 — Execute
-    // ════════════════════════════════════════════════════════════════════
     private double _cloneProgress;
     public double CloneProgress
     {
@@ -284,9 +255,6 @@ public class CloneWizardViewModel : BaseViewModel
 
     public bool ShowStartButton => !IsCloning && !_cloneHasRun;
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 6 — Completion
-    // ════════════════════════════════════════════════════════════════════
     private bool _cloneSuccessful;
     public bool CloneSuccessful
     {
@@ -301,9 +269,6 @@ public class CloneWizardViewModel : BaseViewModel
         set => SetProperty(ref _completionMessage, value);
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Commands
-    // ════════════════════════════════════════════════════════════════════
     public ICommand NextStepCommand            { get; }
     public ICommand PreviousStepCommand        { get; }
     public ICommand StartCloneCommand          { get; }
@@ -311,9 +276,6 @@ public class CloneWizardViewModel : BaseViewModel
     public ICommand CancelCommand              { get; }
     public ICommand SelectSourceProfileCommand { get; }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Constructor
-    // ════════════════════════════════════════════════════════════════════
     public CloneWizardViewModel(
         ICloneEngine             cloneEngine,
         IProfileDiscoveryService profileDiscoveryService,
@@ -345,7 +307,6 @@ public class CloneWizardViewModel : BaseViewModel
         Task.Run(async () => await LoadWizardDataAsync());
     }
 
-    // ── Step Setup ─────────────────────────────────────────────────────
     private void InitialiseSteps()
     {
         var titles = new[] { "Source", "Security", "Backup", "Configure", "Execute", "Complete" };
@@ -368,15 +329,12 @@ public class CloneWizardViewModel : BaseViewModel
             Steps[i].IsCompleted = i < _currentStepIndex;
             Steps[i].IsActive    = i == _currentStepIndex;
         }
-        // Force ItemsControl to re-render (CloneStep has no INotifyPropertyChanged)
+
         var tmp = Steps.ToArray();
         Steps.Clear();
         foreach (var s in tmp) Steps.Add(s);
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // BUG 2 FIX — Data Loading
-    // ════════════════════════════════════════════════════════════════════
     private async Task LoadWizardDataAsync()
     {
         var dispatcher = System.Windows.Application.Current?.Dispatcher;
@@ -390,7 +348,7 @@ public class CloneWizardViewModel : BaseViewModel
 
         try
         {
-            // GetProfilesAsync runs on background thread — no UI touch here
+
             var profiles = await _profileDiscoveryService.GetProfilesAsync();
 
             if (dispatcher != null)
@@ -435,7 +393,7 @@ public class CloneWizardViewModel : BaseViewModel
     public void PreselectSourceProfileAndAdvance(string profileName)
     {
         _preselectedProfileName = profileName;
-        // If data is already loaded, apply it immediately.
+
         if (AvailableProfiles.Count > 0)
         {
             ApplyPreselection();
@@ -457,7 +415,7 @@ public class CloneWizardViewModel : BaseViewModel
 
             if (_selectedRawProfile is not null)
             {
-                // Run safety check
+
                 if (_braveInstallationService.IsBraveRunning())
                 {
                     WizardErrorMessage = "Brave Browser is running. Please close all Brave windows before proceeding.";
@@ -467,7 +425,6 @@ public class CloneWizardViewModel : BaseViewModel
                     WizardErrorMessage = string.Empty;
                 }
 
-                // Advance to the second step (Security Review)
                 CurrentStepIndex = 1;
                 await RunSecurityScanAsync(_selectedRawProfile);
             }
@@ -475,9 +432,6 @@ public class CloneWizardViewModel : BaseViewModel
         _preselectedProfileName = null;
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step Transition Logic
-    // ════════════════════════════════════════════════════════════════════
     private async void OnNextStep()
     {
         if (!CanGoNext || IsLastStep) return;
@@ -494,7 +448,7 @@ public class CloneWizardViewModel : BaseViewModel
 
         try
         {
-            // Step 0 → 1: resolve profile, run security scan
+
             if (CurrentStepIndex == 0)
             {
                 _selectedRawProfile = _discoveredProfiles
@@ -503,14 +457,14 @@ public class CloneWizardViewModel : BaseViewModel
                 if (_selectedRawProfile is null) return;
                 await RunSecurityScanAsync(_selectedRawProfile);
             }
-            // Step 2 → 3: run backup if requested
+
             else if (CurrentStepIndex == 2 && CreateBackupBeforeClone)
             {
                 if (_selectedRawProfile is null) return;
                 await RunBackupAsync(_selectedRawProfile);
-                return; // RunBackupAsync increments CurrentStepIndex itself
+                return;
             }
-            // Step 3 → 4: build preview
+
             else if (CurrentStepIndex == 3)
             {
                 await BuildClonePreviewAsync();
@@ -520,7 +474,7 @@ public class CloneWizardViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Safety net: async void must never let exceptions escape
+
             WizardErrorMessage = $"Step error: {ex.Message}";
         }
     }
@@ -537,12 +491,9 @@ public class CloneWizardViewModel : BaseViewModel
             SelectedSourceProfile = profile;
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 2 — Security Scan
-    // ════════════════════════════════════════════════════════════════════
     private async Task RunSecurityScanAsync(BraveProfile profile)
     {
-        // Already on UI thread (called from async void OnNextStep)
+
         IsScanning = true;
         SecurityFindings.Clear();
         SecuritySummary = "Scanning profile…";
@@ -552,7 +503,6 @@ public class CloneWizardViewModel : BaseViewModel
             var result = await _securityScanner.ScanAsync(profile);
             _lastScanResult = result;
 
-            // Back on UI thread after await
             SecurityFindings.Clear();
 
             if (result.HasPasswords)
@@ -632,12 +582,9 @@ public class CloneWizardViewModel : BaseViewModel
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 3 — Backup
-    // ════════════════════════════════════════════════════════════════════
     private async Task RunBackupAsync(BraveProfile profile)
     {
-        // Already on UI thread — assign directly, no Dispatcher needed
+
         IsBackingUp         = true;
         BackupComplete      = false;
         BackupStatusMessage = "Creating backup snapshot…";
@@ -651,8 +598,7 @@ public class CloneWizardViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
-                // BackupService re-throws ProfileFolderNotFoundException and BackupCorruptionException;
-                // we catch ALL exceptions here so they can never escape to the async void caller.
+
                 BackupStatusMessage = $"Backup skipped: {ex.Message}. Proceeding without backup.";
                 BackupComplete      = false;
                 IsBackingUp         = false;
@@ -681,16 +627,13 @@ public class CloneWizardViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Final safety net — must never throw from here
+
             BackupStatusMessage = $"Backup error: {ex.Message}. Proceeding without backup.";
             IsBackingUp         = false;
             CurrentStepIndex++;
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Step 4 — Clone Preview
-    // ════════════════════════════════════════════════════════════════════
     private async Task BuildClonePreviewAsync()
     {
         if (_selectedRawProfile is null) return;
@@ -707,9 +650,9 @@ public class CloneWizardViewModel : BaseViewModel
             CreateBackup:                 CreateBackupBeforeClone,
             IncludeExtensions:            CopyExtensions,
             IncludeBookmarks:             CopyBookmarks,
-            IncludeSettings:              true, // Always true to avoid null settings in TemplateValidator
-            IncludeThemes:                true, // Always true to avoid null themes in TemplateValidator
-            IncludeSearchEngines:         true, // Always true to avoid null search engines in TemplateValidator
+            IncludeSettings:              true,
+            IncludeThemes:                true,
+            IncludeSearchEngines:         true,
             BlockActiveCookies:           _settingsViewModel.BlockActiveCookiesOnClone,
             ExcludeHistory:               _settingsViewModel.AlwaysExcludeHistory,
             ExcludePasswords:             _settingsViewModel.AlwaysExcludePasswords
@@ -733,16 +676,13 @@ public class CloneWizardViewModel : BaseViewModel
         }
         catch
         {
-            // Preview failure is non-blocking — clone can still proceed
+
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // BUG 1 FIX — Execute Clone (void, Task.Run, Dispatcher.InvokeAsync, outer try/catch)
-    // ════════════════════════════════════════════════════════════════════
     private void OnStartClone()
     {
-        // Null guard — must have a resolved raw profile
+
         if (_selectedRawProfile is null || _cloneHasRun) return;
 
         if (_braveInstallationService.IsBraveRunning())
@@ -787,9 +727,9 @@ public class CloneWizardViewModel : BaseViewModel
             CreateBackup:                 CreateBackupBeforeClone,
             IncludeExtensions:            copyExtensions,
             IncludeBookmarks:             copyBookmarks,
-            IncludeSettings:              true, // Always true to avoid null settings in TemplateValidator
-            IncludeThemes:                true, // Always true to avoid null themes in TemplateValidator
-            IncludeSearchEngines:         true, // Always true to avoid null search engines in TemplateValidator
+            IncludeSettings:              true,
+            IncludeThemes:                true,
+            IncludeSearchEngines:         true,
             BlockActiveCookies:           _settingsViewModel.BlockActiveCookiesOnClone,
             ExcludeHistory:               _settingsViewModel.AlwaysExcludeHistory,
             ExcludePasswords:             _settingsViewModel.AlwaysExcludePasswords
@@ -799,14 +739,13 @@ public class CloneWizardViewModel : BaseViewModel
         {
             try
             {
-                // ── Phase 1: Begin ────────────────────────────────────
+
                 await ReportProgressAsync(dispatcher, () =>
                 {
                     CloneProgress      = 10;
                     CloneStatusMessage = "Verifying source profile…";
                 });
 
-                // ── Phase 2: Clone with staged progress ───────────────
                 await ReportProgressAsync(dispatcher, () => { CloneProgress = 25; CloneStatusMessage = "Creating backup snapshot…"; });
                 await ReportProgressAsync(dispatcher, () => { CloneProgress = 40; CloneStatusMessage = "Copying profile data…"; });
                 await ReportProgressAsync(dispatcher, () => { CloneProgress = 60; CloneStatusMessage = "Applying extensions…"; });
@@ -829,7 +768,7 @@ public class CloneWizardViewModel : BaseViewModel
                             }
                             catch (System.IO.IOException)
                             {
-                                // Fallback to stream-based copy with FileShare.ReadWrite if file is locked by Brave
+
                                 try
                                 {
                                     using var sourceStream = new System.IO.FileStream(sourceBookmarks, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
@@ -838,12 +777,12 @@ public class CloneWizardViewModel : BaseViewModel
                                 }
                                 catch
                                 {
-                                    // Fail silently / ignore
+
                                 }
                             }
                             catch
                             {
-                                // Fail silently / ignore
+
                             }
                         }
                     }
@@ -916,7 +855,7 @@ public class CloneWizardViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
-                // Outer safety net — catches anything not caught above
+
                 if (dispatcher != null)
                 {
                     await dispatcher.InvokeAsync(() =>
@@ -942,9 +881,6 @@ public class CloneWizardViewModel : BaseViewModel
         });
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Finish / Cancel
-    // ════════════════════════════════════════════════════════════════════
     private void OnFinish()
     {
         ResetWizard();
@@ -953,7 +889,7 @@ public class CloneWizardViewModel : BaseViewModel
 
     private void OnCancel()
     {
-        if (IsCloning || IsBackingUp || IsScanning || IsLoading) return; // do not allow cancel mid-operation
+        if (IsCloning || IsBackingUp || IsScanning || IsLoading) return;
         ResetWizard();
         _navigationService.NavigateTo<DashboardViewModel>();
     }
@@ -982,14 +918,6 @@ public class CloneWizardViewModel : BaseViewModel
         OnPropertyChanged(nameof(ShowStartButton));
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // Helpers
-    // ════════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Dispatches a progress + status update onto the UI thread, then waits
-    /// 600 ms on the background thread. Safe to call from Task.Run.
-    /// </summary>
     private static async Task ReportProgressAsync(
         System.Windows.Threading.Dispatcher? dispatcher,
         Action uiUpdate)
@@ -1002,7 +930,6 @@ public class CloneWizardViewModel : BaseViewModel
         await Task.Delay(600);
     }
 
-    /// <summary>Marshals an action onto the WPF UI dispatcher safely.</summary>
     private static void RunOnUi(Action action)
     {
         if (System.Windows.Application.Current?.Dispatcher is { } dispatcher)

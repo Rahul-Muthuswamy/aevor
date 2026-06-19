@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -71,7 +71,6 @@ public class BackupService : IBackupService
             _fileSystem.CreateDirectory(backupDir);
             _fileSystem.CreateDirectory(backupProfileDir);
 
-            // Save metadata first in InProgress state
             await SaveMetadataAsync(backupDir, metadata);
 
             var files = _fileSystem.EnumerateFiles(profile.ProfilePath, "*", SearchOption.AllDirectories)
@@ -103,14 +102,12 @@ public class BackupService : IBackupService
                 }
             }
 
-            // Hashing verification
             var backupHash = await _profileHasher.CalculateHashAsync(backupProfileDir);
             var profileHash = backupHash;
 
             stopwatch.Stop();
             var stats = new BackupStatistics(fileCount, totalBytes, stopwatch.Elapsed);
 
-            // Create manifest
             var manifest = new BackupManifest(
                 BackupId: backupId,
                 CreatedAt: DateTime.UtcNow,
@@ -122,15 +119,13 @@ public class BackupService : IBackupService
                 BackupSize: totalBytes
             );
 
-            // Write manifest.json
             var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
             await _fileSystem.WriteAllTextAsync(Path.Combine(backupDir, "manifest.json"), manifestJson);
 
-            // Finalize metadata to Completed
             metadata = metadata with { Status = BackupStatus.Completed, BackupSize = totalBytes };
             await SaveMetadataAsync(backupDir, metadata);
 
-            _logger.LogInformation("Backup Completed for profile: {ProfileName}. ID: {BackupId}, Size: {Size} bytes, Files: {Files}", 
+            _logger.LogInformation("Backup Completed for profile: {ProfileName}. ID: {BackupId}, Size: {Size} bytes, Files: {Files}",
                 profile.DisplayName, backupId, totalBytes, fileCount);
 
             return new BackupResult(true, metadata, null, stats);
@@ -139,7 +134,6 @@ public class BackupService : IBackupService
         {
             _logger.LogError(ex, "Backup Failed for profile: {ProfileName}.", profile.DisplayName);
 
-            // Set metadata to Failed
             try
             {
                 if (_fileSystem.DirectoryExists(backupDir))
@@ -150,7 +144,7 @@ public class BackupService : IBackupService
             }
             catch
             {
-                // ignore write errors during exception handling
+
             }
 
             if (ex is BackupCorruptionException || ex is ProfileFolderNotFoundException)
@@ -226,7 +220,7 @@ public class BackupService : IBackupService
                 }
                 else
                 {
-                    // Fallback to manifest.json if metadata.json is missing
+
                     var manifestPath = Path.Combine(dir, "manifest.json");
                     if (_fileSystem.FileExists(manifestPath))
                     {
@@ -310,7 +304,6 @@ public class BackupService : IBackupService
         var fileName = Path.GetFileName(filePath);
         if (string.IsNullOrEmpty(fileName)) return true;
 
-        // Exclude lock and socket files
         if (fileName.Equals("lockfile", StringComparison.OrdinalIgnoreCase) ||
             fileName.Equals("parent.lock", StringComparison.OrdinalIgnoreCase) ||
             fileName.Equals("SingletonLock", StringComparison.OrdinalIgnoreCase) ||
@@ -322,7 +315,6 @@ public class BackupService : IBackupService
             return true;
         }
 
-        // Exclude cache and service worker directories
         var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (parts.Any(p => p.Equals("Cache", StringComparison.OrdinalIgnoreCase) ||
                            p.Equals("Code Cache", StringComparison.OrdinalIgnoreCase) ||

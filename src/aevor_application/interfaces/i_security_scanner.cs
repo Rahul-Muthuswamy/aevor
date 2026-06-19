@@ -1,4 +1,4 @@
-using Aevor.Core.Models;
+﻿using Aevor.Core.Models;
 
 namespace Aevor.Application.Interfaces;
 
