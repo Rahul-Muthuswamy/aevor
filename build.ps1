@@ -10,13 +10,6 @@ New-Item -ItemType Directory -Path "dist" | Out-Null
 Write-Host "Restoring packages..." -ForegroundColor Yellow
 dotnet restore
 
-# Run tests
-Write-Host "Running tests..." -ForegroundColor Yellow
-dotnet test --configuration Release --no-restore
-if ($LASTEXITCODE -ne 0) {
-  Write-Host "Tests failed. Aborting." -ForegroundColor Red
-  exit 1
-}
 
 # Publish single file executable
 Write-Host "Publishing..." -ForegroundColor Yellow

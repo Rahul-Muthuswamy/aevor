@@ -17,17 +17,23 @@ public class TemplateApplier : ITemplateApplier
     private readonly IFileSystem _fileSystem;
     private readonly ITemplateValidator _templateValidator;
     private readonly IBackupService _backupService;
+    private readonly IProfileDiscoveryService _profileDiscoveryService;
+    private readonly IBraveInstallationService _braveInstallationService;
     private readonly ILogger<TemplateApplier> _logger;
 
     public TemplateApplier(
         IFileSystem fileSystem,
         ITemplateValidator templateValidator,
         IBackupService backupService,
+        IProfileDiscoveryService profileDiscoveryService,
+        IBraveInstallationService braveInstallationService,
         ILogger<TemplateApplier> logger)
     {
         _fileSystem = fileSystem;
         _templateValidator = templateValidator;
         _backupService = backupService;
+        _profileDiscoveryService = profileDiscoveryService;
+        _braveInstallationService = braveInstallationService;
         _logger = logger;
     }
 
@@ -37,6 +43,12 @@ public class TemplateApplier : ITemplateApplier
         if (profile == null) throw new ArgumentNullException(nameof(profile));
 
         _logger.LogInformation("Template application started for profile: {ProfileName}", profile.DisplayName);
+
+        if (_braveInstallationService.IsBraveRunning())
+        {
+            _logger.LogError("Template application failed. Brave is currently running.");
+            return new TemplateApplicationResult(false, "Brave is currently running. Please close Brave before applying templates.");
+        }
 
         var templateVal = _templateValidator.Validate(template);
         if (!templateVal.IsValid)
@@ -64,7 +76,6 @@ public class TemplateApplier : ITemplateApplier
         Guid? backupId = null;
         if (!skipBackup)
         {
-
             _logger.LogInformation("Creating pre-modification backup of profile: {ProfileName}", profile.DisplayName);
             var backupResult = await _backupService.CreateBackupAsync(profile);
             if (!backupResult.IsSuccess || backupResult.Metadata == null)
@@ -80,12 +91,33 @@ public class TemplateApplier : ITemplateApplier
 
         try
         {
-
             var prefText = await _fileSystem.ReadAllTextAsync(prefPath);
-            var prefRoot = JsonNode.Parse(prefText) ?? new JsonObject();
+            var prefRoot = JsonNode.Parse(prefText) as JsonObject ?? new JsonObject();
 
             var secPrefText = await _fileSystem.ReadAllTextAsync(secPrefPath);
-            var secPrefRoot = JsonNode.Parse(secPrefText) ?? new JsonObject();
+            var secPrefRoot = JsonNode.Parse(secPrefText) as JsonObject ?? new JsonObject();
+
+            var idsToKeep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (template.Extensions != null)
+            {
+                foreach (var ext in template.Extensions)
+                {
+                    if (!string.IsNullOrEmpty(ext.Id))
+                    {
+                        idsToKeep.Add(ext.Id);
+                    }
+                }
+            }
+            if (template.Settings?.Theme?.ThemeId != null &&
+                template.Settings.Theme.ThemeId.Length == 32 &&
+                template.Settings.Theme.ThemeId.All(c => c >= 'a' && c <= 'p'))
+            {
+                idsToKeep.Add(template.Settings.Theme.ThemeId);
+            }
+
+            ClearExistingExtensions(prefRoot, secPrefRoot, profile.ProfilePath, idsToKeep);
+
+            await CopyTemplateExtensionFilesAsync(template, profile, idsToKeep, secPrefRoot);
 
             if (template.Settings != null)
             {
@@ -226,30 +258,253 @@ public class TemplateApplier : ITemplateApplier
         return new TemplateApplicationPreview(settingsToModify, extensionsToModify, filesAffected, warnings);
     }
 
+    private void ClearExistingExtensions(JsonNode prefRoot, JsonNode secPrefRoot, string profilePath, HashSet<string> idsToKeep)
+    {
+        _logger.LogInformation("Clearing target profile extensions not in template...");
+
+        var prefExtensionsSettings = prefRoot["extensions"]?["settings"] as JsonObject;
+        if (prefExtensionsSettings != null)
+        {
+            var toRemove = prefExtensionsSettings.Select(pair => pair.Key).Where(key => !idsToKeep.Contains(key)).ToList();
+            foreach (var key in toRemove)
+            {
+                prefExtensionsSettings.Remove(key);
+                _logger.LogDebug("Removed extension {ExtId} from Preferences", key);
+            }
+        }
+
+        var secPrefExtensionsSettings = secPrefRoot["extensions"]?["settings"] as JsonObject;
+        if (secPrefExtensionsSettings != null)
+        {
+            var toRemove = secPrefExtensionsSettings.Select(pair => pair.Key).Where(key => !idsToKeep.Contains(key)).ToList();
+            foreach (var key in toRemove)
+            {
+                secPrefExtensionsSettings.Remove(key);
+                _logger.LogDebug("Removed extension {ExtId} from Secure Preferences settings", key);
+            }
+        }
+
+        var macsExtensionsSettings = secPrefRoot["protection"]?["macs"]?["extensions"]?["settings"] as JsonObject;
+        if (macsExtensionsSettings != null)
+        {
+            var toRemove = macsExtensionsSettings.Select(pair => pair.Key).Where(key => !idsToKeep.Contains(key)).ToList();
+            foreach (var key in toRemove)
+            {
+                macsExtensionsSettings.Remove(key);
+                _logger.LogDebug("Removed extension signature {ExtId} from Secure Preferences", key);
+            }
+        }
+
+        var macsExtensionsEncryptedHash = secPrefRoot["protection"]?["macs"]?["extensions"]?["settings_encrypted_hash"] as JsonObject;
+        if (macsExtensionsEncryptedHash != null)
+        {
+            var toRemove = macsExtensionsEncryptedHash.Select(pair => pair.Key).Where(key => !idsToKeep.Contains(key)).ToList();
+            foreach (var key in toRemove)
+            {
+                macsExtensionsEncryptedHash.Remove(key);
+                _logger.LogDebug("Removed extension encrypted hash signature {ExtId} from Secure Preferences", key);
+            }
+        }
+
+        var extensionsDir = Path.Combine(profilePath, "Extensions");
+        if (_fileSystem.DirectoryExists(extensionsDir))
+        {
+            var existingDirs = _fileSystem.EnumerateDirectories(extensionsDir).ToList();
+            foreach (var dir in existingDirs)
+            {
+                var dirName = Path.GetFileName(dir);
+                if (!idsToKeep.Contains(dirName) && dirName.Length == 32 && dirName.All(c => c >= 'a' && c <= 'p'))
+                {
+                    try
+                    {
+                        _fileSystem.DeleteDirectory(dir, true);
+                        _logger.LogInformation("Deleted non-template extension directory: {Path}", dir);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to delete extension directory: {Path}", dir);
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task CopyTemplateExtensionFilesAsync(AevorTemplate template, BraveProfile targetProfile, HashSet<string> idsToCopy, JsonNode targetSecPrefRoot)
+    {
+        var sourceProfileName = template.Metadata?.SourceProfileName;
+        if (string.IsNullOrEmpty(sourceProfileName))
+        {
+            _logger.LogWarning("No source profile specified in template metadata. Skipping file/signature copy.");
+            return;
+        }
+
+        _logger.LogInformation("Finding source profile for template: {SourceProfileName}", sourceProfileName);
+        var profiles = await _profileDiscoveryService.GetProfilesAsync();
+        var sourceProfile = profiles.FirstOrDefault(p =>
+            string.Equals(p.DisplayName, sourceProfileName, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(p.FolderName, sourceProfileName, StringComparison.OrdinalIgnoreCase));
+
+        if (sourceProfile == null)
+        {
+            _logger.LogWarning("Source profile '{SourceProfileName}' not found. Preferences will be applied, but extension files and signatures cannot be copied.", sourceProfileName);
+            return;
+        }
+
+        if (!_fileSystem.DirectoryExists(sourceProfile.ProfilePath))
+        {
+            _logger.LogWarning("Source profile path '{SourceProfilePath}' does not exist. Skipping file/signature copy.", sourceProfile.ProfilePath);
+            return;
+        }
+
+        _logger.LogInformation("Source profile found at: {SourceProfilePath}. Copying files and signatures...", sourceProfile.ProfilePath);
+
+        var srcSecPrefPath = Path.Combine(sourceProfile.ProfilePath, "Secure Preferences");
+        JsonObject? srcSecPrefRoot = null;
+        if (_fileSystem.FileExists(srcSecPrefPath))
+        {
+            try
+            {
+                var srcSecPrefText = await _fileSystem.ReadAllTextAsync(srcSecPrefPath);
+                srcSecPrefRoot = JsonNode.Parse(srcSecPrefText) as JsonObject;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse source Secure Preferences at '{Path}'", srcSecPrefPath);
+            }
+        }
+
+        var targetSecPrefObj = targetSecPrefRoot as JsonObject;
+        if (targetSecPrefObj != null)
+        {
+            var targetProtection = targetSecPrefObj["protection"] as JsonObject;
+            if (targetProtection == null)
+            {
+                targetProtection = new JsonObject();
+                targetSecPrefObj["protection"] = targetProtection;
+            }
+            var targetMacs = targetProtection["macs"] as JsonObject;
+            if (targetMacs == null)
+            {
+                targetMacs = new JsonObject();
+                targetProtection["macs"] = targetMacs;
+            }
+            var targetExtensions = targetMacs["extensions"] as JsonObject;
+            if (targetExtensions == null)
+            {
+                targetExtensions = new JsonObject();
+                targetMacs["extensions"] = targetExtensions;
+            }
+            var targetSettings = targetExtensions["settings"] as JsonObject;
+            if (targetSettings == null)
+            {
+                targetSettings = new JsonObject();
+                targetExtensions["settings"] = targetSettings;
+            }
+            var targetSettingsEncryptedHash = targetExtensions["settings_encrypted_hash"] as JsonObject;
+            if (targetSettingsEncryptedHash == null)
+            {
+                targetSettingsEncryptedHash = new JsonObject();
+                targetExtensions["settings_encrypted_hash"] = targetSettingsEncryptedHash;
+            }
+
+            var srcProtection = srcSecPrefRoot?["protection"] as JsonObject;
+            var srcMacs = srcProtection?["macs"] as JsonObject;
+            if (srcMacs != null)
+            {
+                if (srcMacs["default_search_provider"] != null)
+                {
+                    targetMacs["default_search_provider"] = srcMacs["default_search_provider"]?.DeepClone();
+                }
+                if (srcMacs["default_search_provider_data"] != null)
+                {
+                    targetMacs["default_search_provider_data"] = srcMacs["default_search_provider_data"]?.DeepClone();
+                }
+            }
+
+            foreach (var extId in idsToCopy)
+            {
+                var srcDir = Path.Combine(sourceProfile.ProfilePath, "Extensions", extId);
+                var destDir = Path.Combine(targetProfile.ProfilePath, "Extensions", extId);
+                if (_fileSystem.DirectoryExists(srcDir))
+                {
+                    try
+                    {
+                        CopyDirectoryRecursive(srcDir, destDir);
+                        _logger.LogInformation("Copied files for extension/theme: {ExtId}", extId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to copy directory from {Source} to {Dest}", srcDir, destDir);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Extension files not found in source profile: {Path}", srcDir);
+                }
+
+                var srcExtensions = srcMacs?["extensions"] as JsonObject;
+                var srcSettings = srcExtensions?["settings"] as JsonObject;
+                var srcSettingsEncryptedHash = srcExtensions?["settings_encrypted_hash"] as JsonObject;
+
+                if (srcSettings?[extId] != null)
+                {
+                    targetSettings[extId] = srcSettings[extId]?.DeepClone();
+                    _logger.LogDebug("Copied MAC signature for extension: {ExtId}", extId);
+                }
+                if (srcSettingsEncryptedHash?[extId] != null)
+                {
+                    targetSettingsEncryptedHash[extId] = srcSettingsEncryptedHash[extId]?.DeepClone();
+                    _logger.LogDebug("Copied encrypted hash MAC signature for extension: {ExtId}", extId);
+                }
+            }
+        }
+    }
+
+    private void CopyDirectoryRecursive(string sourceDir, string targetDir)
+    {
+        if (!_fileSystem.DirectoryExists(sourceDir)) return;
+        _fileSystem.CreateDirectory(targetDir);
+
+        foreach (var file in _fileSystem.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(sourceDir, file);
+            var destFile = Path.Combine(targetDir, relativePath);
+            var destDir = Path.GetDirectoryName(destFile);
+            if (destDir != null && !_fileSystem.DirectoryExists(destDir))
+            {
+                _fileSystem.CreateDirectory(destDir);
+            }
+            _fileSystem.CopyFile(file, destFile, true);
+        }
+    }
+
     private void ApplyTheme(JsonNode root, ThemeInformation theme)
     {
+        var rootObj = root as JsonObject;
+        if (rootObj == null) return;
+
         if (theme == null)
         {
-            var browserThemeNode = root["browser"]?["theme"]?.AsObject();
+            var browserThemeNode = root["browser"]?["theme"] as JsonObject;
             if (browserThemeNode != null)
             {
                 browserThemeNode.Remove("color");
                 if (browserThemeNode.Count == 0)
                 {
-                    root["browser"]?.AsObject()?.Remove("theme");
+                    (root["browser"] as JsonObject)?.Remove("theme");
                 }
             }
-            root["profile"]?.AsObject()?.Remove("theme_color");
+            (root["profile"] as JsonObject)?.Remove("theme_color");
 
             SetJsonValue(root, new[] { "brave", "colors", "theme_mode" }, 0);
 
-            var extensionsThemeNode = root["extensions"]?["theme"]?.AsObject();
+            var extensionsThemeNode = root["extensions"]?["theme"] as JsonObject;
             if (extensionsThemeNode != null)
             {
                 extensionsThemeNode.Remove("id");
                 if (extensionsThemeNode.Count == 0)
                 {
-                    root["extensions"]?.AsObject()?.Remove("theme");
+                    (root["extensions"] as JsonObject)?.Remove("theme");
                 }
             }
             RemoveWallpaperSettings(root);
@@ -263,16 +518,16 @@ public class TemplateApplier : ITemplateApplier
         }
         else
         {
-            var browserThemeNode = root["browser"]?["theme"]?.AsObject();
+            var browserThemeNode = root["browser"]?["theme"] as JsonObject;
             if (browserThemeNode != null)
             {
                 browserThemeNode.Remove("color");
                 if (browserThemeNode.Count == 0)
                 {
-                    root["browser"]?.AsObject()?.Remove("theme");
+                    (root["browser"] as JsonObject)?.Remove("theme");
                 }
             }
-            root["profile"]?.AsObject()?.Remove("theme_color");
+            (root["profile"] as JsonObject)?.Remove("theme_color");
         }
 
         if (theme.SystemThemeMode != null)
@@ -293,13 +548,13 @@ public class TemplateApplier : ITemplateApplier
         }
         else
         {
-            var extensionsThemeNode = root["extensions"]?["theme"]?.AsObject();
+            var extensionsThemeNode = root["extensions"]?["theme"] as JsonObject;
             if (extensionsThemeNode != null)
             {
                 extensionsThemeNode.Remove("id");
                 if (extensionsThemeNode.Count == 0)
                 {
-                    root["extensions"]?.AsObject()?.Remove("theme");
+                    (root["extensions"] as JsonObject)?.Remove("theme");
                 }
             }
             if (!theme.ThemeColor.HasValue)
@@ -311,22 +566,22 @@ public class TemplateApplier : ITemplateApplier
 
     private void RemoveWallpaperSettings(JsonNode root)
     {
-        root["ntp"]?.AsObject()?.Remove("custom_background");
+        (root["ntp"] as JsonObject)?.Remove("custom_background");
 
-        var ntpNode = root["ntp"]?.AsObject();
+        var ntpNode = root["ntp"] as JsonObject;
         if (ntpNode != null && ntpNode.Count == 0)
         {
-            root.AsObject().Remove("ntp");
+            (root as JsonObject)?.Remove("ntp");
         }
 
-        var braveNewTabPage = root["brave"]?["new_tab_page"]?.AsObject();
+        var braveNewTabPage = root["brave"]?["new_tab_page"] as JsonObject;
         if (braveNewTabPage != null)
         {
             braveNewTabPage.Remove("background_image_source");
             braveNewTabPage.Remove("custom_background_source");
             if (braveNewTabPage.Count == 0)
             {
-                root["brave"]?.AsObject()?.Remove("new_tab_page");
+                (root["brave"] as JsonObject)?.Remove("new_tab_page");
             }
         }
     }
@@ -339,9 +594,9 @@ public class TemplateApplier : ITemplateApplier
 
         if (search.Name == "Brave" || string.IsNullOrEmpty(search.Name))
         {
-            root.AsObject().Remove("synced_default_search_provider_guid");
-            root.AsObject().Remove("default_search_provider_data");
-            root.AsObject().Remove("default_search_provider_data_signature");
+            (root as JsonObject)?.Remove("synced_default_search_provider_guid");
+            (root as JsonObject)?.Remove("default_search_provider_data");
+            (root as JsonObject)?.Remove("default_search_provider_data_signature");
         }
     }
 
@@ -365,7 +620,9 @@ public class TemplateApplier : ITemplateApplier
             settingsNode = root["extensions"]!["settings"]!;
         }
 
-        var settingsObj = settingsNode.AsObject();
+        var settingsObj = settingsNode as JsonObject;
+        if (settingsObj == null) return;
+
         foreach (var ext in extensions)
         {
             var extNode = settingsObj[ext.Id];
@@ -376,17 +633,24 @@ public class TemplateApplier : ITemplateApplier
                 extNode = newExt;
             }
 
-            var manifestNode = extNode["manifest"];
+            var extObj = extNode as JsonObject;
+            if (extObj == null) continue;
+
+            var manifestNode = extObj["manifest"];
             if (manifestNode == null)
             {
                 var newManifest = new JsonObject();
-                extNode.AsObject()["manifest"] = newManifest;
+                extObj["manifest"] = newManifest;
                 manifestNode = newManifest;
             }
 
-            manifestNode.AsObject()["name"] = JsonValue.Create(ext.Name);
-            manifestNode.AsObject()["version"] = JsonValue.Create(ext.Version);
-            extNode.AsObject()["state"] = JsonValue.Create(ext.IsEnabled ? 1 : 0);
+            var manifestObj = manifestNode as JsonObject;
+            if (manifestObj != null)
+            {
+                manifestObj["name"] = JsonValue.Create(ext.Name);
+                manifestObj["version"] = JsonValue.Create(ext.Version);
+            }
+            extObj["state"] = JsonValue.Create(ext.IsEnabled ? 1 : 0);
         }
     }
 
@@ -400,19 +664,27 @@ public class TemplateApplier : ITemplateApplier
             if (next == null)
             {
                 var newObj = new JsonObject();
-                current.AsObject()[key] = newObj;
+                var currentObj = current as JsonObject;
+                if (currentObj != null)
+                {
+                    currentObj[key] = newObj;
+                }
                 next = newObj;
             }
             current = next;
         }
 
-        if (value is JsonNode node)
+        var parentObj = current as JsonObject;
+        if (parentObj != null)
         {
-            current.AsObject()[path[^1]] = node;
-        }
-        else
-        {
-            current.AsObject()[path[^1]] = JsonValue.Create(value);
+            if (value is JsonNode node)
+            {
+                parentObj[path[^1]] = node;
+            }
+            else
+            {
+                parentObj[path[^1]] = JsonValue.Create(value);
+            }
         }
     }
 }
