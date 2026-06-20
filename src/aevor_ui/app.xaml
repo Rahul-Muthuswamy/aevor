@@ -1,0 +1,19 @@
+﻿<Application x:Class="Aevor.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Aevor.UI">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="themes/colors.xaml" />
+                <ResourceDictionary Source="themes/typography.xaml" />
+                <ResourceDictionary Source="themes/spacing.xaml" />
+                <ResourceDictionary Source="themes/controls.xaml" />
+                <ResourceDictionary Source="themes/cards.xaml" />
+                <ResourceDictionary Source="themes/buttons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <CroppedBitmap x:Key="AevorIcon" Source="/assets/aevor_logo.png" SourceRect="0,0,2000,1520" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,503 @@
+﻿<UserControl x:Class="Aevor.UI.Views.SecurityView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="FilterPillStyle" TargetType="Button">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#E5E7EB" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+            <Setter Property="Padding" Value="16,6" />
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="16"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Storyboard x:Key="FadeInResults">
+            <DoubleAnimation Storyboard.TargetName="ContentPanel"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.5">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <ThicknessAnimation Storyboard.TargetName="ContentPanel"
+                                Storyboard.TargetProperty="Margin"
+                                From="0,24,0,0" To="0,0,0,0" Duration="0:0:0.4">
+                <ThicknessAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseOut" />
+                </ThicknessAnimation.EasingFunction>
+            </ThicknessAnimation>
+        </Storyboard>
+    </UserControl.Resources>
+
+    <Grid>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="White">
+        <Border Padding="32" Background="White">
+            <StackPanel x:Name="ContentPanel" Opacity="1">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"    />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Image Source="{StaticResource AevorIcon}" Height="36" Width="36" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0"/>
+                        <TextBlock Text="Security Reports" Style="{StaticResource H1TextBlockStyle}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Real-time risk assessment for all Brave browser profiles"
+                               Style="{StaticResource BodyTextBlockStyle}"
+                               Foreground="{DynamicResource MutedBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Run Scan"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding RunScanCommand}" />
+
+                    <Button Content="Export Report"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ExportReportCommand}"
+                            Margin="8,0,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <Border Margin="0,32,0,0"
+                    Style="{StaticResource CardStyle}"
+                    Padding="24"
+                    Background="{Binding OverallRiskBackground}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"    />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding OverallRiskScore}"
+                                       Style="{StaticResource H1TextBlockStyle}"
+                                       Foreground="{Binding OverallRiskColor}"
+                                       FontSize="48" />
+                            <TextBlock Text=" / 100"
+                                       Style="{StaticResource H2TextBlockStyle}"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       VerticalAlignment="Bottom"
+                                       Margin="0,0,0,10" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding OverallRiskLabel}"
+                                   Style="{StaticResource H3TextBlockStyle}"
+                                   Foreground="{Binding OverallRiskColor}"
+                                   Margin="0,4,0,0" />
+
+                        <TextBlock Text="Risk Score  ·  Higher score = greater exposure"
+                                   Style="{StaticResource BodyTextBlockStyle}"
+                                   Foreground="{DynamicResource MutedBrush}"
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+
+                        <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding TotalFindings}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Total Findings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding CriticalCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource DangerBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Critical" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,24,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding WarningCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource WarningBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Warnings" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding ExcludedCount}" Style="{StaticResource H2TextBlockStyle}" Foreground="{DynamicResource SuccessBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Text="Excluded" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Style="{StaticResource BodySmallTextBlockStyle}"
+                       Foreground="{DynamicResource MutedBrush}"
+                       HorizontalAlignment="Right"
+                       Margin="0,8,0,0" />
+
+            <TextBlock Text="Profile Risk Overview" Style="{StaticResource H3TextBlockStyle}" Margin="0,32,0,0" />
+
+            <ItemsControl ItemsSource="{Binding ProfileSummaries}" Margin="0,16,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+
+                        <Border Style="{StaticResource CardStyle}" Width="200" Padding="20" Margin="0,0,12,12" Background="{DynamicResource SurfaceBrush}">
+                            <StackPanel>
+
+                                <Border Width="36" Height="36" CornerRadius="18" Background="#F7E5FC" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding Initial}"
+                                               Style="{StaticResource BodyTextBlockStyle}"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource PrimaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+
+                                <TextBlock Text="{Binding ProfileName}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Margin="0,12,0,0" />
+
+                                <TextBlock Text="{Binding RiskScore, StringFormat='Risk: {0}'}" Style="{StaticResource H2TextBlockStyle}" Foreground="{Binding RiskColor}" Margin="0,8,0,0" />
+
+                                <TextBlock Text="{Binding RiskLabel}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{Binding RiskColor}" FontWeight="Bold" />
+
+                                <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0">
+                                    <Run Text="{Binding FindingCount}" />
+                                    <Run Text=" findings" />
+                                </TextBlock>
+
+                                <TextBlock Text="{Binding LastScanned}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Grid Margin="0,32,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"    />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Findings" Style="{StaticResource H3TextBlockStyle}" VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+
+                    <Button Content="All" Command="{Binding FilterBySeverityCommand}" CommandParameter="All">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterAllActive}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Content="Critical" Command="{Binding FilterBySeverityCommand}" CommandParameter="Critical" Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterCriticalActive}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Content="Warning" Command="{Binding FilterBySeverityCommand}" CommandParameter="Warning" Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterWarningActive}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Content="Info" Command="{Binding FilterBySeverityCommand}" CommandParameter="Info" Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FilterPillStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFilterInfoActive}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <ItemsControl ItemsSource="{Binding FilteredFindings}" Margin="0,16,0,32">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+
+                        <Border Style="{StaticResource CardStyle}" Padding="16,20" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*"    />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{Binding SeverityColor}" VerticalAlignment="Center" Margin="4,0,16,0" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FindingTitle}" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" />
+                                    <TextBlock Text="{Binding FindingDetail}" Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+
+                                    <TextBlock Style="{StaticResource BodySmallTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0">
+                                        <Run Text="Affected: " />
+                                        <Run Text="{Binding AffectedProfile}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <Border Grid.Column="2" CornerRadius="12" Padding="10,6" VerticalAlignment="Center" Background="{Binding SeverityBadgeBackground}">
+                                    <TextBlock Text="{Binding Severity}" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="Bold" Foreground="{Binding SeverityBadgeText}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+        </Border>
+        </ScrollViewer>
+
+        <Grid x:Name="LoadingPanel"
+              Background="#F9FAFB"
+              Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                <Border HorizontalAlignment="Center"
+                        Width="96" Height="96"
+                        CornerRadius="48"
+                        Background="White">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#A78BFA" Opacity="0.4"/>
+                    </Border.Effect>
+                    <Image Source="{StaticResource AevorIcon}"
+                           Width="56" Height="56"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           RenderTransformOrigin="0.5,0.5"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center">
+                        <Image.RenderTransform>
+                            <RotateTransform x:Name="SpinnerRotate" Angle="0" />
+                        </Image.RenderTransform>
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Visibility, ElementName=LoadingPanel}" Value="Visible">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="RotationStoryboard">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(Image.RenderTransform).(RotateTransform.Angle)"
+                                                                     From="0" To="360" Duration="0:0:1.2"
+                                                                     RepeatBehavior="Forever" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="RotationStoryboard" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </Border>
+
+                <TextBlock Text="Running Security Scan"
+                           Style="{StaticResource H2TextBlockStyle}"
+                           HorizontalAlignment="Center"
+                           Margin="0,24,0,0" />
+
+                <TextBlock Text="Analyzing all Brave profiles for vulnerabilities and sensitive data exposure"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           Foreground="{DynamicResource MutedBrush}"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           MaxWidth="400"
+                           TextWrapping="Wrap"
+                           Margin="0,8,0,0" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,24,0,0">
+                    <Ellipse x:Name="Dot1" Width="10" Height="10" Fill="{DynamicResource PrimaryBrush}" Margin="6,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Opacity" Value="0.3" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Visibility, ElementName=LoadingPanel}" Value="Visible">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="Dot1Storyboard">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0"   Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="0.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2" Value="0.3" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0"    Value="1.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.2"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2"  Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0"    Value="1.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.2"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2"  Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="Dot1Storyboard" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                        <Ellipse.RenderTransformOrigin>0.5,0.5</Ellipse.RenderTransformOrigin>
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <Ellipse x:Name="Dot2" Width="10" Height="10" Fill="{DynamicResource PrimaryBrush}" Margin="6,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Opacity" Value="0.3" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Visibility, ElementName=LoadingPanel}" Value="Visible">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="Dot2Storyboard">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="0.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2" Value="0.3" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.4"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.6"  Value="1.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.8"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2"  Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.4"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.6"  Value="1.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.8"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2"  Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="Dot2Storyboard" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                        <Ellipse.RenderTransformOrigin>0.5,0.5</Ellipse.RenderTransformOrigin>
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <Ellipse x:Name="Dot3" Width="10" Height="10" Fill="{DynamicResource PrimaryBrush}" Margin="6,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Opacity" Value="0.3" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Visibility, ElementName=LoadingPanel}" Value="Visible">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="Dot3Storyboard">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="0.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.0" Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2" Value="0.3" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.8"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.0"  Value="1.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2"  Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:0.8"  Value="1.0" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.0"  Value="1.3" />
+                                                        <EasingDoubleKeyFrame KeyTime="0:0:1.2"  Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="Dot3Storyboard" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                        <Ellipse.RenderTransformOrigin>0.5,0.5</Ellipse.RenderTransformOrigin>
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                </StackPanel>
+
+                <StackPanel HorizontalAlignment="Center" Margin="0,20,0,0">
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center">
+                        <Run Text="●" Foreground="{DynamicResource PrimaryBrush}" />
+                        <Run Text="  Checking for saved credentials" />
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,4,0,0">
+                        <Run Text="●" Foreground="{DynamicResource PrimaryBrush}" />
+                        <Run Text="  Scanning session cookies &amp; local storage" />
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,4,0,0">
+                        <Run Text="●" Foreground="{DynamicResource PrimaryBrush}" />
+                        <Run Text="  Evaluating browser process state" />
+                    </TextBlock>
+                </StackPanel>
+
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

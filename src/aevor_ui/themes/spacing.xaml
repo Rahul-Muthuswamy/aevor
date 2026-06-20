@@ -1,0 +1,14 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Thickness x:Key="SpacingXS">4</Thickness>
+    <Thickness x:Key="SpacingSM">8</Thickness>
+    <Thickness x:Key="SpacingMD">16</Thickness>
+    <Thickness x:Key="SpacingLG">24</Thickness>
+    <Thickness x:Key="SpacingXL">32</Thickness>
+
+    <CornerRadius x:Key="CornerRadiusSM">4</CornerRadius>
+    <CornerRadius x:Key="CornerRadiusMD">8</CornerRadius>
+    <CornerRadius x:Key="CornerRadiusLG">12</CornerRadius>
+
+</ResourceDictionary>
