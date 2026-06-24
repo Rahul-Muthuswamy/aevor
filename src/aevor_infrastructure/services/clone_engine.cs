@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Aevor.Application.Interfaces;
@@ -147,28 +148,28 @@ public class CloneEngine : ICloneEngine
                 if (_fileSystem.FileExists(destPrefPath))
                 {
                     var prefText = await _fileSystem.ReadAllTextAsync(destPrefPath);
-                    var prefRoot = System.Text.Json.Nodes.JsonNode.Parse(prefText);
+                    var prefRoot = System.Text.Json.Nodes.JsonNode.Parse(prefText) as JsonObject;
                     if (prefRoot != null)
                     {
-                        var profileNode = prefRoot["profile"];
+                        var profileNode = prefRoot["profile"] as JsonObject;
                         if (profileNode == null)
                         {
-                            prefRoot.AsObject()["profile"] = new System.Text.Json.Nodes.JsonObject();
-                            profileNode = prefRoot["profile"];
+                            var newProfileNode = new JsonObject();
+                            prefRoot["profile"] = newProfileNode;
+                            profileNode = newProfileNode;
                         }
-                        profileNode!.AsObject()["name"] = System.Text.Json.Nodes.JsonValue.Create(request.DestinationProfileName);
+                        profileNode["name"] = System.Text.Json.Nodes.JsonValue.Create(request.DestinationProfileName);
 
                         if (!request.IncludeExtensions)
                         {
                             var themeId = tempTemplate.Settings?.Theme?.ThemeId;
                             if (string.IsNullOrEmpty(themeId))
                             {
-                                prefRoot.AsObject().Remove("extensions");
-                                _logger.LogInformation("Removed extensions from Preferences.");
+                                prefRoot.Remove("extensions");
                             }
                             else
                             {
-                                var extensionsNode = prefRoot["extensions"]?.AsObject();
+                                var extensionsNode = prefRoot["extensions"] as JsonObject;
                                 if (extensionsNode != null)
                                 {
                                     var keysToRemove = extensionsNode.Select(kvp => kvp.Key).Where(k => k != "theme" && k != "settings").ToList();
@@ -177,7 +178,7 @@ public class CloneEngine : ICloneEngine
                                         extensionsNode.Remove(key);
                                     }
 
-                                    var settingsNode = extensionsNode["settings"]?.AsObject();
+                                    var settingsNode = extensionsNode["settings"] as JsonObject;
                                     if (settingsNode != null)
                                     {
                                         var settingsKeysToRemove = settingsNode.Select(kvp => kvp.Key).Where(k => k != themeId).ToList();
@@ -187,12 +188,10 @@ public class CloneEngine : ICloneEngine
                                         }
                                     }
                                 }
-                                _logger.LogInformation("Removed all extensions from Preferences except theme: {ThemeId}", themeId);
                             }
                         }
 
                         await _fileSystem.WriteAllTextAsync(destPrefPath, prefRoot.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-                        _logger.LogInformation("Updated profile name to '{DestName}' in Preferences.", request.DestinationProfileName);
                     }
                 }
 
@@ -200,7 +199,7 @@ public class CloneEngine : ICloneEngine
                 if (_fileSystem.FileExists(destSecPrefPath))
                 {
                     var secPrefText = await _fileSystem.ReadAllTextAsync(destSecPrefPath);
-                    var secPrefRoot = System.Text.Json.Nodes.JsonNode.Parse(secPrefText);
+                    var secPrefRoot = System.Text.Json.Nodes.JsonNode.Parse(secPrefText) as JsonObject;
                     if (secPrefRoot != null)
                     {
                         if (!request.IncludeExtensions)
@@ -208,12 +207,11 @@ public class CloneEngine : ICloneEngine
                             var themeId = tempTemplate.Settings?.Theme?.ThemeId;
                             if (string.IsNullOrEmpty(themeId))
                             {
-                                secPrefRoot.AsObject().Remove("extensions");
-                                _logger.LogInformation("Removed extensions from Secure Preferences.");
+                                secPrefRoot.Remove("extensions");
                             }
                             else
                             {
-                                var extensionsNode = secPrefRoot["extensions"]?.AsObject();
+                                var extensionsNode = secPrefRoot["extensions"] as JsonObject;
                                 if (extensionsNode != null)
                                 {
                                     var keysToRemove = extensionsNode.Select(kvp => kvp.Key).Where(k => k != "theme" && k != "settings").ToList();
@@ -222,7 +220,7 @@ public class CloneEngine : ICloneEngine
                                         extensionsNode.Remove(key);
                                     }
 
-                                    var settingsNode = extensionsNode["settings"]?.AsObject();
+                                    var settingsNode = extensionsNode["settings"] as JsonObject;
                                     if (settingsNode != null)
                                     {
                                         var settingsKeysToRemove = settingsNode.Select(kvp => kvp.Key).Where(k => k != themeId).ToList();
@@ -232,7 +230,6 @@ public class CloneEngine : ICloneEngine
                                         }
                                     }
                                 }
-                                _logger.LogInformation("Removed all extensions from Secure Preferences except theme: {ThemeId}", themeId);
                             }
                             await _fileSystem.WriteAllTextAsync(destSecPrefPath, secPrefRoot.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                         }

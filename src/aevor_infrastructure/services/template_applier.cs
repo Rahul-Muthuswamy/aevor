@@ -117,7 +117,7 @@ public class TemplateApplier : ITemplateApplier
 
             ClearExistingExtensions(prefRoot, secPrefRoot, profile.ProfilePath, idsToKeep);
 
-            await CopyTemplateExtensionFilesAsync(template, profile, idsToKeep, secPrefRoot);
+            var copiedIds = await CopyTemplateExtensionFilesAsync(template, profile, idsToKeep, prefRoot, secPrefRoot);
 
             if (template.Settings != null)
             {
@@ -148,8 +148,8 @@ public class TemplateApplier : ITemplateApplier
 
             if (template.Extensions != null && template.Extensions.Count > 0)
             {
-                ApplyExtensions(prefRoot, template.Extensions);
-                ApplyExtensions(secPrefRoot, template.Extensions);
+                ApplyExtensions(prefRoot, template.Extensions, copiedIds);
+                ApplyExtensions(secPrefRoot, template.Extensions, copiedIds);
                 appliedChanges.Add($"{template.Extensions.Count} Extensions configuration applied.");
             }
 
@@ -329,13 +329,14 @@ public class TemplateApplier : ITemplateApplier
         }
     }
 
-    private async Task CopyTemplateExtensionFilesAsync(AevorTemplate template, BraveProfile targetProfile, HashSet<string> idsToCopy, JsonNode targetSecPrefRoot)
+    private async Task<HashSet<string>> CopyTemplateExtensionFilesAsync(AevorTemplate template, BraveProfile targetProfile, HashSet<string> idsToCopy, JsonNode targetPrefRoot, JsonNode targetSecPrefRoot)
     {
+        var copiedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var sourceProfileName = template.Metadata?.SourceProfileName;
         if (string.IsNullOrEmpty(sourceProfileName))
         {
             _logger.LogWarning("No source profile specified in template metadata. Skipping file/signature copy.");
-            return;
+            return copiedIds;
         }
 
         _logger.LogInformation("Finding source profile for template: {SourceProfileName}", sourceProfileName);
@@ -347,16 +348,31 @@ public class TemplateApplier : ITemplateApplier
         if (sourceProfile == null)
         {
             _logger.LogWarning("Source profile '{SourceProfileName}' not found. Preferences will be applied, but extension files and signatures cannot be copied.", sourceProfileName);
-            return;
+            return copiedIds;
         }
 
         if (!_fileSystem.DirectoryExists(sourceProfile.ProfilePath))
         {
             _logger.LogWarning("Source profile path '{SourceProfilePath}' does not exist. Skipping file/signature copy.", sourceProfile.ProfilePath);
-            return;
+            return copiedIds;
         }
 
         _logger.LogInformation("Source profile found at: {SourceProfilePath}. Copying files and signatures...", sourceProfile.ProfilePath);
+
+        var srcPrefPath = Path.Combine(sourceProfile.ProfilePath, "Preferences");
+        JsonObject? srcPrefRoot = null;
+        if (_fileSystem.FileExists(srcPrefPath))
+        {
+            try
+            {
+                var srcPrefText = await _fileSystem.ReadAllTextAsync(srcPrefPath);
+                srcPrefRoot = JsonNode.Parse(srcPrefText) as JsonObject;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse source Preferences at '{Path}'", srcPrefPath);
+            }
+        }
 
         var srcSecPrefPath = Path.Combine(sourceProfile.ProfilePath, "Secure Preferences");
         JsonObject? srcSecPrefRoot = null;
@@ -373,9 +389,36 @@ public class TemplateApplier : ITemplateApplier
             }
         }
 
+        var targetPrefObj = targetPrefRoot as JsonObject;
+        var targetPrefExtensions = targetPrefObj?["extensions"] as JsonObject;
+        if (targetPrefExtensions == null && targetPrefObj != null)
+        {
+            targetPrefExtensions = new JsonObject();
+            targetPrefObj["extensions"] = targetPrefExtensions;
+        }
+        var targetPrefSettings = targetPrefExtensions?["settings"] as JsonObject;
+        if (targetPrefSettings == null && targetPrefExtensions != null)
+        {
+            targetPrefSettings = new JsonObject();
+            targetPrefExtensions["settings"] = targetPrefSettings;
+        }
+
         var targetSecPrefObj = targetSecPrefRoot as JsonObject;
         if (targetSecPrefObj != null)
         {
+            var targetSecPrefExtensions = targetSecPrefObj["extensions"] as JsonObject;
+            if (targetSecPrefExtensions == null)
+            {
+                targetSecPrefExtensions = new JsonObject();
+                targetSecPrefObj["extensions"] = targetSecPrefExtensions;
+            }
+            var targetSecPrefSettings = targetSecPrefExtensions["settings"] as JsonObject;
+            if (targetSecPrefSettings == null)
+            {
+                targetSecPrefSettings = new JsonObject();
+                targetSecPrefExtensions["settings"] = targetSecPrefSettings;
+            }
+
             var targetProtection = targetSecPrefObj["protection"] as JsonObject;
             if (targetProtection == null)
             {
@@ -442,6 +485,22 @@ public class TemplateApplier : ITemplateApplier
                     _logger.LogWarning("Extension files not found in source profile: {Path}", srcDir);
                 }
 
+                var srcPrefExtensions = srcPrefRoot?["extensions"] as JsonObject;
+                var srcPrefSettings = srcPrefExtensions?["settings"] as JsonObject;
+                if (srcPrefSettings?[extId] != null && targetPrefSettings != null)
+                {
+                    targetPrefSettings[extId] = srcPrefSettings[extId]?.DeepClone();
+                    _logger.LogDebug("Copied Preferences settings for extension: {ExtId}", extId);
+                }
+
+                var srcSecPrefExtensions = srcSecPrefRoot?["extensions"] as JsonObject;
+                var srcSecPrefSettings = srcSecPrefExtensions?["settings"] as JsonObject;
+                if (srcSecPrefSettings?[extId] != null && targetSecPrefSettings != null)
+                {
+                    targetSecPrefSettings[extId] = srcSecPrefSettings[extId]?.DeepClone();
+                    _logger.LogDebug("Copied Secure Preferences settings for extension: {ExtId}", extId);
+                }
+
                 var srcExtensions = srcMacs?["extensions"] as JsonObject;
                 var srcSettings = srcExtensions?["settings"] as JsonObject;
                 var srcSettingsEncryptedHash = srcExtensions?["settings_encrypted_hash"] as JsonObject;
@@ -456,8 +515,11 @@ public class TemplateApplier : ITemplateApplier
                     targetSettingsEncryptedHash[extId] = srcSettingsEncryptedHash[extId]?.DeepClone();
                     _logger.LogDebug("Copied encrypted hash MAC signature for extension: {ExtId}", extId);
                 }
+
+                copiedIds.Add(extId);
             }
         }
+        return copiedIds;
     }
 
     private void CopyDirectoryRecursive(string sourceDir, string targetDir)
@@ -611,7 +673,7 @@ public class TemplateApplier : ITemplateApplier
         SetJsonValue(root, new[] { "brave", "tabs", "use_vertical_tabs" }, tabs.UseVerticalTabs);
     }
 
-    private void ApplyExtensions(JsonNode root, IReadOnlyList<ExtensionInfo> extensions)
+    private void ApplyExtensions(JsonNode root, IReadOnlyList<ExtensionInfo> extensions, HashSet<string> skippedIds)
     {
         var settingsNode = root["extensions"]?["settings"];
         if (settingsNode == null)
@@ -625,6 +687,8 @@ public class TemplateApplier : ITemplateApplier
 
         foreach (var ext in extensions)
         {
+            if (skippedIds.Contains(ext.Id)) continue;
+
             var extNode = settingsObj[ext.Id];
             if (extNode == null)
             {
