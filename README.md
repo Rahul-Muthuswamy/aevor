@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="aevor/aevor_logo.png" alt="Aevor Logo" width="120"/>
+  <img src="aevor/assets/aevor_logo.png" alt="Aevor Logo" width="120"/>
 </p>
 
 <h1 align="center">Aevor</h1>
