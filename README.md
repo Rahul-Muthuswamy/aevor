@@ -1,21 +1,21 @@
 <p align="center">
-  <img src="aevor/assets/aevor_logo.png" alt="Aevor Logo" width="120"/>
+  <img src="assets/aevor_logo.png" alt="Aevor Logo" width="120"/>
 </p>
-
+ 
 <h1 align="center">Aevor</h1>
-
+ 
 <p align="center">
   A premium desktop profile management & backup suite for <b>Brave Browser</b> on Windows.
 </p>
-
+ 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Windows-blue" />
   <img src="https://img.shields.io/badge/UI-WPF-purple" />
   <img src="https://img.shields.io/badge/license-MIT-green" />
 </p>
-
+ 
 <p align="center">
-  <img src="aevor/assets/aevor_demo.gif" alt="Aevor Demo" width="700"/>
+  <img src="assets/aevor_demo.gif" alt="Aevor Demo" width="700"/>
 </p>
 
 ---
