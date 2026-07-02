@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -309,7 +309,8 @@ public class TemplatesViewModel : BaseViewModel
                                     if (result.IsSuccess)
                                     {
                                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                                            SetStatusMessage($"Template applied successfully to \"{targetProfile.DisplayName}\"", ToastType.Success));
+                                            SetStatusMessage($"Template applied to \"{targetProfile.DisplayName}\" successfully", ToastType.Success));
+                                        await LoadTemplatesAsync();
                                         return null;
                                     }
                                     else

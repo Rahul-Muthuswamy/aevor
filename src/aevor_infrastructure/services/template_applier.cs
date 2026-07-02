@@ -116,6 +116,7 @@ public class TemplateApplier : ITemplateApplier
             }
 
             ClearExistingExtensions(prefRoot, secPrefRoot, profile.ProfilePath, idsToKeep);
+            ResetProfilePreferences(prefRoot);
 
             var copiedIds = await CopyTemplateExtensionFilesAsync(template, profile, idsToKeep, prefRoot, secPrefRoot);
 
@@ -150,7 +151,15 @@ public class TemplateApplier : ITemplateApplier
             {
                 ApplyExtensions(prefRoot, template.Extensions, copiedIds);
                 ApplyExtensions(secPrefRoot, template.Extensions, copiedIds);
-                appliedChanges.Add($"{template.Extensions.Count} Extensions configuration applied.");
+
+                if (copiedIds.Contains("__source_profile_not_found__"))
+                {
+                    appliedChanges.Add("Extensions could not be copied — source profile not found on this machine. Settings applied.");
+                }
+                else
+                {
+                    appliedChanges.Add($"{template.Extensions.Count} Extensions configuration applied.");
+                }
             }
 
             var serializeOptions = new JsonSerializerOptions { WriteIndented = true };
@@ -211,9 +220,9 @@ public class TemplateApplier : ITemplateApplier
             return new TemplateApplicationValidationResult(false, errors, warnings);
         }
 
-        if (template.Metadata?.TemplateVersion == null || template.Metadata.TemplateVersion.ToString() != "1.0")
+        if (template.Metadata?.TemplateVersion == null)
         {
-            errors.Add($"Unsupported or missing template version: '{template.Metadata?.TemplateVersion?.ToString() ?? "null"}'");
+            errors.Add("Template version is missing. Cannot validate template.");
         }
 
         if (!_fileSystem.DirectoryExists(profile.ProfilePath))
@@ -256,6 +265,23 @@ public class TemplateApplier : ITemplateApplier
         }
 
         return new TemplateApplicationPreview(settingsToModify, extensionsToModify, filesAffected, warnings);
+    }
+
+    private void ResetProfilePreferences(JsonObject prefRoot)
+    {
+        _logger.LogInformation("Resetting stale preference keys before applying template settings...");
+
+        prefRoot.Remove("default_search_provider");
+        prefRoot.Remove("default_search_provider_data");
+        prefRoot.Remove("synced_default_search_provider_guid");
+
+        (prefRoot["browser"] as JsonObject)?.Remove("theme");
+        (prefRoot["profile"] as JsonObject)?.Remove("theme_color");
+        (prefRoot["extensions"] as JsonObject)?.Remove("theme");
+        (prefRoot["brave"]?["colors"] as JsonObject)?.Remove("theme_mode");
+        (prefRoot["brave"] as JsonObject)?.Remove("sidebar");
+        (prefRoot["brave"] as JsonObject)?.Remove("tabs");
+        (prefRoot["ntp"] as JsonObject)?.Remove("custom_background");
     }
 
     private void ClearExistingExtensions(JsonNode prefRoot, JsonNode secPrefRoot, string profilePath, HashSet<string> idsToKeep)
@@ -347,7 +373,8 @@ public class TemplateApplier : ITemplateApplier
 
         if (sourceProfile == null)
         {
-            _logger.LogWarning("Source profile '{SourceProfileName}' not found. Preferences will be applied, but extension files and signatures cannot be copied.", sourceProfileName);
+            _logger.LogWarning("Source profile '{SourceProfileName}' not found. JSON settings will be applied but extension files and signatures cannot be copied.", sourceProfileName);
+            copiedIds.Add("__source_profile_not_found__");
             return copiedIds;
         }
 
